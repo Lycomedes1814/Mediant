@@ -1,6 +1,12 @@
-# Plan: Express Server Backend for Mediant
+# Roadmap
 
-## Context
+## Edit entry
+
+Muted crayon icon appears on hover over any agenda item. Clicking it opens the existing add-entry panel pre-filled with the entry's data for editing. In server mode, writes the change back to the .org file.
+
+## Server backend
+
+### Context
 
 Mediant is currently a static SPA — users paste org text into a textarea. Goal: add a server that reads/writes a single `.org` file and serves the UI. Access from other devices via `tailscale serve`. No application-level auth.
 
