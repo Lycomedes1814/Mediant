@@ -1,0 +1,407 @@
+/**
+ * DOM rendering: AgendaWeek + DeadlineItem[] → HTML.
+ *
+ * Reads from the agenda data model, writes to the DOM.
+ * No parsing or date logic here — that belongs to earlier stages.
+ */
+
+import type { AgendaWeek, AgendaDay, AgendaItem, DeadlineItem, OverdueItem, SomedayItem } from "../agenda/model.ts";
+import { getTagColor, TAG_DEFAULT_COLOR } from "./tagColors.ts";
+
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"];
+
+// ── Public API ───────────────────────────────────────────────────────
+
+export function renderAgenda(
+  container: HTMLElement,
+  week: AgendaWeek,
+  deadlines: DeadlineItem[],
+  overdue: OverdueItem[],
+  someday: SomedayItem[],
+  today: Date,
+): void {
+  container.innerHTML = "";
+
+  // Header
+  const startDate = week[0].date;
+  const endDate = week[6].date;
+  container.appendChild(renderHeader(startDate, endDate));
+
+  // Overdue section (before deadlines — most urgent)
+  if (overdue.length > 0) {
+    container.appendChild(renderOverdue(overdue));
+  }
+
+  // Deadlines section
+  if (deadlines.length > 0) {
+    container.appendChild(renderDeadlines(deadlines));
+  }
+
+  // Day cards
+  for (let i = 0; i < 7; i++) {
+    container.appendChild(renderDay(week[i], i, today));
+  }
+
+  // Someday section
+  if (someday.length > 0) {
+    container.appendChild(renderSomeday(someday));
+  }
+}
+
+// ── Header ───────────────────────────────────────────────────────────
+
+function renderHeader(startDate: Date, endDate: Date): HTMLElement {
+  const header = el("header", "agenda-header");
+
+  const nav = el("nav", "agenda-nav");
+
+  const prevBtn = el("button", "nav-arrow");
+  prevBtn.innerHTML = "&larr;";
+  prevBtn.setAttribute("aria-label", "Previous 7 days");
+  prevBtn.dataset.action = "prev";
+
+  const title = el("span", "nav-title");
+  const weekDate = el("span", "nav-week-date");
+  weekDate.textContent = formatDateRange(startDate, endDate);
+  title.append(weekDate);
+
+  const nextBtn = el("button", "nav-arrow");
+  nextBtn.innerHTML = "&rarr;";
+  nextBtn.setAttribute("aria-label", "Next 7 days");
+  nextBtn.dataset.action = "next";
+
+  nav.append(prevBtn, title, nextBtn);
+
+  const actions = el("div", "agenda-actions");
+
+  const todayBtn = el("button", "agenda-nav-today");
+  todayBtn.textContent = "Today";
+  todayBtn.dataset.action = "today";
+
+  const tagsBtn = el("button", "tags-editor-btn");
+  tagsBtn.setAttribute("aria-label", "Edit tag colors");
+  tagsBtn.textContent = "Tags";
+  tagsBtn.dataset.action = "tags";
+
+  const themeBtn = el("button", "theme-toggle");
+  themeBtn.setAttribute("aria-label", "Toggle dark mode");
+  themeBtn.textContent = document.documentElement.dataset.theme === "dark" ? "\u2600" : "\u263E";
+  themeBtn.addEventListener("click", () => {
+    const isDark = document.documentElement.dataset.theme === "dark";
+    if (isDark) {
+      delete document.documentElement.dataset.theme;
+      localStorage.setItem("theme", "light");
+      themeBtn.textContent = "\u263E";
+    } else {
+      document.documentElement.dataset.theme = "dark";
+      localStorage.setItem("theme", "dark");
+      themeBtn.textContent = "\u2600";
+    }
+  });
+
+  const addBtn = el("button", "add-item-btn");
+  addBtn.textContent = "+Add";
+  addBtn.dataset.action = "add";
+
+  actions.append(todayBtn, tagsBtn, addBtn, themeBtn);
+  header.append(nav, actions);
+  return header;
+}
+
+// ── Deadlines ────────────────────────────────────────────────────────
+
+function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
+  const section = el("section", "deadlines-section");
+
+  const header = el("header", "deadlines-header");
+  header.textContent = "Upcoming deadlines";
+  section.appendChild(header);
+
+  for (const dl of deadlines) {
+    const row = el("div", "deadline-item");
+    if (dl.entry.todo === "DONE") row.classList.add("item-done");
+
+    const time = el("span", "item-time");
+    time.textContent = dl.daysUntil === 0 ? "Due today" : `Due ${dl.daysUntil}d`;
+
+    const state = el("span", "item-state");
+    state.textContent = dl.entry.todo ?? "";
+
+    const title = el("span", "item-title");
+    title.textContent = dl.entry.title;
+
+    row.append(time, state, title, renderTags(dl.entry.tags));
+    section.appendChild(row);
+  }
+
+  return section;
+}
+
+// ── Overdue ─────────────────────────────────────────────────────────
+
+function renderOverdue(items: OverdueItem[]): HTMLElement {
+  const section = el("section", "overdue-section");
+
+  const header = el("header", "overdue-header");
+  header.textContent = "Overdue";
+  section.appendChild(header);
+
+  for (const item of items) {
+    const row = el("div", "overdue-item");
+
+    const time = el("span", "item-time");
+    time.textContent = `${item.daysOverdue}d ago`;
+
+    const kind = el("span", "item-kind");
+    kind.textContent = item.kind === "deadline" ? "DEADLINE" : "SCHEDULED";
+
+    const title = el("span", "item-title");
+    title.textContent = item.entry.title;
+
+    row.append(time, kind, title, renderTags(item.entry.tags));
+    section.appendChild(row);
+  }
+
+  return section;
+}
+
+// ── Someday ─────────────────────────────────────────────────────────
+
+function renderSomeday(items: SomedayItem[]): HTMLElement {
+  const section = el("section", "someday-section");
+
+  const header = el("header", "someday-header");
+  header.textContent = "Someday";
+  section.appendChild(header);
+
+  for (const item of items) {
+    const row = el("div", "someday-item");
+
+    const state = el("span", "item-state");
+    state.textContent = "TODO";
+
+    const title = el("span", "item-title");
+    title.textContent = item.entry.title;
+
+    row.append(state, title, renderTags(item.entry.tags));
+    section.appendChild(row);
+  }
+
+  return section;
+}
+
+// ── Day card ─────────────────────────────────────────────────────────
+
+function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
+  const card = el("article", "day-card");
+
+  const isToday = isSameDate(day.date, today);
+  if (isToday) card.classList.add("is-today");
+
+  // Header
+  const header = el("header", "day-header");
+  const label = el("span", "date-label");
+  label.textContent = `${DAY_NAMES[day.date.getDay()]} ${day.date.getDate()} ${MONTH_NAMES[day.date.getMonth()]}`;
+  header.appendChild(label);
+
+  if (isToday) {
+    header.appendChild(el("span", "today-marker"));
+  }
+
+  card.appendChild(header);
+
+  // Separate items by category
+  const allDay = day.items.filter((i) => i.category === "all-day");
+  const rest = day.items.filter((i) => i.category !== "all-day");
+
+  // All-day section
+  if (allDay.length > 0) {
+    const section = el("div", "allday-section");
+    for (const item of allDay) {
+      section.appendChild(renderAllDayItem(item));
+    }
+    card.appendChild(section);
+  }
+
+  // Timed / scheduled section
+  if (rest.length > 0) {
+    const section = el("div", "timed-section");
+
+    if (isToday) {
+      const line = renderNowLine(rest, today);
+      if (line) section.appendChild(line);
+    }
+
+    for (const item of rest) {
+      if (item.category === "scheduled") {
+        section.appendChild(renderScheduledItem(item));
+      } else if (item.category === "deadline") {
+        section.appendChild(renderDayDeadlineItem(item));
+      } else {
+        section.appendChild(renderTimedItem(item));
+      }
+
+      // Body text
+      if (item.entry.body) {
+        const body = el("div", "item-body");
+        body.textContent = item.entry.body;
+        section.appendChild(body);
+      }
+    }
+    card.appendChild(section);
+  }
+
+  // Empty day
+  if (allDay.length === 0 && rest.length === 0) {
+    const empty = el("div", "day-empty");
+    empty.textContent = "—";
+    card.appendChild(empty);
+  }
+
+  return card;
+}
+
+// ── Item renderers ───────────────────────────────────────────────────
+
+function renderAllDayItem(item: AgendaItem): HTMLElement {
+  const row = el("div", "allday-item");
+  if (item.entry.todo === "DONE") row.classList.add("item-done");
+
+  const title = el("span", "item-title");
+  title.textContent = item.entry.title;
+
+  row.append(title, renderTags(item.entry.tags));
+  return row;
+}
+
+function renderTimedItem(item: AgendaItem): HTMLElement {
+  const row = el("div", "timed-item");
+  if (item.entry.todo === "DONE") row.classList.add("item-done");
+
+  const primaryTag = item.entry.tags[0];
+  if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
+
+  const time = el("span", "item-time");
+  time.textContent = formatTimeRange(item.startTime, item.endTime);
+
+  const title = el("span", "item-title");
+  title.textContent = item.entry.title;
+
+  row.append(time, title, renderTags(item.entry.tags));
+  return row;
+}
+
+function renderScheduledItem(item: AgendaItem): HTMLElement {
+  const row = el("div", "scheduled-item");
+  if (item.entry.todo === "DONE") row.classList.add("item-done");
+
+  const state = el("span", "item-state");
+  state.textContent = item.entry.todo ?? "TODO";
+
+  const title = el("span", "item-title");
+  title.textContent = item.entry.title;
+
+  if (item.startTime) {
+    row.classList.add("has-time");
+    const time = el("span", "item-time");
+    time.textContent = formatTimeRange(item.startTime, item.endTime);
+    row.append(time, state, title, renderTags(item.entry.tags));
+  } else {
+    row.append(state, title, renderTags(item.entry.tags));
+  }
+  return row;
+}
+
+function renderDayDeadlineItem(item: AgendaItem): HTMLElement {
+  const row = el("div", "day-deadline-item");
+  if (item.entry.todo === "DONE") row.classList.add("item-done");
+
+  const kind = el("span", "item-kind");
+  kind.textContent = "DEADLINE";
+
+  const title = el("span", "item-title");
+  title.textContent = item.entry.title;
+
+  if (item.startTime) {
+    row.classList.add("has-time");
+    const time = el("span", "item-time");
+    time.textContent = formatTimeRange(item.startTime, item.endTime);
+    row.append(time, kind, title, renderTags(item.entry.tags));
+  } else {
+    row.append(kind, title, renderTags(item.entry.tags));
+  }
+  return row;
+}
+
+// ── Now line ─────────────────────────────────────────────────────────
+
+function renderNowLine(items: AgendaItem[], now: Date): HTMLElement | null {
+  const timedItems = items.filter((i) => i.startTime);
+  if (timedItems.length === 0) return null;
+
+  const firstTime = timedItems[0].startTime!;
+  const lastItem = timedItems[timedItems.length - 1];
+  const lastTime = lastItem.endTime ?? lastItem.startTime!;
+
+  const firstMinutes = timeToMinutes(firstTime);
+  const lastMinutes = timeToMinutes(lastTime);
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  if (nowMinutes < firstMinutes || nowMinutes > lastMinutes) return null;
+
+  const pct = ((nowMinutes - firstMinutes) / (lastMinutes - firstMinutes)) * 100;
+
+  const line = el("div", "now-line");
+  line.style.top = `${pct}%`;
+  return line;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+function renderTags(tags: readonly string[]): HTMLElement {
+  const badges = el("span", "tag-badges");
+  for (const tag of tags) {
+    const span = el("span", "tag");
+    span.style.background = getTagColor(tag);
+    span.textContent = tag;
+    badges.appendChild(span);
+  }
+  return badges;
+}
+
+function formatTimeRange(start: string | null, end: string | null): string {
+  if (!start) return "";
+  if (!end) return start;
+  return `${start}–${end}`;
+}
+
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function isSameDate(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate();
+}
+
+function formatDateRange(start: Date, end: Date): string {
+  const sameMonth = start.getMonth() === end.getMonth();
+  const sameYear = start.getFullYear() === end.getFullYear();
+  if (sameMonth && sameYear) {
+    return `${start.getDate()}–${end.getDate()} ${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()}`;
+  }
+  if (sameYear) {
+    return `${start.getDate()} ${MONTH_NAMES[start.getMonth()]} – ${end.getDate()} ${MONTH_NAMES[end.getMonth()]} ${start.getFullYear()}`;
+  }
+  return `${start.getDate()} ${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()} – ${end.getDate()} ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
+}
+
+function el(tag: string, className?: string): HTMLElement {
+  const e = document.createElement(tag);
+  if (className) e.className = className;
+  return e;
+}

@@ -1,0 +1,966 @@
+/* ── Reset & Base ─────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+
+  --bg: #f8f9fa;
+  --bg-card: #ffffff;
+  --bg-today: #f0f4ff;
+  --bg-allday: #fafafa;
+
+  --text: #1a1a1a;
+  --text-dim: #6b7280;
+  --text-done: #b8b8b8;
+
+  --border: #e5e7eb;
+  --border-light: #f0f0f0;
+  --border-today: #4f7df5;
+
+  --time-col: 7rem;
+
+  /* Category accents */
+  --accent-deadline: #ef4444;
+  --accent-scheduled: #6b7280;
+  --now-line: #ef4444;
+}
+
+[data-theme="dark"] {
+  --bg: #111215;
+  --bg-card: #1a1b1e;
+  --bg-today: #1a1f2e;
+  --bg-allday: #15161a;
+
+  --text: #e1e2e5;
+  --text-dim: #8b8f96;
+  --text-done: #555;
+
+  --border: #2a2c30;
+  --border-light: #222326;
+  --border-today: #5b8def;
+
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* ── Header / Navigation ──────────────────────────────────────────── */
+
+.agenda-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  margin-bottom: 1rem;
+}
+
+.agenda-nav {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.nav-arrow {
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  line-height: 1;
+}
+
+.nav-arrow:last-child {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+.nav-arrow:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.nav-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.9375rem;
+  user-select: none;
+}
+
+.nav-week-num {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.nav-week-date {
+  font-weight: 400;
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+}
+
+.agenda-actions {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.agenda-nav-today {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: var(--text);
+}
+
+.agenda-nav-today:hover {
+  background: var(--bg);
+  border-color: var(--text-dim);
+}
+
+/* ── Day Card ─────────────────────────────────────────────────────── */
+
+.day-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.day-card.is-today {
+  background: var(--bg-today);
+  border-color: var(--border-today);
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.day-header .date-label {
+  color: var(--text);
+}
+
+.day-header .today-marker {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-today);
+  align-self: center;
+}
+
+.day-empty {
+  padding: 0.5rem 1rem;
+  color: var(--text-done);
+  font-size: 0.75rem;
+}
+
+/* ── Grid layout for items with time column ───────────────────────── */
+
+.item-row {
+  display: grid;
+  grid-template-columns: var(--time-col) 1fr auto;
+  align-items: baseline;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  gap: 0 0.5rem;
+}
+
+.item-row .item-time {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+}
+
+.item-row .item-title {
+  min-width: 0;
+}
+
+/* ── All-day section ──────────────────────────────────────────────── */
+
+.allday-section {
+  background: var(--bg-allday);
+  border-bottom: 1px solid var(--border);
+  padding: 0.125rem 0;
+}
+
+.allday-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 0.375rem 1rem;
+  font-size: 0.875rem;
+  gap: 0 0.5rem;
+}
+
+.allday-item + .allday-item {
+  border-top: 1px solid var(--border-light);
+}
+
+.allday-item .item-title {
+  font-weight: 500;
+}
+
+/* ── Timed items ──────────────────────────────────────────────────── */
+
+.timed-section {
+  position: relative;
+}
+
+.timed-item {
+  display: grid;
+  grid-template-columns: var(--time-col) 1fr auto;
+  align-items: baseline;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border-left: 3px solid transparent;
+  gap: 0 0.5rem;
+}
+
+.timed-item + .timed-item,
+.timed-item + .scheduled-item,
+.scheduled-item + .timed-item,
+.scheduled-item + .scheduled-item {
+  border-top: 1px solid var(--border-light);
+}
+
+.timed-item .item-time {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+}
+
+.timed-item .item-title {
+  min-width: 0;
+}
+
+
+/* ── Overdue section (top of agenda) ─────────────────────────────── */
+
+.overdue-section {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-deadline);
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.overdue-header {
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--accent-deadline);
+}
+
+.overdue-item {
+  display: grid;
+  grid-template-columns: var(--time-col) auto 1fr auto;
+  align-items: baseline;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border-left: 3px solid var(--accent-deadline);
+  gap: 0 0.375rem;
+}
+
+.overdue-item + .overdue-item {
+  border-top: 1px solid var(--border-light);
+}
+
+.overdue-item .item-time {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-deadline);
+}
+
+.overdue-item .item-kind {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--accent-deadline);
+  border: 1px solid var(--accent-deadline);
+  border-radius: 0.25rem;
+  padding: 0 0.25rem;
+  line-height: 1.4;
+}
+
+.overdue-item .item-title {
+  min-width: 0;
+}
+
+/* ── Upcoming Deadlines section (top of agenda) ───────────────────── */
+
+.deadlines-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.deadlines-header {
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--accent-deadline);
+}
+
+/* ── Deadline items ───────────────────────────────────────────────── */
+
+.deadline-item {
+  display: grid;
+  grid-template-columns: var(--time-col) auto 1fr auto;
+  align-items: baseline;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border-left: 3px solid var(--accent-deadline);
+  gap: 0 0.375rem;
+}
+
+.deadline-item + .deadline-item {
+  border-top: 1px solid var(--border-light);
+}
+
+.deadline-item .item-time {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-deadline);
+  text-transform: uppercase;
+}
+
+.deadline-item .item-state {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0 0.25rem;
+  line-height: 1.4;
+}
+
+.deadline-item .item-title {
+  min-width: 0;
+}
+
+/* ── Scheduled items ──────────────────────────────────────────────── */
+
+.scheduled-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  gap: 0 0.375rem;
+}
+
+.scheduled-item.has-time {
+  grid-template-columns: var(--time-col) auto 1fr auto;
+}
+
+.scheduled-item .item-time {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+}
+
+.scheduled-item .item-state {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0 0.25rem;
+  line-height: 1.4;
+}
+
+.scheduled-item .item-title {
+  min-width: 0;
+}
+
+/* ── Day deadline items (deadlines within day cards) ─────────────── */
+
+.day-deadline-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  gap: 0 0.375rem;
+}
+
+.day-deadline-item.has-time {
+  grid-template-columns: var(--time-col) auto 1fr auto;
+}
+
+.day-deadline-item .item-time {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+}
+
+.day-deadline-item .item-kind {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--accent-deadline);
+  border: 1px solid var(--accent-deadline);
+  border-radius: 0.25rem;
+  padding: 0 0.25rem;
+  line-height: 1.4;
+}
+
+.day-deadline-item .item-title {
+  min-width: 0;
+}
+
+/* ── Someday section (bottom of agenda) ──────────────────────────── */
+
+.someday-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  margin-top: 0.75rem;
+  overflow: hidden;
+}
+
+.someday-header {
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text-dim);
+}
+
+.someday-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  gap: 0 0.375rem;
+}
+
+.someday-item + .someday-item {
+  border-top: 1px solid var(--border-light);
+}
+
+.someday-item .item-state {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0 0.25rem;
+  line-height: 1.4;
+}
+
+.someday-item .item-title {
+  min-width: 0;
+}
+
+/* ── DONE items ───────────────────────────────────────────────────── */
+
+.item-done {
+  opacity: 0.55;
+}
+
+.item-done .item-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-done);
+}
+
+.item-done .item-state {
+  color: var(--text-done);
+  border-color: var(--text-done);
+}
+
+/* ── Tag badges ───────────────────────────────────────────────────── */
+
+.tag-badges {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  justify-self: end;
+}
+
+.tag {
+  font-size: 0.6875rem;
+  padding: 0.0625rem 0.375rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  color: white;
+  background: #9ca3af;
+  white-space: nowrap;
+}
+
+
+/* ── Now line ─────────────────────────────────────────────────────── */
+
+.now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--now-line);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.now-line::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--now-line);
+}
+
+/* ── Item body / expand ───────────────────────────────────────────── */
+
+.item-body {
+  display: none;
+  padding: 0.25rem 1rem 0.5rem calc(var(--time-col) + 1.5rem);
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+}
+
+.item-body.is-open {
+  display: block;
+  opacity: 0.7;
+}
+
+/* ── Theme toggle ────────────────────────────────────────────────── */
+
+.theme-toggle {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  line-height: 1;
+  color: var(--text);
+}
+
+.theme-toggle:hover {
+  background: var(--bg);
+  border-color: var(--text-dim);
+}
+
+/* ── Input screen ────────────────────────────────────────────────── */
+
+.input-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 40rem;
+  margin: 3rem auto;
+}
+
+.input-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.input-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.input-textarea {
+  width: 100%;
+  min-height: 20rem;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg-card);
+  color: var(--text);
+  resize: vertical;
+}
+
+.input-textarea:focus {
+  outline: none;
+  border-color: var(--border-today);
+}
+
+.input-load-btn {
+  align-self: flex-start;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--border-today);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.input-load-btn:hover {
+  opacity: 0.9;
+}
+
+/* ── Tags editor button ──────────────────────────────────────────── */
+
+.tags-editor-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: var(--text);
+}
+
+.tags-editor-btn:hover {
+  background: var(--bg);
+  border-color: var(--text-dim);
+}
+
+/* ── Tag editor overlay & panel ──────────────────────────────────── */
+
+.te-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.te-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.te-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 17rem;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border);
+  z-index: 101;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.te-panel.is-open {
+  transform: translateX(0);
+}
+
+.te-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  flex-shrink: 0;
+}
+
+.te-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--text-dim);
+  padding: 0 0.25rem;
+  line-height: 1;
+}
+
+.te-close:hover {
+  color: var(--text);
+}
+
+.te-list {
+  list-style: none;
+  padding: 0.5rem 0;
+  flex: 1;
+}
+
+.te-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.te-row + .te-row {
+  border-top: 1px solid var(--border-light);
+}
+
+.te-swatch {
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  background: none;
+  flex-shrink: 0;
+}
+
+.te-swatch::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.te-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.125rem;
+}
+
+.te-label {
+  font-size: 0.6875rem;
+  padding: 0.0625rem 0.375rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+  flex: 1;
+  text-align: center;
+}
+
+.te-reset {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.6875rem;
+  cursor: pointer;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.te-reset:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.te-empty {
+  padding: 1.5rem 1rem;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* ── Add-item panel ────────────────────────────────────────────────── */
+
+.add-item-btn {
+  background: var(--border-today);
+  color: #fff;
+  border: 1px solid var(--border-today);
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.add-item-btn:hover {
+  filter: brightness(1.1);
+}
+
+.add-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.add-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.add-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 18rem;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border);
+  z-index: 101;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.add-panel.is-open {
+  transform: translateX(0);
+}
+
+.add-form {
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.add-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.add-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.add-input {
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.add-input:focus {
+  outline: none;
+  border-color: var(--border-today);
+}
+
+.add-radio-group {
+  display: flex;
+  gap: 0.125rem;
+}
+
+.add-radio-group input[type="radio"] {
+  display: none;
+}
+
+.add-radio-label {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: background 0.15s, color 0.15s;
+}
+
+.add-radio-label:first-of-type {
+  border-radius: 0.25rem 0 0 0.25rem;
+}
+
+.add-radio-label:last-of-type {
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.add-radio-group input[type="radio"]:checked + .add-radio-label {
+  background: var(--border-today);
+  border-color: var(--border-today);
+  color: #fff;
+}
+
+.add-save-btn {
+  padding: 0.5rem;
+  background: var(--border-today);
+  color: #fff;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.25rem;
+}
+
+.add-save-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  body {
+    padding: 0.5rem;
+  }
+
+  :root {
+    --time-col: 5.5rem;
+  }
+
+  .day-header {
+    position: sticky;
+    top: 0;
+    background: inherit;
+    z-index: 2;
+  }
+
+  .day-card.is-today .day-header {
+    background: var(--bg-today);
+  }
+
+  .timed-item,
+  .deadline-item,
+  .day-deadline-item,
+  .overdue-item,
+  .scheduled-item,
+  .allday-item {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .allday-section {
+    padding: 0.125rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .te-panel,
+  .add-panel {
+    width: 100%;
+  }
+}

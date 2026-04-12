@@ -1,0 +1,320 @@
+# Org Syntax Reference
+
+Detailed account of how Mediant handles Org-mode syntax. Three categories:
+
+1. **Supported** — parsed and used in the agenda
+2. **Gracefully ignored** — recognized but silently skipped, will not cause errors
+3. **Unsupported** — not recognized; may cause unexpected behavior if present
+
+---
+
+## Supported
+
+### Headings
+
+```org
+* Top-level heading
+** Second-level heading
+*** Third-level (any depth)
+```
+
+- Stars at line start followed by a space.
+- Heading level is preserved as `level` on the entry.
+- Content after the stars is the title (minus tags and TODO state).
+
+### TODO state
+
+```org
+** TODO Buy groceries
+** DONE Finished task
+```
+
+- `TODO` and `DONE` are recognized as state keywords. They must appear immediately after the stars+space.
+- Other keywords (WAITING, NEXT, CANCELLED, etc.) are treated as part of the heading title.
+- DONE items are parsed fully. In the v1 agenda, they are rendered as dimmed grey in the agenda view.
+
+### Tags
+
+```org
+** Heading text :tag1:
+** Heading text :tag1:tag2:tag3:
+```
+
+- Colon-delimited at end of heading line.
+- Parsed into a string array: `["tag1", "tag2", "tag3"]`.
+- Tag inheritance (parent heading tags propagating to children) is **not** supported.
+
+### Active timestamps
+
+```org
+<2026-04-07 ti.>
+<2026-04-07 ti. 15:15>
+<2026-04-07 ti. 15:15-16:00>
+<2026-04-07 Sat 12:00>
+```
+
+- Angle-bracket delimited.
+- Date in `YYYY-MM-DD` format (required).
+- Day name after date (any language, with or without trailing dot) — **consumed but ignored**. The date string is authoritative.
+- Optional start time in `HH:MM` format.
+- Optional end time as `-HH:MM` (time range on the same day).
+- Can appear as a standalone line in the entry body, or inline.
+
+### Repeaters
+
+```org
+<2026-04-07 ti. 15:15-16:00 +1w>
+<2026-04-06 ma. +1y>
+<2026-04-08 on. 18:00-21:00 +1w>
+```
+
+- Appended inside the timestamp before the closing `>`.
+- Format: `+Nunit` where N is a positive integer and unit is one of:
+  - `d` — daily
+  - `w` — weekly
+  - `m` — monthly
+  - `y` — yearly
+- Only the `+` (cumulate) repeater type is supported. `.+` and `++` repeater types are **not** supported.
+
+### SCHEDULED
+
+```org
+SCHEDULED: <2026-04-14 ti. 12:00>
+```
+
+- Must appear on the line(s) immediately following a heading.
+- The keyword `SCHEDULED:` followed by a space and an active timestamp.
+- Produces a planning entry with `kind: "scheduled"`.
+
+### DEADLINE
+
+```org
+DEADLINE: <2026-05-05 ti.>
+```
+
+- Same rules as SCHEDULED.
+- Produces a planning entry with `kind: "deadline"`.
+
+### Body text
+
+```org
+** Tur til månen :friluft:
+<2026-04-12 Sun 14:00>
+Oppmøte Dragvoll.
+```
+
+- Any non-blank lines under a heading that aren't planning lines or standalone timestamps.
+- Preserved as a string. Shown in the UI as expandable notes.
+- A blank line terminates body accumulation.
+
+---
+
+## Gracefully ignored
+
+These constructs are recognized and silently skipped. They will not produce entries, cause parse errors, or corrupt adjacent entries.
+
+### File-level keywords
+
+```org
+#+title: Org Inbox
+#+startup: show2levels
+#+author: Name
+#+options: toc:nil
+```
+
+- Any line starting with `#+` before or between headings.
+
+### Inactive timestamps
+
+```org
+[2026-04-07 ti. 15:15-16:00]
+```
+
+- Square-bracket timestamps. Recognized by the parser but not added to any entry's timestamps. They do not generate agenda items.
+
+### Timestamp ranges (spanning days)
+
+```org
+<2026-04-07 ti.>--<2026-04-09 to.>
+```
+
+- Two timestamps connected by `--`. Recognized but **not** supported in v1. The line is treated as body text.
+
+### Priority cookies
+
+```org
+** TODO [#A] Important task
+```
+
+- `[#A]`, `[#B]`, `[#C]` after TODO state. Recognized and stripped from the title but not stored or used.
+
+### Property drawers
+
+```org
+:PROPERTIES:
+:CATEGORY: work
+:END:
+```
+
+- Everything between `:PROPERTIES:` and `:END:` is skipped.
+
+### Logbook drawers
+
+```org
+:LOGBOOK:
+CLOCK: [2026-04-07 ti. 10:00]--[2026-04-07 ti. 11:30] =>  1:30
+:END:
+```
+
+- Everything between `:LOGBOOK:` and `:END:` is skipped.
+
+### Generic drawers
+
+```org
+:DRAWERNAME:
+...
+:END:
+```
+
+- Any `:NAME:` ... `:END:` block is skipped.
+
+### CLOSED planning
+
+```org
+CLOSED: [2026-04-07 ti. 14:00]
+```
+
+- Recognized as a planning keyword but not stored.
+
+### Org links
+
+```org
+[[https://example.com][Example]]
+[[file:other.org]]
+```
+
+- If they appear in body text, the raw text is preserved. No special link handling.
+
+### Inline markup
+
+```org
+*bold* /italic/ ~code~ =verbatim= +strikethrough+
+```
+
+- Preserved as-is in body text. No rendering of markup in v1.
+
+### Lists
+
+```org
+- Item one
+- Item two
+  - Nested item
+1. Ordered item
+```
+
+- Treated as body text. No special list handling.
+
+### Tables
+
+```org
+| Col1 | Col2 |
+|------+------|
+| a    | b    |
+```
+
+- Treated as body text.
+
+### Comments
+
+```org
+# This is a comment
+#+begin_comment
+Block comment
+#+end_comment
+```
+
+- Lines starting with `# ` are ignored.
+- Comment blocks are ignored.
+
+### Source/example blocks
+
+```org
+#+begin_src python
+print("hello")
+#+end_src
+```
+
+- Block content treated as body text. No syntax highlighting.
+
+---
+
+## Unsupported (may cause unexpected behavior)
+
+These constructs are **not recognized** by the parser. If present, they may be misinterpreted (e.g., treated as body text when they shouldn't be, or partially parsed incorrectly).
+
+### `.+` and `++` repeater types
+
+```org
+<2026-04-07 ti. .+1w>
+<2026-04-07 ti. ++1w>
+```
+
+- Only `+` repeaters are supported. `.+` and `++` will not be parsed as repeaters — the timestamp will be treated as non-repeating.
+
+### Diary sexp timestamps
+
+```org
+<%%(diary-float t 1 2)>
+```
+
+- Not recognized. Will be treated as body text.
+
+### Custom TODO keyword sequences
+
+```org
+#+TODO: TODO NEXT WAITING | DONE CANCELLED
+** NEXT Some task
+** WAITING Blocked task
+```
+
+- `#+TODO:` keyword definitions are ignored.
+- Keywords other than `TODO` and `DONE` (e.g., NEXT, WAITING, CANCELLED) are treated as part of the heading title.
+- State transition logging, timestamps on state changes, and workflow logic are not supported.
+
+### Tag inheritance
+
+```org
+* Project :work:
+** Task one
+```
+
+- `Task one` does **not** inherit the `:work:` tag from its parent. Only tags explicitly on the heading line are parsed.
+
+### Column view / custom agenda commands
+
+- Not applicable — this is a standalone viewer, not an Emacs extension.
+
+### Babel / tangling
+
+- Not applicable.
+
+### Archiving (`ARCHIVE` tag, archive files)
+
+- The `ARCHIVE` tag is parsed like any other tag but has no special behavior.
+- Archive files (`.org_archive`) are not loaded.
+
+### Effort estimates
+
+```org
+:Effort: 1:30
+```
+
+- Part of property drawers, which are ignored.
+
+### Habits
+
+```org
+:STYLE: habit
+```
+
+- Not supported. The property drawer is ignored.
