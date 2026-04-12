@@ -3,4 +3,3 @@ dist/
 .claude/
 /.agent-shell/
 .env
-deploy.sh
