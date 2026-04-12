@@ -142,6 +142,7 @@ let addPanelEl: HTMLElement | null = null;
 let addOverlayEl: HTMLElement | null = null;
 let addPanelTitleEl: HTMLElement | null = null;
 let editingLine: number | null = null;
+let editingRepeater: string | null = null;
 
 interface AddPanelRefs {
   typeGroup: HTMLElement;
@@ -150,6 +151,7 @@ interface AddPanelRefs {
   timeInput: HTMLInputElement;
   planGroup: HTMLElement;
   tagsInput: HTMLInputElement;
+  repeatSelect: HTMLSelectElement;
 }
 let addPanelRefs: AddPanelRefs | null = null;
 
@@ -211,16 +213,28 @@ function buildAddPanel(): void {
   ]);
   form.appendChild(planGroup.container);
 
+  // Repeat (event only)
+  const repeatSelect = makeSelect("Repeat", "add-repeat", [
+    { value: "", label: "None" },
+    { value: "+1d", label: "Daily" },
+    { value: "+1w", label: "Weekly" },
+    { value: "+2w", label: "Every 2 weeks" },
+    { value: "+1m", label: "Monthly" },
+    { value: "+1y", label: "Yearly" },
+  ]);
+  form.appendChild(repeatSelect.container);
+
   // Tags
   const tagsInput = makeTextInput("Tags", "add-tags");
   tagsInput.input.placeholder = "comma-separated";
   form.appendChild(tagsInput.container);
 
-  // Show/hide planning row based on type
+  // Show/hide planning / repeat rows based on type
   const typeRadios = typeGroup.container.querySelectorAll<HTMLInputElement>("input[name='add-type']");
   function syncPlanningVisibility(): void {
     const isTodo = (typeGroup.container.querySelector<HTMLInputElement>("input[name='add-type']:checked"))?.value === "todo";
     planGroup.container.style.display = isTodo ? "" : "none";
+    repeatSelect.container.style.display = isTodo ? "none" : "";
   }
   typeRadios.forEach(r => r.addEventListener("change", syncPlanningVisibility));
   syncPlanningVisibility();
@@ -236,12 +250,13 @@ function buildAddPanel(): void {
     const dateVal = expandDate(dateInput.input.value.trim());
     if (dateInput.input.value.trim() && !dateVal) { dateInput.input.focus(); return; }
     const timeRaw = timeInput.input.value.trim();
-    const timeVal = /^([01]\d|2[0-3]):[0-5]\d$/.test(timeRaw) ? timeRaw : "";
+    const timeVal = /^([01]\d|2[0-3]):[0-5]\d(-([01]\d|2[0-3]):[0-5]\d)?$/.test(timeRaw) ? timeRaw : "";
     if (timeRaw && !timeVal) { timeInput.input.focus(); return; }
     const planVal = (planGroup.container.querySelector<HTMLInputElement>("input[name='add-plan']:checked"))?.value ?? "scheduled";
     const tagsVal = tagsInput.input.value.trim();
+    const repeaterVal = type === "event" ? (repeatSelect.select.value || null) : editingRepeater;
 
-    const orgText = buildOrgText(type, heading, dateVal, timeVal, planVal, tagsVal);
+    const orgText = buildOrgText(type, heading, dateVal, timeVal, planVal, tagsVal, repeaterVal);
     if (editingLine !== null) {
       replaceOrgBlock(editingLine, orgText);
     } else {
@@ -261,7 +276,31 @@ function buildAddPanel(): void {
     timeInput: timeInput.input,
     planGroup: planGroup.container,
     tagsInput: tagsInput.input,
+    repeatSelect: repeatSelect.select,
   };
+}
+
+function makeSelect(label: string, id: string, options: { value: string; label: string }[]): { container: HTMLElement; select: HTMLSelectElement } {
+  const container = document.createElement("div");
+  container.className = "add-field";
+
+  const lbl = document.createElement("label");
+  lbl.className = "add-label";
+  lbl.htmlFor = id;
+  lbl.textContent = label;
+
+  const select = document.createElement("select");
+  select.id = id;
+  select.className = "add-input";
+  for (const opt of options) {
+    const o = document.createElement("option");
+    o.value = opt.value;
+    o.textContent = opt.label;
+    select.appendChild(o);
+  }
+
+  container.append(lbl, select);
+  return { container, select };
 }
 
 function makeRadioGroup(label: string, name: string, options: { value: string; label: string; checked?: boolean }[]): { container: HTMLElement } {
@@ -368,13 +407,22 @@ function makeTimeInput(label: string, id: string): { container: HTMLElement; inp
   input.type = "text";
   input.id = id;
   input.className = "add-input";
-  input.placeholder = "HH:MM";
-  input.pattern = "^([01]\\d|2[0-3]):[0-5]\\d$";
-  input.maxLength = 5;
+  input.placeholder = "HH:MM or HH:MM-HH:MM";
+  input.pattern = "^([01]\\d|2[0-3]):[0-5]\\d(-([01]\\d|2[0-3]):[0-5]\\d)?$";
+  input.maxLength = 11;
   input.addEventListener("input", () => {
-    const v = input.value.replace(/[^\d]/g, "");
-    if (v.length >= 3) {
-      input.value = v.slice(0, 2) + ":" + v.slice(2, 4);
+    const raw = input.value;
+    const hasRange = raw.includes("-");
+    if (hasRange) {
+      const [a, b = ""] = raw.split("-");
+      const da = a.replace(/\D/g, "").slice(0, 4);
+      const db = b.replace(/\D/g, "").slice(0, 4);
+      const fa = da.length >= 3 ? da.slice(0, 2) + ":" + da.slice(2) : da;
+      const fb = db.length >= 3 ? db.slice(0, 2) + ":" + db.slice(2) : db;
+      input.value = fa + "-" + fb;
+    } else {
+      const v = raw.replace(/\D/g, "").slice(0, 4);
+      input.value = v.length >= 3 ? v.slice(0, 2) + ":" + v.slice(2) : v;
     }
   });
 
@@ -382,7 +430,7 @@ function makeTimeInput(label: string, id: string): { container: HTMLElement; inp
   return { container, input };
 }
 
-function buildOrgText(type: string, heading: string, date: string, time: string, plan: string, tags: string): string {
+function buildOrgText(type: string, heading: string, date: string, time: string, plan: string, tags: string, repeater: string | null = null): string {
   // Build tag string
   let tagStr = "";
   if (tags) {
@@ -400,7 +448,8 @@ function buildOrgText(type: string, heading: string, date: string, time: string,
   const d = new Date(date + "T00:00:00");
   const dayAbbrev = DAY_ABBREVS[d.getDay()];
   const timeStr = time ? ` ${time}` : "";
-  const timestamp = `<${date} ${dayAbbrev}${timeStr}>`;
+  const repStr = repeater ? ` ${repeater}` : "";
+  const timestamp = `<${date} ${dayAbbrev}${timeStr}${repStr}>`;
 
   if (type === "todo" && plan !== "none") {
     const keyword = plan === "deadline" ? "DEADLINE" : "SCHEDULED";
@@ -470,6 +519,7 @@ function openAddPanel(): void {
   if (!addPanelEl || !addOverlayEl) return;
 
   editingLine = null;
+  editingRepeater = null;
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Add item";
 
   // Reset form fields
@@ -480,9 +530,11 @@ function openAddPanel(): void {
     if (todoRadio) todoRadio.checked = true;
     const schedRadio = form.querySelector<HTMLInputElement>("input[value='scheduled']");
     if (schedRadio) schedRadio.checked = true;
+    if (addPanelRefs) addPanelRefs.repeatSelect.value = "";
     // Trigger planning visibility sync
     const planField = form.querySelectorAll<HTMLElement>(".add-field")[4];
     if (planField) planField.style.display = "";
+    if (addPanelRefs) addPanelRefs.repeatSelect.parentElement!.style.display = "none";
   }
 
   addOverlayEl.classList.add("is-open");
@@ -519,13 +571,19 @@ function openEditPanel(sourceLine: number): void {
   const ts = sched?.timestamp ?? deadline?.timestamp ?? entry.timestamps[0] ?? null;
 
   refs.dateInput.value = ts ? isoToDisplayDate(ts.date) : "";
-  refs.timeInput.value = ts?.startTime ?? "";
+  refs.timeInput.value = ts?.startTime
+    ? ts.endTime ? `${ts.startTime}-${ts.endTime}` : ts.startTime
+    : "";
+
+  editingRepeater = ts?.repeater ? `+${ts.repeater.value}${ts.repeater.unit}` : null;
+  refs.repeatSelect.value = editingRepeater ?? "";
 
   const plan = sched ? "scheduled" : deadline ? "deadline" : "none";
   const planRadio = refs.planGroup.querySelector<HTMLInputElement>(`input[value="${plan}"]`);
   if (planRadio) planRadio.checked = true;
 
   refs.planGroup.style.display = type === "todo" ? "" : "none";
+  refs.repeatSelect.parentElement!.style.display = type === "event" ? "" : "none";
 
   addOverlayEl.classList.add("is-open");
   addPanelEl.classList.add("is-open");
