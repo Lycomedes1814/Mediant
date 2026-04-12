@@ -140,6 +140,18 @@ function closeTagEditor(): void {
 
 let addPanelEl: HTMLElement | null = null;
 let addOverlayEl: HTMLElement | null = null;
+let addPanelTitleEl: HTMLElement | null = null;
+let editingLine: number | null = null;
+
+interface AddPanelRefs {
+  typeGroup: HTMLElement;
+  titleInput: HTMLInputElement;
+  dateInput: HTMLInputElement;
+  timeInput: HTMLInputElement;
+  planGroup: HTMLElement;
+  tagsInput: HTMLInputElement;
+}
+let addPanelRefs: AddPanelRefs | null = null;
 
 const DAY_ABBREVS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -157,6 +169,7 @@ function buildAddPanel(): void {
 
   const title = document.createElement("span");
   title.textContent = "Add item";
+  addPanelTitleEl = title;
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "te-close";
@@ -229,13 +242,26 @@ function buildAddPanel(): void {
     const tagsVal = tagsInput.input.value.trim();
 
     const orgText = buildOrgText(type, heading, dateVal, timeVal, planVal, tagsVal);
-    appendOrgText(orgText);
+    if (editingLine !== null) {
+      replaceOrgBlock(editingLine, orgText);
+    } else {
+      appendOrgText(orgText);
+    }
     closeAddPanel();
   });
   form.appendChild(saveBtn);
 
   addPanelEl.appendChild(form);
   document.body.append(addOverlayEl, addPanelEl);
+
+  addPanelRefs = {
+    typeGroup: typeGroup.container,
+    titleInput: titleInput.input,
+    dateInput: dateInput.input,
+    timeInput: timeInput.input,
+    planGroup: planGroup.container,
+    tagsInput: tagsInput.input,
+  };
 }
 
 function makeRadioGroup(label: string, name: string, options: { value: string; label: string; checked?: boolean }[]): { container: HTMLElement } {
@@ -385,6 +411,49 @@ function buildOrgText(type: string, heading: string, date: string, time: string,
   return `${headingLine}\n  ${timestamp}`;
 }
 
+/**
+ * Replace the block for an entry at `sourceLine` with `newText`, preserving
+ * any body text (non-planning, non-bare-timestamp lines) that followed the
+ * original heading. The block extends from the heading line up to (but not
+ * including) the next heading or EOF.
+ */
+function replaceOrgBlock(sourceLine: number, newText: string): void {
+  const existing = localStorage.getItem("mediant-org-source") ?? "";
+  const lines = existing.split("\n");
+  const startIdx = sourceLine - 1;
+  if (startIdx < 0 || startIdx >= lines.length) return;
+
+  // Find end of block: next heading or EOF
+  let endIdx = lines.length;
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    if (/^\*+\s/.test(lines[i])) { endIdx = i; break; }
+  }
+
+  // Preserve body lines that aren't planning or bare timestamps — those are
+  // the structural lines buildOrgText regenerates.
+  const structuralRe = /^\s*(?:(?:SCHEDULED|DEADLINE):\s*)?<\d{4}-\d{2}-\d{2}/;
+  const preserved: string[] = [];
+  for (let i = startIdx + 1; i < endIdx; i++) {
+    if (!structuralRe.test(lines[i])) preserved.push(lines[i]);
+  }
+
+  const newBlockLines = newText.split("\n");
+  const updated = [
+    ...lines.slice(0, startIdx),
+    ...newBlockLines,
+    ...preserved,
+    ...lines.slice(endIdx),
+  ].join("\n");
+
+  if (exceedsLimit(updated)) {
+    alert("Edit would exceed the 4 MB limit.");
+    return;
+  }
+  localStorage.setItem("mediant-org-source", updated);
+  entries = parseOrg(updated);
+  render();
+}
+
 function appendOrgText(orgText: string): void {
   const existing = localStorage.getItem("mediant-org-source") ?? "";
   const updated = existing.trimEnd() + "\n" + orgText + "\n";
@@ -399,6 +468,9 @@ function appendOrgText(orgText: string): void {
 
 function openAddPanel(): void {
   if (!addPanelEl || !addOverlayEl) return;
+
+  editingLine = null;
+  if (addPanelTitleEl) addPanelTitleEl.textContent = "Add item";
 
   // Reset form fields
   const form = addPanelEl.querySelector(".add-form");
@@ -419,6 +491,50 @@ function openAddPanel(): void {
   // Focus title input
   const titleInput = addPanelEl.querySelector<HTMLInputElement>("#add-title");
   if (titleInput) setTimeout(() => titleInput.focus(), 250);
+}
+
+function openEditPanel(sourceLine: number): void {
+  if (!addPanelEl || !addOverlayEl || !addPanelRefs) return;
+
+  const entry = entries.find(e => e.sourceLineNumber === sourceLine);
+  if (!entry) return;
+
+  editingLine = sourceLine;
+  if (addPanelTitleEl) addPanelTitleEl.textContent = "Edit item";
+
+  const refs = addPanelRefs;
+
+  // Type
+  const type = entry.todo ? "todo" : "event";
+  const typeRadio = refs.typeGroup.querySelector<HTMLInputElement>(`input[value="${type}"]`);
+  if (typeRadio) typeRadio.checked = true;
+
+  // Title & tags
+  refs.titleInput.value = entry.title;
+  refs.tagsInput.value = entry.tags.join(", ");
+
+  // Date / time / plan — prefer SCHEDULED, then DEADLINE, then first body timestamp
+  const sched = entry.planning.find(p => p.kind === "scheduled");
+  const deadline = entry.planning.find(p => p.kind === "deadline");
+  const ts = sched?.timestamp ?? deadline?.timestamp ?? entry.timestamps[0] ?? null;
+
+  refs.dateInput.value = ts ? isoToDisplayDate(ts.date) : "";
+  refs.timeInput.value = ts?.startTime ?? "";
+
+  const plan = sched ? "scheduled" : deadline ? "deadline" : "none";
+  const planRadio = refs.planGroup.querySelector<HTMLInputElement>(`input[value="${plan}"]`);
+  if (planRadio) planRadio.checked = true;
+
+  refs.planGroup.style.display = type === "todo" ? "" : "none";
+
+  addOverlayEl.classList.add("is-open");
+  addPanelEl.classList.add("is-open");
+  setTimeout(() => refs.titleInput.focus(), 250);
+}
+
+function isoToDisplayDate(iso: string): string {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
 }
 
 function closeAddPanel(): void {
@@ -530,8 +646,9 @@ function render(): void {
 
 function setupNavigation(): void {
   document.addEventListener("click", (e) => {
-    const target = e.target as HTMLElement;
-    const action = target.dataset.action;
+    const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-action]");
+    if (!btn) return;
+    const action = btn.dataset.action;
     if (!action) return;
 
     if (action === "prev") {
@@ -547,6 +664,9 @@ function setupNavigation(): void {
       openTagEditor();
     } else if (action === "add") {
       openAddPanel();
+    } else if (action === "edit") {
+      const line = Number(btn.dataset.line);
+      if (line) openEditPanel(line);
     }
   });
 }
