@@ -104,6 +104,18 @@ index.html             — Minimal shell with #agenda container
 - Advanced state workflows / custom TODO keyword sequences
 - Multi-file agenda, editing from the UI, export
 
+## Local storage
+
+Mediant stores the following in your browser's `localStorage`:
+
+| Key | Purpose |
+|---|---|
+| `mediant-org-source` | Pasted and added Org content, persisted across reloads |
+| `mediant-tag-colors` | Tag-to-color assignments, so tag colors stay consistent |
+| `theme` | Light/dark mode preference |
+
+All data stays in your browser — nothing is sent to a server.
+
 ## License
 
 [GPLv3](LICENSE)
