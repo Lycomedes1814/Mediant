@@ -83,7 +83,7 @@ function openTagEditor(): void {
 
     const swatch = document.createElement("input");
     swatch.type = "color";
-    swatch.className = "te-swatch";
+    swatch.className = "te-swatch-hidden";
     swatch.value = getTagColor(tag);
 
     const label = document.createElement("span");
@@ -95,6 +95,8 @@ function openTagEditor(): void {
     resetBtn.className = "te-reset";
     resetBtn.textContent = "Reset";
     resetBtn.setAttribute("aria-label", `Reset ${tag} color`);
+
+    label.addEventListener("click", () => swatch.click());
 
     swatch.addEventListener("input", () => {
       setTagColor(tag, swatch.value);

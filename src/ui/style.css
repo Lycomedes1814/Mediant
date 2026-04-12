@@ -749,24 +749,14 @@ body {
   border-top: 1px solid var(--border-light);
 }
 
-.te-swatch {
-  width: 1.5rem;
-  height: 1.5rem;
+.te-swatch-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 0.25rem;
-  cursor: pointer;
-  background: none;
-  flex-shrink: 0;
-}
-
-.te-swatch::-webkit-color-swatch-wrapper {
-  padding: 2px;
-}
-
-.te-swatch::-webkit-color-swatch {
   border: none;
-  border-radius: 0.125rem;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .te-label {
@@ -776,6 +766,12 @@ body {
   font-weight: 500;
   color: white;
   white-space: nowrap;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.te-label:hover {
+  filter: brightness(1.15);
 }
 
 .te-spacer {
