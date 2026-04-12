@@ -142,16 +142,18 @@ let addPanelEl: HTMLElement | null = null;
 let addOverlayEl: HTMLElement | null = null;
 let addPanelTitleEl: HTMLElement | null = null;
 let editingLine: number | null = null;
-let editingRepeater: string | null = null;
+let editingSchedRepeater: string | null = null;
+let editingDeadRepeater: string | null = null;
 
 interface AddPanelRefs {
   typeGroup: HTMLElement;
   titleInput: HTMLInputElement;
-  dateInput: HTMLInputElement;
-  timeInput: HTMLInputElement;
-  planGroup: HTMLElement;
+  whenInput: HTMLInputElement;
+  schedInput: HTMLInputElement;
+  deadInput: HTMLInputElement;
   tagsInput: HTMLInputElement;
   repeatSelect: HTMLSelectElement;
+  syncVisibility: () => void;
 }
 let addPanelRefs: AddPanelRefs | null = null;
 
@@ -197,21 +199,16 @@ function buildAddPanel(): void {
   const titleInput = makeTextInput("Title", "add-title");
   form.appendChild(titleInput.container);
 
-  // Date
-  const dateInput = makeDateInput("Date", "add-date");
-  form.appendChild(dateInput.container);
+  // Event: when
+  const whenInput = makeDateTimeInput("When", "add-when");
+  form.appendChild(whenInput.container);
 
-  // Time
-  const timeInput = makeTimeInput("Time", "add-time");
-  form.appendChild(timeInput.container);
+  // TODO: scheduled / deadline (combined date+time)
+  const schedInput = makeDateTimeInput("Scheduled", "add-sched");
+  form.appendChild(schedInput.container);
 
-  // Planning (TODO only)
-  const planGroup = makeRadioGroup("Planning", "add-plan", [
-    { value: "scheduled", label: "Scheduled", checked: true },
-    { value: "deadline", label: "Deadline" },
-    { value: "none", label: "None" },
-  ]);
-  form.appendChild(planGroup.container);
+  const deadInput = makeDateTimeInput("Deadline", "add-dead");
+  form.appendChild(deadInput.container);
 
   // Repeat (event only)
   const repeatSelect = makeSelect("Repeat", "add-repeat", [
@@ -229,15 +226,17 @@ function buildAddPanel(): void {
   tagsInput.input.placeholder = "comma-separated";
   form.appendChild(tagsInput.container);
 
-  // Show/hide planning / repeat rows based on type
+  // Show/hide fields based on type
   const typeRadios = typeGroup.container.querySelectorAll<HTMLInputElement>("input[name='add-type']");
-  function syncPlanningVisibility(): void {
+  const syncVisibility = (): void => {
     const isTodo = (typeGroup.container.querySelector<HTMLInputElement>("input[name='add-type']:checked"))?.value === "todo";
-    planGroup.container.style.display = isTodo ? "" : "none";
+    whenInput.container.style.display = isTodo ? "none" : "";
     repeatSelect.container.style.display = isTodo ? "none" : "";
-  }
-  typeRadios.forEach(r => r.addEventListener("change", syncPlanningVisibility));
-  syncPlanningVisibility();
+    schedInput.container.style.display = isTodo ? "" : "none";
+    deadInput.container.style.display = isTodo ? "" : "none";
+  };
+  typeRadios.forEach(r => r.addEventListener("change", syncVisibility));
+  syncVisibility();
 
   // Save button
   const saveBtn = document.createElement("button");
@@ -247,16 +246,36 @@ function buildAddPanel(): void {
     const type = (typeGroup.container.querySelector<HTMLInputElement>("input[name='add-type']:checked"))?.value ?? "todo";
     const heading = titleInput.input.value.trim();
     if (!heading) { titleInput.input.focus(); return; }
-    const dateVal = expandDate(dateInput.input.value.trim());
-    if (dateInput.input.value.trim() && !dateVal) { dateInput.input.focus(); return; }
-    const timeRaw = timeInput.input.value.trim();
-    const timeVal = /^([01]\d|2[0-3]):[0-5]\d(-([01]\d|2[0-3]):[0-5]\d)?$/.test(timeRaw) ? timeRaw : "";
-    if (timeRaw && !timeVal) { timeInput.input.focus(); return; }
-    const planVal = (planGroup.container.querySelector<HTMLInputElement>("input[name='add-plan']:checked"))?.value ?? "scheduled";
     const tagsVal = tagsInput.input.value.trim();
-    const repeaterVal = type === "event" ? (repeatSelect.select.value || null) : editingRepeater;
 
-    const orgText = buildOrgText(type, heading, dateVal, timeVal, planVal, tagsVal, repeaterVal);
+    const readDT = (inp: HTMLInputElement): { date: string; time: string } | null => {
+      const raw = inp.value.trim();
+      if (!raw) return { date: "", time: "" };
+      const parsed = parseDateTime(raw);
+      if (!parsed) { inp.focus(); return null; }
+      return parsed;
+    };
+
+    let orgText: string;
+    if (type === "event") {
+      const dt = readDT(whenInput.input); if (dt === null) return;
+      if (!dt.date) { whenInput.input.focus(); return; }
+      const repeaterVal = repeatSelect.select.value || null;
+      orgText = buildOrgText({
+        type: "event", heading, tags: tagsVal,
+        date: dt.date, time: dt.time, repeater: repeaterVal,
+      });
+    } else {
+      const s = readDT(schedInput.input); if (s === null) return;
+      const d = readDT(deadInput.input); if (d === null) return;
+      if (!s.date && !d.date) { schedInput.input.focus(); return; }
+      orgText = buildOrgText({
+        type: "todo", heading, tags: tagsVal,
+        schedDate: s.date, schedTime: s.time, schedRepeater: editingSchedRepeater,
+        deadDate: d.date, deadTime: d.time, deadRepeater: editingDeadRepeater,
+      });
+    }
+
     if (editingLine !== null) {
       replaceOrgBlock(editingLine, orgText);
     } else {
@@ -272,11 +291,12 @@ function buildAddPanel(): void {
   addPanelRefs = {
     typeGroup: typeGroup.container,
     titleInput: titleInput.input,
-    dateInput: dateInput.input,
-    timeInput: timeInput.input,
-    planGroup: planGroup.container,
+    whenInput: whenInput.input,
+    schedInput: schedInput.input,
+    deadInput: deadInput.input,
     tagsInput: tagsInput.input,
     repeatSelect: repeatSelect.select,
+    syncVisibility,
   };
 }
 
@@ -366,7 +386,7 @@ function expandDate(raw: string): string {
   return "";
 }
 
-function makeDateInput(label: string, id: string): { container: HTMLElement; input: HTMLInputElement } {
+function makeDateTimeInput(label: string, id: string): { container: HTMLElement; input: HTMLInputElement } {
   const container = document.createElement("div");
   container.className = "add-field";
 
@@ -379,85 +399,84 @@ function makeDateInput(label: string, id: string): { container: HTMLElement; inp
   input.type = "text";
   input.id = id;
   input.className = "add-input";
-  input.placeholder = "DD or DD/MM or DD/MM/YYYY";
-  input.maxLength = 10;
-  input.addEventListener("input", () => {
-    const v = input.value.replace(/[^\d]/g, "");
-    if (v.length >= 5) {
-      input.value = v.slice(0, 2) + "/" + v.slice(2, 4) + "/" + v.slice(4, 8);
-    } else if (v.length >= 3) {
-      input.value = v.slice(0, 2) + "/" + v.slice(2, 4);
-    }
-  });
+  input.placeholder = "DD[/MM[/YYYY]] [HH:MM[-HH:MM]]";
 
   container.append(lbl, input);
   return { container, input };
 }
 
-function makeTimeInput(label: string, id: string): { container: HTMLElement; input: HTMLInputElement } {
-  const container = document.createElement("div");
-  container.className = "add-field";
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(-([01]\d|2[0-3]):[0-5]\d)?$/;
 
-  const lbl = document.createElement("label");
-  lbl.className = "add-label";
-  lbl.htmlFor = id;
-  lbl.textContent = label;
+/**
+ * Parse a combined date/time field. Accepts "<date>" or "<date> <time>".
+ * Date forms: DD, DD/MM, DD/MM/YYYY. Time forms: HH:MM or HH:MM-HH:MM.
+ * Returns null on invalid input.
+ */
+function parseDateTime(raw: string): { date: string; time: string } | null {
+  const parts = raw.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { date: "", time: "" };
 
-  const input = document.createElement("input");
-  input.type = "text";
-  input.id = id;
-  input.className = "add-input";
-  input.placeholder = "HH:MM or HH:MM-HH:MM";
-  input.pattern = "^([01]\\d|2[0-3]):[0-5]\\d(-([01]\\d|2[0-3]):[0-5]\\d)?$";
-  input.maxLength = 11;
-  input.addEventListener("input", () => {
-    const raw = input.value;
-    const hasRange = raw.includes("-");
-    if (hasRange) {
-      const [a, b = ""] = raw.split("-");
-      const da = a.replace(/\D/g, "").slice(0, 4);
-      const db = b.replace(/\D/g, "").slice(0, 4);
-      const fa = da.length >= 3 ? da.slice(0, 2) + ":" + da.slice(2) : da;
-      const fb = db.length >= 3 ? db.slice(0, 2) + ":" + db.slice(2) : db;
-      input.value = fa + "-" + fb;
-    } else {
-      const v = raw.replace(/\D/g, "").slice(0, 4);
-      input.value = v.length >= 3 ? v.slice(0, 2) + ":" + v.slice(2) : v;
-    }
-  });
+  let time = "";
+  let dateRaw: string;
+  const last = parts[parts.length - 1];
+  if (TIME_RE.test(last)) {
+    time = last;
+    dateRaw = parts.slice(0, -1).join(" ");
+  } else {
+    dateRaw = parts.join(" ");
+  }
 
-  container.append(lbl, input);
-  return { container, input };
+  if (!dateRaw) return null;
+  const date = expandDate(dateRaw);
+  if (!date) return null;
+  return { date, time };
 }
 
-function buildOrgText(type: string, heading: string, date: string, time: string, plan: string, tags: string, repeater: string | null = null): string {
-  // Build tag string
+interface BuildOrgOpts {
+  type: "todo" | "event";
+  heading: string;
+  tags: string;
+  // event
+  date?: string;
+  time?: string;
+  repeater?: string | null;
+  // todo
+  schedDate?: string;
+  schedTime?: string;
+  schedRepeater?: string | null;
+  deadDate?: string;
+  deadTime?: string;
+  deadRepeater?: string | null;
+}
+
+function buildOrgText(opts: BuildOrgOpts): string {
   let tagStr = "";
-  if (tags) {
-    const tagList = tags.split(",").map(t => t.trim()).filter(Boolean);
+  if (opts.tags) {
+    const tagList = opts.tags.split(",").map(t => t.trim()).filter(Boolean);
     if (tagList.length > 0) tagStr = " :" + tagList.join(":") + ":";
   }
 
-  // Build heading line
-  const todoPrefix = type === "todo" ? "TODO " : "";
-  const headingLine = `* ${todoPrefix}${heading}${tagStr}`;
+  const todoPrefix = opts.type === "todo" ? "TODO " : "";
+  const headingLine = `* ${todoPrefix}${opts.heading}${tagStr}`;
 
-  // Build timestamp
-  if (!date) return headingLine; // no date → someday item
+  const makeTs = (date: string, time: string | undefined, repeater: string | null | undefined): string => {
+    const d = new Date(date + "T00:00:00");
+    const dayAbbrev = DAY_ABBREVS[d.getDay()];
+    const timeStr = time ? ` ${time}` : "";
+    const repStr = repeater ? ` ${repeater}` : "";
+    return `<${date} ${dayAbbrev}${timeStr}${repStr}>`;
+  };
 
-  const d = new Date(date + "T00:00:00");
-  const dayAbbrev = DAY_ABBREVS[d.getDay()];
-  const timeStr = time ? ` ${time}` : "";
-  const repStr = repeater ? ` ${repeater}` : "";
-  const timestamp = `<${date} ${dayAbbrev}${timeStr}${repStr}>`;
-
-  if (type === "todo" && plan !== "none") {
-    const keyword = plan === "deadline" ? "DEADLINE" : "SCHEDULED";
-    return `${headingLine}\n  ${keyword}: ${timestamp}`;
+  if (opts.type === "event") {
+    if (!opts.date) return headingLine;
+    return `${headingLine}\n  ${makeTs(opts.date, opts.time, opts.repeater)}`;
   }
 
-  // Event or TODO with plan=none: timestamp as body
-  return `${headingLine}\n  ${timestamp}`;
+  // TODO: up to one SCHEDULED and one DEADLINE
+  const lines: string[] = [headingLine];
+  if (opts.schedDate) lines.push(`  SCHEDULED: ${makeTs(opts.schedDate, opts.schedTime, opts.schedRepeater)}`);
+  if (opts.deadDate) lines.push(`  DEADLINE: ${makeTs(opts.deadDate, opts.deadTime, opts.deadRepeater)}`);
+  return lines.join("\n");
 }
 
 /**
@@ -516,33 +535,38 @@ function appendOrgText(orgText: string): void {
 }
 
 function openAddPanel(): void {
-  if (!addPanelEl || !addOverlayEl) return;
+  if (!addPanelEl || !addOverlayEl || !addPanelRefs) return;
 
   editingLine = null;
-  editingRepeater = null;
+  editingSchedRepeater = null;
+  editingDeadRepeater = null;
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Add item";
 
-  // Reset form fields
-  const form = addPanelEl.querySelector(".add-form");
-  if (form) {
-    form.querySelectorAll<HTMLInputElement>("input[type='text']").forEach(i => { i.value = ""; });
-    const todoRadio = form.querySelector<HTMLInputElement>("input[value='todo']");
-    if (todoRadio) todoRadio.checked = true;
-    const schedRadio = form.querySelector<HTMLInputElement>("input[value='scheduled']");
-    if (schedRadio) schedRadio.checked = true;
-    if (addPanelRefs) addPanelRefs.repeatSelect.value = "";
-    // Trigger planning visibility sync
-    const planField = form.querySelectorAll<HTMLElement>(".add-field")[4];
-    if (planField) planField.style.display = "";
-    if (addPanelRefs) addPanelRefs.repeatSelect.parentElement!.style.display = "none";
-  }
+  const refs = addPanelRefs;
+  refs.titleInput.value = "";
+  refs.whenInput.value = "";
+  refs.schedInput.value = "";
+  refs.deadInput.value = "";
+  refs.tagsInput.value = "";
+  refs.repeatSelect.value = "";
+  const todoRadio = refs.typeGroup.querySelector<HTMLInputElement>("input[value='todo']");
+  if (todoRadio) todoRadio.checked = true;
+  refs.syncVisibility();
 
   addOverlayEl.classList.add("is-open");
   addPanelEl.classList.add("is-open");
+  setTimeout(() => refs.titleInput.focus(), 250);
+}
 
-  // Focus title input
-  const titleInput = addPanelEl.querySelector<HTMLInputElement>("#add-title");
-  if (titleInput) setTimeout(() => titleInput.focus(), 250);
+function tsToTimeDisplay(ts: { startTime: string | null; endTime: string | null }): string {
+  if (!ts.startTime) return "";
+  return ts.endTime ? `${ts.startTime}-${ts.endTime}` : ts.startTime;
+}
+
+function tsToDateTimeDisplay(ts: { date: string; startTime: string | null; endTime: string | null }): string {
+  const d = isoToDisplayDate(ts.date);
+  const t = tsToTimeDisplay(ts);
+  return t ? `${d} ${t}` : d;
 }
 
 function openEditPanel(sourceLine: number): void {
@@ -556,34 +580,42 @@ function openEditPanel(sourceLine: number): void {
 
   const refs = addPanelRefs;
 
-  // Type
   const type = entry.todo ? "todo" : "event";
   const typeRadio = refs.typeGroup.querySelector<HTMLInputElement>(`input[value="${type}"]`);
   if (typeRadio) typeRadio.checked = true;
 
-  // Title & tags
   refs.titleInput.value = entry.title;
   refs.tagsInput.value = entry.tags.join(", ");
 
-  // Date / time / plan — prefer SCHEDULED, then DEADLINE, then first body timestamp
-  const sched = entry.planning.find(p => p.kind === "scheduled");
-  const deadline = entry.planning.find(p => p.kind === "deadline");
-  const ts = sched?.timestamp ?? deadline?.timestamp ?? entry.timestamps[0] ?? null;
+  refs.whenInput.value = "";
+  refs.schedInput.value = "";
+  refs.deadInput.value = "";
+  refs.repeatSelect.value = "";
+  editingSchedRepeater = null;
+  editingDeadRepeater = null;
 
-  refs.dateInput.value = ts ? isoToDisplayDate(ts.date) : "";
-  refs.timeInput.value = ts?.startTime
-    ? ts.endTime ? `${ts.startTime}-${ts.endTime}` : ts.startTime
-    : "";
+  if (type === "event") {
+    const ts = entry.timestamps[0] ?? null;
+    if (ts) {
+      refs.whenInput.value = tsToDateTimeDisplay(ts);
+      refs.repeatSelect.value = ts.repeater ? `+${ts.repeater.value}${ts.repeater.unit}` : "";
+    }
+  } else {
+    const sched = entry.planning.find(p => p.kind === "scheduled");
+    const deadline = entry.planning.find(p => p.kind === "deadline");
+    if (sched) {
+      refs.schedInput.value = tsToDateTimeDisplay(sched.timestamp);
+      editingSchedRepeater = sched.timestamp.repeater
+        ? `+${sched.timestamp.repeater.value}${sched.timestamp.repeater.unit}` : null;
+    }
+    if (deadline) {
+      refs.deadInput.value = tsToDateTimeDisplay(deadline.timestamp);
+      editingDeadRepeater = deadline.timestamp.repeater
+        ? `+${deadline.timestamp.repeater.value}${deadline.timestamp.repeater.unit}` : null;
+    }
+  }
 
-  editingRepeater = ts?.repeater ? `+${ts.repeater.value}${ts.repeater.unit}` : null;
-  refs.repeatSelect.value = editingRepeater ?? "";
-
-  const plan = sched ? "scheduled" : deadline ? "deadline" : "none";
-  const planRadio = refs.planGroup.querySelector<HTMLInputElement>(`input[value="${plan}"]`);
-  if (planRadio) planRadio.checked = true;
-
-  refs.planGroup.style.display = type === "todo" ? "" : "none";
-  refs.repeatSelect.parentElement!.style.display = type === "event" ? "" : "none";
+  refs.syncVisibility();
 
   addOverlayEl.classList.add("is-open");
   addPanelEl.classList.add("is-open");
