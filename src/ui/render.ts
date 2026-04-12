@@ -269,6 +269,9 @@ function renderAllDayItem(item: AgendaItem): HTMLElement {
   const row = el("div", "allday-item");
   if (item.entry.todo === "DONE") row.classList.add("item-done");
 
+  const primaryTag = item.entry.tags[0];
+  if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
+
   const title = el("span", "item-title");
   title.textContent = item.entry.title;
 
@@ -297,6 +300,9 @@ function renderScheduledItem(item: AgendaItem): HTMLElement {
   const row = el("div", "scheduled-item");
   if (item.entry.todo === "DONE") row.classList.add("item-done");
 
+  const primaryTag = item.entry.tags[0];
+  if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
+
   const state = el("span", "item-state");
   state.textContent = item.entry.todo ?? "TODO";
 
@@ -317,6 +323,9 @@ function renderScheduledItem(item: AgendaItem): HTMLElement {
 function renderDayDeadlineItem(item: AgendaItem): HTMLElement {
   const row = el("div", "day-deadline-item");
   if (item.entry.todo === "DONE") row.classList.add("item-done");
+
+  const primaryTag = item.entry.tags[0];
+  if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
 
   const kind = el("span", "item-kind");
   kind.textContent = "DEADLINE";
