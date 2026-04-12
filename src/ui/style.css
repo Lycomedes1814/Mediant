@@ -601,6 +601,23 @@ body {
   font-weight: 600;
 }
 
+.input-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.github-link {
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.github-link:hover {
+  color: var(--text);
+}
+
 .input-textarea {
   width: 100%;
   min-height: 20rem;
