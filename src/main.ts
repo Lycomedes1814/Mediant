@@ -108,7 +108,10 @@ function openTagEditor(): void {
       label.style.background = fresh;
     });
 
-    row.append(swatch, label, resetBtn);
+    const spacer = document.createElement("span");
+    spacer.className = "te-spacer";
+
+    row.append(swatch, label, spacer, resetBtn);
     list.appendChild(row);
   }
 
