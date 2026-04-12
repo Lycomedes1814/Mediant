@@ -229,12 +229,21 @@ function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
   if (rest.length > 0) {
     const section = el("div", "timed-section");
 
-    if (isToday) {
-      const line = renderNowLine(rest, today);
-      if (line) section.appendChild(line);
-    }
+    const nowMinutes = isToday
+      ? today.getHours() * 60 + today.getMinutes()
+      : -1;
+    let nowLineInserted = !isToday;
 
     for (const item of rest) {
+      // Insert now line before the first item that starts at or after current time
+      if (!nowLineInserted) {
+        const itemMinutes = item.startTime ? timeToMinutes(item.startTime) : -1;
+        if (itemMinutes >= nowMinutes) {
+          section.appendChild(renderNowLine());
+          nowLineInserted = true;
+        }
+      }
+
       if (item.category === "scheduled") {
         section.appendChild(renderScheduledItem(item));
       } else if (item.category === "deadline") {
@@ -250,6 +259,12 @@ function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
         section.appendChild(body);
       }
     }
+
+    // If all items are before now, append the line at the end
+    if (!nowLineInserted) {
+      section.appendChild(renderNowLine());
+    }
+
     card.appendChild(section);
   }
 
@@ -346,25 +361,8 @@ function renderDayDeadlineItem(item: AgendaItem): HTMLElement {
 
 // ── Now line ─────────────────────────────────────────────────────────
 
-function renderNowLine(items: AgendaItem[], now: Date): HTMLElement | null {
-  const timedItems = items.filter((i) => i.startTime);
-  if (timedItems.length === 0) return null;
-
-  const firstTime = timedItems[0].startTime!;
-  const lastItem = timedItems[timedItems.length - 1];
-  const lastTime = lastItem.endTime ?? lastItem.startTime!;
-
-  const firstMinutes = timeToMinutes(firstTime);
-  const lastMinutes = timeToMinutes(lastTime);
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
-  if (nowMinutes < firstMinutes || nowMinutes > lastMinutes) return null;
-
-  const pct = ((nowMinutes - firstMinutes) / (lastMinutes - firstMinutes)) * 100;
-
-  const line = el("div", "now-line");
-  line.style.top = `${pct}%`;
-  return line;
+function renderNowLine(): HTMLElement {
+  return el("div", "now-line");
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
