@@ -33,6 +33,18 @@ Detailed account of how Mediant handles Org-mode syntax. Three categories:
 - Other keywords (WAITING, NEXT, CANCELLED, etc.) are treated as part of the heading title.
 - DONE items are parsed fully. In the v1 agenda, they are rendered as dimmed grey in the agenda view.
 
+### Priority cookies
+
+```org
+** TODO [#A] Important task
+** [#B] Plain heading without TODO
+```
+
+- `[#A]`, `[#B]`, `[#C]` immediately after the TODO state (or at the start of the heading remainder if no TODO keyword).
+- Parsed into `priority` on the entry (`"A" | "B" | "C" | null`) and stripped from the title.
+- Rendered in the agenda as a small colored badge (A = red, B = amber, C = blue) prefixed to the item title.
+- Only the letters `A`, `B`, and `C` are recognized. Other letters (e.g. `[#D]`) are treated as part of the title.
+
 ### Tags
 
 ```org
@@ -139,14 +151,6 @@ These constructs are recognized and silently skipped. They will not produce entr
 ```
 
 - Two timestamps connected by `--`. Recognized but **not** supported in v1. The line is treated as body text.
-
-### Priority cookies
-
-```org
-** TODO [#A] Important task
-```
-
-- `[#A]`, `[#B]`, `[#C]` after TODO state. Recognized and stripped from the title but not stored or used.
 
 ### Property drawers
 

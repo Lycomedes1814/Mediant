@@ -26,7 +26,7 @@ Three clearly separated stages — do not collapse them:
 |---|---|
 | `src/org/timestamp.ts` | Timestamp parsing, Date conversion, recurrence expansion. **Only** module that does date arithmetic. |
 | `src/org/parser.ts` | Line-by-line Org parser → `OrgEntry[]`. Delegates all timestamp work to `timestamp.ts`. |
-| `src/org/model.ts` | Parser output types: `OrgEntry`, `OrgPlanning`, `TodoState`. |
+| `src/org/model.ts` | Parser output types: `OrgEntry`, `OrgPlanning`, `TodoState`, `Priority`. |
 | `src/agenda/model.ts` | Agenda/render types: `AgendaItem`, `AgendaDay`, `AgendaWeek`, `DeadlineItem`, `OverdueItem`, `SomedayItem`, `RenderCategory`. |
 | `src/agenda/generate.ts` | 7-day generation from a start date, recurrence expansion (bounded to requested range), classification, sorting, overdue/someday collection. |
 | `src/ui/render.ts` | DOM rendering from `AgendaWeek` + `DeadlineItem[]` + `OverdueItem[]`. |
@@ -55,7 +55,7 @@ npx vite              # dev server (serves index.html)
 
 See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and unsupported syntax.
 
-**Supported:** headings, TODO/DONE, tags, active timestamps, time ranges, repeaters (+Nd/w/m/y), SCHEDULED, DEADLINE, body text.
+**Supported:** headings, TODO/DONE, priority cookies (`[#A]`/`[#B]`/`[#C]`), tags, active timestamps, time ranges, repeaters (+Nd/w/m/y), SCHEDULED, DEADLINE, body text.
 
 **Gracefully ignored:** file keywords (#+), inactive timestamps, drawers, properties, comments, links, inline markup, lists, tables.
 
@@ -74,10 +74,12 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Today** indicated by blue border + small blue dot (not a text badge)
 - **Empty days** always present, shown with a subtle em dash
 - **Tags** rendered as colored badge pills, right-aligned. Colors auto-assigned from a palette and persisted in localStorage (`mediant-tag-colors`)
+- **Priority badges** — `[#A]`/`[#B]`/`[#C]` rendered as small colored badges (red/amber/blue) nested inside the item title so the row grid templates stay fixed
 - **Now line** on today's card — red line positioned proportionally within the timed section
 - **Navigation** — prev/next by 7-day increments, "Today" button returns to today as start date
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE), sorted alphabetically
 - **Add-item panel** — slide-in panel for creating TODO tasks and events. Generates Org text and appends to localStorage source.
+- **Edit-item panel** — same slide-in panel, opened from a per-item edit button. Rewrites the existing Org block in place, preserving body lines.
 - **Org source persistence** — textarea content saved to `localStorage` (`mediant-org-source`) and auto-filled on reload
 
 ## Testing
@@ -104,9 +106,8 @@ Always run tests after changes to parser, timestamp, or agenda logic.
 
 - Full Org-mode syntax
 - Heading hierarchy in the agenda
-- Priorities, properties, drawers, habits, clocking
+- Properties, drawers, habits, clocking
 - Timezone handling
 - Advanced state workflows / custom TODO sequences
 - Multi-file agenda
-- Editing from the UI
 - Export to other formats

@@ -17,6 +17,7 @@ See [ORG-SYNTAX.md](ORG-SYNTAX.md) for the full breakdown of supported, graceful
 |---|---|
 | Headings | `* Top level` / `** Second level` |
 | TODO / DONE | `** TODO Some task` / `** DONE Finished` |
+| Priority cookies | `** TODO [#A] Urgent task` |
 | Tags | `** Heading :tag1:tag2:` |
 | Active timestamp | `<2026-04-07 ti. 15:15-16:00>` |
 | Repeater | `<2026-04-07 ti. 15:15-16:00 +1w>` |
@@ -54,7 +55,7 @@ Three clearly separated stages:
 ```
 src/
   org/
-    model.ts           — Parser output types (OrgEntry, OrgPlanning, TodoState)
+    model.ts           — Parser output types (OrgEntry, OrgPlanning, TodoState, Priority)
     timestamp.ts       — Timestamp parsing, Date conversion, recurrence expansion
     parser.ts          — Line-by-line Org file parser
     __tests__/         — Timestamp and parser tests
@@ -78,6 +79,7 @@ index.html             — Minimal shell with #agenda container
   - All-day events (holidays, birthdays) in a subtle grouped section
   - Timed events with monospace time column, tag-colored left border, tag badges (colors auto-assigned from a palette, persisted in localStorage)
   - Scheduled tasks inline (time → TODO/DONE badge → title)
+- **Priority badges** — A/B/C priority cookies rendered as small colored badges (red/amber/blue) before the item title
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE)
 - **DONE items** rendered at reduced opacity with line-through
 - **Today** indicated by blue card border and small dot marker
@@ -85,13 +87,14 @@ index.html             — Minimal shell with #agenda container
 - **Week navigation** with prev/next/today buttons
 - **Now line** on today's timed section
 - **Add-item panel** for creating TODO tasks and events from the UI
+- **Edit-item panel** for updating an existing entry in place (preserves body text)
 - Responsive: sticky day headers and adjusted spacing on mobile
 
 ## Tech stack
 
 - **TypeScript** — parser, data model, agenda generation, rendering
 - **Vite** — dev server and bundling
-- **Vitest** — 126 tests across parser, timestamp, and agenda suites
+- **Vitest** — 131 tests across parser, timestamp, and agenda suites
 - **HTML/CSS** — responsive week-agenda UI with CSS grid
 - No framework dependencies
 
@@ -99,10 +102,10 @@ index.html             — Minimal shell with #agenda container
 
 - Full Org-mode syntax
 - Heading hierarchy in the agenda
-- Priorities, properties, drawers, habits, clocking
+- Properties, drawers, habits, clocking
 - Timezone handling beyond local time
 - Advanced state workflows / custom TODO keyword sequences
-- Multi-file agenda, editing from the UI, export
+- Multi-file agenda, export to other formats
 
 ## Local storage
 
