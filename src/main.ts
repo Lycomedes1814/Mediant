@@ -544,21 +544,6 @@ async function toggleDone(sourceLine: number): Promise<void> {
   await persistSource(lines.join("\n"));
 }
 
-/**
- * Flip TODO↔DONE on the heading line of the entry at `sourceLine`. Edits
- * only the heading, leaving planning lines and body untouched.
- */
-async function toggleDone(sourceLine: number): Promise<void> {
-  const lines = currentSource.split("\n");
-  const idx = sourceLine - 1;
-  if (idx < 0 || idx >= lines.length) return;
-  const m = lines[idx].match(/^(\*+\s+)(TODO|DONE)(\b.*)?$/);
-  if (!m) return;
-  const next = m[2] === "TODO" ? "DONE" : "TODO";
-  lines[idx] = `${m[1]}${next}${m[3] ?? ""}`;
-  await persistSource(lines.join("\n"));
-}
-
 function appendOrgText(orgText: string): void {
   const updated = currentSource.trimEnd() + "\n" + orgText + "\n";
   void persistSource(updated);
