@@ -1,10 +1,15 @@
 # Mediant
 
-A minimal Org-mode parser and week-agenda viewer. Paste Org-mode content into a textarea and get a responsive, visually clear week-agenda in HTML/CSS.
+A minimal Org-mode parser and week-agenda viewer. Runs in two modes:
+
+- **Static mode** — paste Org content into a textarea, everything lives in your browser's `localStorage`. Zero-install, usable straight from a static host.
+- **Server mode** — run `mediant <file.org>` to start a tiny local Node server that reads and writes a real `.org` file on disk. The browser UI hydrates from the file on load and picks up external edits (e.g. from Emacs) live over SSE.
+
+No framework dependencies. The server has no dependencies at all — it uses Node built-ins only.
 
 ## What it does
 
-1. **Parses** pasted Org content — only the subset of syntax needed for agenda views
+1. **Parses** Org content — only the subset of syntax needed for agenda views
 2. **Models** the parsed data faithfully to Org semantics before any display logic
 3. **Generates** a week-based agenda structure, expanding recurring events within the requested week only
 4. **Renders** a responsive week-agenda UI with clear visual distinctions between event types
@@ -31,11 +36,47 @@ Anything outside this subset is ignored gracefully — it will not cause errors.
 
 ```sh
 npm install
-npx vite         # dev server at http://localhost:5173
+npx vite         # dev server at http://localhost:5173 (textarea mode)
 npm test         # run all tests
+npm run build    # produce dist/
 ```
 
 The dev server serves `index.html` with a textarea to paste Org content.
+
+### Server mode
+
+To run against a real Org file on disk:
+
+```sh
+npm run build                    # produce dist/ (required once)
+node server/cli.mjs ~/org/todo.org            # foreground, http://localhost:4242
+node server/cli.mjs ~/org/todo.org --port 7000
+node server/cli.mjs ~/org/todo.org --daemon   # fork to background, prints PID
+```
+
+Or, after `npm install -g .` (or `npm link`), just:
+
+```sh
+mediant ~/org/todo.org [--port N] [--daemon]
+```
+
+When the server is running, the browser UI skips the paste screen and hydrates directly from the file. Every edit made through the UI is written back to disk, and external edits (from Emacs, another editor, Syncthing, etc.) are picked up automatically over Server-Sent Events.
+
+**Security:** the server binds to `127.0.0.1` and has no authentication. Expose it to other machines via Tailscale, an SSH tunnel, or a reverse proxy — not directly.
+
+**Stopping a daemonised instance:** `kill <pid>` (the PID is printed when `--daemon` starts).
+
+### API
+
+The server exposes three endpoints on top of the static UI:
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/source` | Returns the file contents. Response header `X-Version: <mtimeMs>`. |
+| `PUT` | `/api/source` | Writes the file. Accepts `If-Match: <version>`; mismatch returns `409`. Response header `X-Version` is the new version. |
+| `GET` | `/api/events` | Server-Sent Events stream. Emits `data: <version>` whenever the file changes on disk. |
+
+Conflict strategy is simple: **the on-disk copy wins**. If you edit in the UI while the file has changed underneath you, the server rejects the write with 409 and the UI reloads from disk.
 
 ## Architecture
 
@@ -67,7 +108,9 @@ src/
     render.ts          — DOM rendering from AgendaWeek + DeadlineItem[] + OverdueItem[]
     tagColors.ts       — Dynamic tag color management (auto-assign, localStorage)
     style.css          — All styles (CSS grid layout, responsive)
-  main.ts              — Entry point: textarea input → parse → generate → render
+  main.ts              — Entry point: probes server, hydrates, wires parse → generate → render
+server/
+  cli.mjs              — Node CLI + HTTP server (no deps). Serves dist/ and exposes /api/source + /api/events.
 index.html             — Minimal shell with #agenda container
 ```
 
@@ -94,9 +137,10 @@ index.html             — Minimal shell with #agenda container
 
 - **TypeScript** — parser, data model, agenda generation, rendering
 - **Vite** — dev server and bundling
-- **Vitest** — 131 tests across parser, timestamp, and agenda suites
+- **Vitest** — 133 tests across parser, timestamp, and agenda suites
 - **HTML/CSS** — responsive week-agenda UI with CSS grid
-- No framework dependencies
+- **Node** (built-ins only) — optional local server (`server/cli.mjs`)
+- No framework dependencies, no runtime npm dependencies
 
 ## Non-goals (v1)
 
@@ -106,18 +150,20 @@ index.html             — Minimal shell with #agenda container
 - Timezone handling beyond local time
 - Advanced state workflows / custom TODO keyword sequences
 - Multi-file agenda, export to other formats
+- Server-side authentication or multi-user access control (use Tailscale / SSH tunnel / reverse proxy)
+- Collaborative editing / CRDT sync (last write loses to disk; the file is the source of truth)
 
 ## Local storage
 
-Mediant stores the following in your browser's `localStorage`:
+Mediant uses your browser's `localStorage` for the following:
 
 | Key | Purpose |
 |---|---|
-| `mediant-org-source` | Pasted and added Org content, persisted across reloads |
+| `mediant-org-source` | Pasted Org content (static mode only — ignored in server mode) |
 | `mediant-tag-colors` | Tag-to-color assignments, so tag colors stay consistent |
 | `theme` | Light/dark mode preference |
 
-All data stays in your browser — nothing is sent to a server.
+In **static mode** all data stays in your browser — nothing is sent to a server. In **server mode** the Org source lives in the file you passed to the CLI, and `mediant-org-source` is not used; tag colors and theme are still browser-local.
 
 ## License
 
