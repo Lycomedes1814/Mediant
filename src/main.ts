@@ -510,15 +510,26 @@ function replaceOrgBlock(sourceLine: number, newText: string): void {
     if (/^\*+\s/.test(lines[i])) { endIdx = i; break; }
   }
 
-  // Preserve body lines that aren't planning or bare timestamps — those are
-  // the structural lines buildOrgText regenerates.
-  const structuralRe = /^\s*(?:(?:SCHEDULED|DEADLINE):\s*)?<\d{4}-\d{2}-\d{2}/;
+  // The new block re-emits at most one SCHEDULED, one DEADLINE, and one
+  // bare timestamp. Drop only the first occurrence of each kind the new
+  // block actually contains; leave every other structural line alone so
+  // entries with multiple active timestamps don't lose data on save.
+  const schedRe = /^\s*SCHEDULED:\s*<\d{4}-\d{2}-\d{2}/;
+  const deadRe = /^\s*DEADLINE:\s*<\d{4}-\d{2}-\d{2}/;
+  const bareRe = /^\s*<\d{4}-\d{2}-\d{2}/;
+  const newBlockLines = newText.split("\n");
+  let dropSched = newBlockLines.some(l => schedRe.test(l));
+  let dropDead = newBlockLines.some(l => deadRe.test(l));
+  let dropBare = newBlockLines.some(l => bareRe.test(l));
   const preserved: string[] = [];
   for (let i = startIdx + 1; i < endIdx; i++) {
-    if (!structuralRe.test(lines[i])) preserved.push(lines[i]);
+    const line = lines[i];
+    if (dropSched && schedRe.test(line)) { dropSched = false; continue; }
+    if (dropDead && deadRe.test(line)) { dropDead = false; continue; }
+    if (dropBare && bareRe.test(line)) { dropBare = false; continue; }
+    preserved.push(line);
   }
 
-  const newBlockLines = newText.split("\n");
   const updated = [
     ...lines.slice(0, startIdx),
     ...newBlockLines,
