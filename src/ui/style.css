@@ -526,6 +526,15 @@ body {
   border-color: var(--text-done);
 }
 
+.item-state.is-toggleable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.item-state.is-toggleable:hover {
+  filter: brightness(1.15);
+}
+
 /* ── Priority badges ──────────────────────────────────────────────── */
 
 .item-priority {
