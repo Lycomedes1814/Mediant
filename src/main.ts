@@ -274,7 +274,6 @@ function buildAddPanel(): void {
     } else {
       const s = readDT(schedInput.input); if (s === null) return;
       const d = readDT(deadInput.input); if (d === null) return;
-      if (!s.date && !d.date) { schedInput.input.focus(); return; }
       orgText = buildOrgText({
         type: "todo", heading, tags: tagsVal,
         priority: editingPriority,
