@@ -161,6 +161,35 @@ describe("sorting", () => {
     expect(categories).toEqual(["all-day", "deadline", "scheduled", "timed"]);
   });
 
+  it("timed deadlines interleave chronologically with timed events", () => {
+    const org = [
+      "** TODO Make the pie\nDEADLINE: <2026-04-07 ti. 19:00>\n",
+      "** Unicorn gathering\n<2026-04-07 ti. 10:00>\n",
+      "** Whale gathering\n<2026-04-07 ti. 13:00>\n",
+      "** TODO Bake the pie\nSCHEDULED: <2026-04-07 ti. 15:30>\n",
+    ].join("");
+    const entries = parseOrg(org);
+    const week = generateWeek(entries, APRIL_6);
+    const order = week[1].items.map((i) => [i.startTime, i.entry.title]);
+    expect(order).toEqual([
+      ["10:00", "Unicorn gathering"],
+      ["13:00", "Whale gathering"],
+      ["15:30", "Bake the pie"],
+      ["19:00", "Make the pie"],
+    ]);
+  });
+
+  it("untimed deadline still sorts before timed events", () => {
+    const org = [
+      "** TODO Untimed deadline\nDEADLINE: <2026-04-07 ti.>\n",
+      "** Timed event\n<2026-04-07 ti. 10:00>\n",
+    ].join("");
+    const entries = parseOrg(org);
+    const week = generateWeek(entries, APRIL_6);
+    const titles = week[1].items.map((i) => i.entry.title);
+    expect(titles).toEqual(["Untimed deadline", "Timed event"]);
+  });
+
   it("timed items sorted by start time", () => {
     const org = [
       "** Later\n<2026-04-07 ti. 18:30-20:00>\n",
