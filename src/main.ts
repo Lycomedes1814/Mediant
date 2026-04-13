@@ -640,6 +640,27 @@ function init(): void {
   buildAddPanel();
   setupNavigation();
   showInput();
+  startClockTicker();
+}
+
+/**
+ * Re-render once per minute so the now-line and "today" indication stay
+ * current without requiring a page reload. Aligns to the next minute
+ * boundary so updates land close to :00 seconds.
+ */
+function startClockTicker(): void {
+  const tick = (): void => {
+    if (document.visibilityState === "visible") render();
+  };
+  const msToNextMinute = 60_000 - (Date.now() % 60_000);
+  setTimeout(() => {
+    tick();
+    setInterval(tick, 60_000);
+  }, msToNextMinute);
+  // Also refresh immediately when the tab becomes visible again.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") render();
+  });
 }
 
 function showInput(): void {
