@@ -180,6 +180,7 @@ const server = http.createServer(async (req, res) => {
     try {
       const data = fs.readFileSync(filePath, "utf-8");
       currentVersion = String(fs.statSync(filePath).mtimeMs);
+      console.log(`mediant: read  ${new Date().toISOString()}  ${data.length} bytes`);
       res.writeHead(200, {
         "Content-Type": "text/plain; charset=utf-8",
         "X-Version": currentVersion,
@@ -207,6 +208,7 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req);
       fs.writeFileSync(filePath, body, "utf-8");
       currentVersion = String(fs.statSync(filePath).mtimeMs);
+      console.log(`mediant: write ${new Date().toISOString()}  ${body.length} bytes`);
       res.writeHead(200, { "X-Version": currentVersion });
       res.end();
     } catch (e) {
