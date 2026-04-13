@@ -507,6 +507,35 @@ body {
   border-color: var(--text-done);
 }
 
+/* ── Priority badges ──────────────────────────────────────────────── */
+
+.item-priority {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border: 1px solid currentColor;
+  border-radius: 0.25rem;
+  padding: 0 0.3125rem;
+  line-height: 1.4;
+  vertical-align: baseline;
+}
+
+.item-priority.priority-A {
+  color: #dc2626;
+}
+
+.item-priority.priority-B {
+  color: #d97706;
+}
+
+.item-priority.priority-C {
+  color: #2563eb;
+}
+
+.item-done .item-priority {
+  color: var(--text-done);
+}
+
 /* ── Tag badges ───────────────────────────────────────────────────── */
 
 .tag-badges {

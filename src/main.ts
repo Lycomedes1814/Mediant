@@ -142,6 +142,7 @@ let addPanelEl: HTMLElement | null = null;
 let addOverlayEl: HTMLElement | null = null;
 let addPanelTitleEl: HTMLElement | null = null;
 let editingLine: number | null = null;
+let editingPriority: "A" | "B" | "C" | null = null;
 let editingSchedRepeater: string | null = null;
 let editingDeadRepeater: string | null = null;
 
@@ -263,6 +264,7 @@ function buildAddPanel(): void {
       const repeaterVal = repeatSelect.select.value || null;
       orgText = buildOrgText({
         type: "event", heading, tags: tagsVal,
+        priority: editingPriority,
         date: dt.date, time: dt.time, repeater: repeaterVal,
       });
     } else {
@@ -271,6 +273,7 @@ function buildAddPanel(): void {
       if (!s.date && !d.date) { schedInput.input.focus(); return; }
       orgText = buildOrgText({
         type: "todo", heading, tags: tagsVal,
+        priority: editingPriority,
         schedDate: s.date, schedTime: s.time, schedRepeater: editingSchedRepeater,
         deadDate: d.date, deadTime: d.time, deadRepeater: editingDeadRepeater,
       });
@@ -441,6 +444,7 @@ interface BuildOrgOpts {
   type: "todo" | "event";
   heading: string;
   tags: string;
+  priority?: "A" | "B" | "C" | null;
   // event
   date?: string;
   time?: string;
@@ -462,7 +466,8 @@ function buildOrgText(opts: BuildOrgOpts): string {
   }
 
   const todoPrefix = opts.type === "todo" ? "TODO " : "";
-  const headingLine = `* ${todoPrefix}${opts.heading}${tagStr}`;
+  const priorityPrefix = opts.priority ? `[#${opts.priority}] ` : "";
+  const headingLine = `* ${todoPrefix}${priorityPrefix}${opts.heading}${tagStr}`;
 
   const makeTs = (date: string, time: string | undefined, repeater: string | null | undefined): string => {
     const d = new Date(date + "T00:00:00");
@@ -543,6 +548,7 @@ function openAddPanel(): void {
   if (!addPanelEl || !addOverlayEl || !addPanelRefs) return;
 
   editingLine = null;
+  editingPriority = null;
   editingSchedRepeater = null;
   editingDeadRepeater = null;
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Add item";
@@ -581,6 +587,7 @@ function openEditPanel(sourceLine: number): void {
   if (!entry) return;
 
   editingLine = sourceLine;
+  editingPriority = entry.priority;
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Edit item";
 
   const refs = addPanelRefs;

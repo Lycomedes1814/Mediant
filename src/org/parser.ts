@@ -41,7 +41,7 @@
  *     want to avoid treating drawer syntax as body text.
  */
 
-import type { OrgEntry, OrgPlanning, TodoState } from "./model.ts";
+import type { OrgEntry, OrgPlanning, Priority, TodoState } from "./model.ts";
 import type { OrgTimestamp } from "./timestamp.ts";
 import { parseTimestamps, TIMESTAMP_RE } from "./timestamp.ts";
 
@@ -52,6 +52,9 @@ const HEADING_RE = /^(\*+)\s+((?:TODO|DONE)\s+)?(.+)$/;
 
 /** Matches tags at the end of a heading title. Group 1 = full tag string including colons. */
 const TAGS_RE = /\s+(:[a-zA-Z0-9_@]+(?::[a-zA-Z0-9_@]+)*:)\s*$/;
+
+/** Matches a priority cookie at the start of a heading remainder. Group 1 = letter. */
+const PRIORITY_RE = /^\[#([A-C])\]\s*/;
 
 /** Matches a SCHEDULED or DEADLINE planning line. Groups: 1=keyword, 2=rest of line. */
 const PLANNING_RE = /^\s*(SCHEDULED|DEADLINE):\s*(.+)$/;
@@ -176,6 +179,7 @@ export function parseOrg(source: string): OrgEntry[] {
 interface MutableEntry {
   level: number;
   todo: TodoState;
+  priority: Priority;
   title: string;
   tags: string[];
   planning: OrgPlanning[];
@@ -190,6 +194,14 @@ function parseHeading(match: RegExpMatchArray, lineNumber: number): MutableEntry
   const todo: TodoState = todoRaw === "TODO" || todoRaw === "DONE" ? todoRaw : null;
 
   let remainder = match[3];
+
+  // Extract priority cookie ([#A]/[#B]/[#C]) at the start of the remainder
+  let priority: Priority = null;
+  const priorityMatch = remainder.match(PRIORITY_RE);
+  if (priorityMatch) {
+    priority = priorityMatch[1] as Priority;
+    remainder = remainder.slice(priorityMatch[0].length);
+  }
 
   // Extract tags from the end of the title
   const tags: string[] = [];
@@ -212,6 +224,7 @@ function parseHeading(match: RegExpMatchArray, lineNumber: number): MutableEntry
   return {
     level,
     todo,
+    priority,
     title,
     tags,
     planning: [],
@@ -234,6 +247,7 @@ function finalizeEntry(entry: MutableEntry): OrgEntry {
   return {
     level: entry.level,
     todo: entry.todo,
+    priority: entry.priority,
     title: entry.title,
     tags: entry.tags,
     planning: entry.planning,

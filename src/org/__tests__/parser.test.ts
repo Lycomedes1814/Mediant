@@ -61,6 +61,41 @@ describe("todo states", () => {
   });
 });
 
+// ── Priority ─────────────────────────────────────────────────────────
+
+describe("priority", () => {
+  it("parses [#A] after TODO keyword and strips from title", () => {
+    const entries = parseOrg("** TODO [#A] Urgent task\n");
+    expect(entries[0].priority).toBe("A");
+    expect(entries[0].title).toBe("Urgent task");
+  });
+
+  it("parses [#B] without TODO keyword", () => {
+    const entries = parseOrg("** [#B] Plain heading\n");
+    expect(entries[0].priority).toBe("B");
+    expect(entries[0].title).toBe("Plain heading");
+  });
+
+  it("parses [#C] with DONE and tags", () => {
+    const entries = parseOrg("** DONE [#C] Done task :work:\n");
+    expect(entries[0].priority).toBe("C");
+    expect(entries[0].todo).toBe("DONE");
+    expect(entries[0].title).toBe("Done task");
+    expect(entries[0].tags).toEqual(["work"]);
+  });
+
+  it("priority is null when no cookie present", () => {
+    const entries = parseOrg("** TODO Task\n");
+    expect(entries[0].priority).toBeNull();
+  });
+
+  it("ignores unknown priority letters", () => {
+    const entries = parseOrg("** TODO [#D] Task\n");
+    expect(entries[0].priority).toBeNull();
+    expect(entries[0].title).toBe("[#D] Task");
+  });
+});
+
 // ── Tags ─────────────────────────────────────────────────────────────
 
 describe("tags", () => {

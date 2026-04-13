@@ -11,6 +11,7 @@ function entry(overrides: Partial<OrgEntry> & { title: string }): OrgEntry {
   return {
     level: 2,
     todo: null,
+    priority: null,
     tags: [],
     planning: [],
     timestamps: [],

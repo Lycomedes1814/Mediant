@@ -2,6 +2,8 @@ import type { OrgTimestamp } from "./timestamp.ts";
 
 export type TodoState = "TODO" | "DONE" | null;
 
+export type Priority = "A" | "B" | "C" | null;
+
 /**
  * A SCHEDULED or DEADLINE planning entry attached to a heading.
  */
@@ -34,6 +36,7 @@ export interface OrgPlanning {
 export interface OrgEntry {
   readonly level: number;
   readonly todo: TodoState;
+  readonly priority: Priority;
   readonly title: string;
   readonly tags: readonly string[];
   readonly planning: readonly OrgPlanning[];

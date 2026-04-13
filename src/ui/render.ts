@@ -129,8 +129,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     const state = el("span", "item-state");
     state.textContent = dl.entry.todo ?? "";
 
-    const title = el("span", "item-title");
-    title.textContent = dl.entry.title;
+    const title = renderTitle(dl.entry);
 
     row.append(time, state, title, renderTags(dl.entry.tags), renderEditBtn(dl.entry.sourceLineNumber));
     section.appendChild(row);
@@ -157,8 +156,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
     const kind = el("span", "item-kind");
     kind.textContent = item.kind === "deadline" ? "DEADLINE" : "SCHEDULED";
 
-    const title = el("span", "item-title");
-    title.textContent = item.entry.title;
+    const title = renderTitle(item.entry);
 
     row.append(time, kind, title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
     section.appendChild(row);
@@ -182,8 +180,7 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
     const state = el("span", "item-state");
     state.textContent = "TODO";
 
-    const title = el("span", "item-title");
-    title.textContent = item.entry.title;
+    const title = renderTitle(item.entry);
 
     row.append(state, title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
     section.appendChild(row);
@@ -287,8 +284,7 @@ function renderAllDayItem(item: AgendaItem): HTMLElement {
   const primaryTag = item.entry.tags[0];
   if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
 
-  const title = el("span", "item-title");
-  title.textContent = item.entry.title;
+  const title = renderTitle(item.entry);
 
   row.append(title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
   return row;
@@ -304,8 +300,7 @@ function renderTimedItem(item: AgendaItem): HTMLElement {
   const time = el("span", "item-time");
   time.textContent = formatTimeRange(item.startTime, item.endTime);
 
-  const title = el("span", "item-title");
-  title.textContent = item.entry.title;
+  const title = renderTitle(item.entry);
 
   row.append(time, title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
   return row;
@@ -321,8 +316,7 @@ function renderScheduledItem(item: AgendaItem): HTMLElement {
   const state = el("span", "item-state");
   state.textContent = item.entry.todo ?? "TODO";
 
-  const title = el("span", "item-title");
-  title.textContent = item.entry.title;
+  const title = renderTitle(item.entry);
 
   if (item.startTime) {
     row.classList.add("has-time");
@@ -345,8 +339,7 @@ function renderDayDeadlineItem(item: AgendaItem): HTMLElement {
   const kind = el("span", "item-kind");
   kind.textContent = "DEADLINE";
 
-  const title = el("span", "item-title");
-  title.textContent = item.entry.title;
+  const title = renderTitle(item.entry);
 
   if (item.startTime) {
     row.classList.add("has-time");
@@ -377,6 +370,19 @@ function renderNowLine(): HTMLElement {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
+
+function renderTitle(entry: { title: string; priority: "A" | "B" | "C" | null }): HTMLElement {
+  const title = el("span", "item-title");
+  if (entry.priority) {
+    const badge = el("span", `item-priority priority-${entry.priority}`);
+    badge.textContent = entry.priority;
+    title.appendChild(badge);
+    title.appendChild(document.createTextNode(" " + entry.title));
+  } else {
+    title.textContent = entry.title;
+  }
+  return title;
+}
 
 function renderTags(tags: readonly string[]): HTMLElement {
   const badges = el("span", "tag-badges");
