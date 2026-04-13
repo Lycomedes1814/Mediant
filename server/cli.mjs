@@ -134,7 +134,14 @@ function startWatcher() {
 startWatcher();
 
 function serveStatic(req, res) {
-  let urlPath = decodeURIComponent(req.url.split("?")[0]);
+  let urlPath;
+  try {
+    urlPath = decodeURIComponent((req.url ?? "/").split("?")[0]);
+  } catch {
+    res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Bad request");
+    return;
+  }
   if (urlPath === "/") urlPath = "/index.html";
   const resolved = path.resolve(distDir, "." + urlPath);
   if (!resolved.startsWith(distDir + path.sep) && resolved !== distDir) {

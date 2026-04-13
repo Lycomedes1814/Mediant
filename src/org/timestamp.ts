@@ -71,8 +71,9 @@ export const TIMESTAMP_RE =
 
 // ── Parsing ──────────────────────────────────────────────────────────
 
-function parseRepeater(raw: string): OrgRepeater {
+function parseRepeater(raw: string): OrgRepeater | null {
   const value = parseInt(raw.slice(1, -1), 10);
+  if (!Number.isFinite(value) || value <= 0) return null;
   const unit = raw.slice(-1) as OrgRepeater["unit"];
   return { value, unit };
 }
@@ -82,11 +83,12 @@ function parseRepeater(raw: string): OrgRepeater {
  * Exposed so the parser can drive its own regex control flow if needed.
  */
 export function timestampFromMatch(match: RegExpMatchArray): OrgTimestamp {
+  const repeater = match[4] ? parseRepeater(match[4]) : null;
   return {
     date: match[1],
     startTime: match[2] ?? null,
     endTime: match[3] ?? null,
-    repeater: match[4] ? parseRepeater(match[4]) : null,
+    repeater,
     raw: match[0],
   };
 }

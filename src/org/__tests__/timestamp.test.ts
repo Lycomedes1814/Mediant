@@ -69,6 +69,12 @@ describe("parseTimestamps", () => {
     expect(results[0].repeater).toEqual({ value: 2, unit: "w" });
   });
 
+  it("ignores zero-value repeaters", () => {
+    const results = parseTimestamps("<2026-04-06 ma. +0d>");
+    expect(results).toHaveLength(1);
+    expect(results[0].repeater).toBeNull();
+  });
+
   it("handles Norwegian weekday names", () => {
     for (const day of ["ma.", "ti.", "on.", "to.", "fr.", "lø.", "sø."]) {
       const results = parseTimestamps(`<2026-04-07 ${day}>`);
