@@ -399,7 +399,7 @@ function makeDateTimeInput(label: string, id: string): { container: HTMLElement;
   input.type = "text";
   input.id = id;
   input.className = "add-input";
-  input.placeholder = "DD[/MM[/YYYY]] [HH:MM[-HH:MM]]";
+  input.placeholder = "DD[/MM[/YYYY]] [HH:MM[-HH:MM]] | HH:MM";
 
   container.append(lbl, input);
   return { container, input };
@@ -426,7 +426,12 @@ function parseDateTime(raw: string): { date: string; time: string } | null {
     dateRaw = parts.join(" ");
   }
 
-  if (!dateRaw) return null;
+  if (!dateRaw) {
+    if (!time) return null;
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return { date: today, time };
+  }
   const date = expandDate(dateRaw);
   if (!date) return null;
   return { date, time };
