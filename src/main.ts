@@ -14,6 +14,7 @@ let currentStart = todayMidnight();
 let currentSource = localStorage.getItem("mediant-org-source") ?? "";
 let serverMode = false;
 let serverVersion: string | null = null;
+let agendaLoaded = false;
 
 // ── Tag editor panel ────────────────────────────────────────────────
 
@@ -663,7 +664,7 @@ async function init(): Promise<void> {
  */
 function startClockTicker(): void {
   const tick = (): void => {
-    if (document.visibilityState === "visible") render();
+    if (agendaLoaded && document.visibilityState === "visible") render();
   };
   const msToNextMinute = 60_000 - (Date.now() % 60_000);
   setTimeout(() => {
@@ -672,7 +673,7 @@ function startClockTicker(): void {
   }, msToNextMinute);
   // Also refresh immediately when the tab becomes visible again.
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") render();
+    if (agendaLoaded && document.visibilityState === "visible") render();
   });
 }
 
@@ -758,6 +759,7 @@ async function probeServer(): Promise<boolean> {
   } catch {
     return false;
   }
+<<<<<<< HEAD
 }
 
 /**
@@ -837,6 +839,7 @@ function render(): void {
   const container = document.getElementById("agenda");
   if (!container) return;
 
+  agendaLoaded = true;
   const today = new Date();
   const week = generateWeek(entries, currentStart);
   const deadlines = collectDeadlines(entries, today);
