@@ -186,25 +186,17 @@ function dayOffsetIndex(date: Date, rangeStart: Date): number {
   return Math.round((dateMs - startMs) / (1000 * 60 * 60 * 24));
 }
 
-/** Category sort order: all-day → deadline → timed → scheduled.
- * Deadlines sort before timed events: they are more urgent/actionable. */
-const CATEGORY_ORDER: Record<RenderCategory, number> = {
-  "all-day": 0,
-  "deadline": 1,
-  "timed": 2,
-  "scheduled": 3,
-};
-
 /**
- * Effective sort order for an item. Timed events and scheduled items
- * with a time are interleaved by start time (both get order 2).
- * All-day stays first, then deadlines and untimed scheduled, then timed.
+ * Effective sort order for an item:
+ *   0. all-day
+ *   1. untimed deadlines and untimed scheduled (can't be placed on the timeline)
+ *   2. anything with a start time — timed events, scheduled-with-time,
+ *      and timed deadlines all interleave by startTime
  */
 function effectiveOrder(item: AgendaItem): number {
   if (item.category === "all-day") return 0;
-  if (item.category === "deadline") return 1;
-  if (item.category === "scheduled" && !item.startTime) return 1;
-  return 2; // timed, scheduled-with-time
+  if (!item.startTime) return 1;
+  return 2;
 }
 
 /**
@@ -212,8 +204,9 @@ function effectiveOrder(item: AgendaItem): number {
  *
  * Order:
  *   1. all-day items (alphabetical)
- *   2. deadlines and untimed scheduled (alphabetical)
- *   3. timed events and scheduled-with-time, interleaved by startTime
+ *   2. untimed deadlines and untimed scheduled (alphabetical)
+ *   3. everything with a time (timed events, scheduled-with-time,
+ *      timed deadlines) interleaved by startTime
  */
 function compareItems(a: AgendaItem, b: AgendaItem): number {
   const orderDiff = effectiveOrder(a) - effectiveOrder(b);
