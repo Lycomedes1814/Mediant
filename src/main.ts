@@ -11,6 +11,7 @@ const MAX_INPUT_BYTES = 4 * 1024 * 1024; // 4 MB
 
 let entries = parseOrg("");
 let currentStart = todayMidnight();
+let agendaLoaded = false;
 
 // ── Tag editor panel ────────────────────────────────────────────────
 
@@ -662,7 +663,7 @@ function init(): void {
  */
 function startClockTicker(): void {
   const tick = (): void => {
-    if (document.visibilityState === "visible") render();
+    if (agendaLoaded && document.visibilityState === "visible") render();
   };
   const msToNextMinute = 60_000 - (Date.now() % 60_000);
   setTimeout(() => {
@@ -671,7 +672,7 @@ function startClockTicker(): void {
   }, msToNextMinute);
   // Also refresh immediately when the tab becomes visible again.
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") render();
+    if (agendaLoaded && document.visibilityState === "visible") render();
   });
 }
 
@@ -747,6 +748,7 @@ function loadFromTextarea(source: string): void {
   localStorage.setItem("mediant-org-source", source);
   entries = parseOrg(source);
   currentStart = todayMidnight();
+  agendaLoaded = true;
   render();
 }
 
