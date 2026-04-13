@@ -126,8 +126,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     const time = el("span", "item-time");
     time.textContent = dl.daysUntil === 0 ? "Due today" : `Due ${dl.daysUntil}d`;
 
-    const state = el("span", "item-state");
-    state.textContent = dl.entry.todo ?? "";
+    const state = renderStateBadge(dl.entry);
 
     const title = renderTitle(dl.entry);
 
@@ -176,9 +175,9 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
 
   for (const item of items) {
     const row = el("div", "someday-item");
+    if (item.entry.todo === "DONE") row.classList.add("item-done");
 
-    const state = el("span", "item-state");
-    state.textContent = "TODO";
+    const state = renderStateBadge(item.entry, "TODO");
 
     const title = renderTitle(item.entry);
 
@@ -289,9 +288,7 @@ function renderAllDayItem(item: AgendaItem): HTMLElement {
   const children: HTMLElement[] = [];
   if (item.entry.todo) {
     row.classList.add("has-state");
-    const state = el("span", "item-state");
-    state.textContent = item.entry.todo;
-    children.push(state);
+    children.push(renderStateBadge(item.entry));
   }
   children.push(title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
   row.append(...children);
@@ -313,9 +310,7 @@ function renderTimedItem(item: AgendaItem): HTMLElement {
   const children: HTMLElement[] = [time];
   if (item.entry.todo) {
     row.classList.add("has-state");
-    const state = el("span", "item-state");
-    state.textContent = item.entry.todo;
-    children.push(state);
+    children.push(renderStateBadge(item.entry));
   }
   children.push(title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
   row.append(...children);
@@ -329,8 +324,7 @@ function renderScheduledItem(item: AgendaItem): HTMLElement {
   const primaryTag = item.entry.tags[0];
   if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
 
-  const state = el("span", "item-state");
-  state.textContent = item.entry.todo ?? "TODO";
+  const state = renderStateBadge(item.entry, "TODO");
 
   const title = renderTitle(item.entry);
 
@@ -366,6 +360,25 @@ function renderDayDeadlineItem(item: AgendaItem): HTMLElement {
     row.append(kind, title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
   }
   return row;
+}
+
+// ── State badge ─────────────────────────────────────────────────────
+
+function renderStateBadge(
+  entry: { todo: "TODO" | "DONE" | null; sourceLineNumber: number },
+  fallback?: string,
+): HTMLElement {
+  const state = el("span", "item-state");
+  state.textContent = entry.todo ?? fallback ?? "";
+  if (entry.todo) {
+    state.classList.add("is-toggleable");
+    state.dataset.action = "toggle-done";
+    state.dataset.line = String(entry.sourceLineNumber);
+    state.setAttribute("role", "button");
+    state.setAttribute("tabindex", "0");
+    state.setAttribute("aria-label", entry.todo === "TODO" ? "Mark done" : "Mark not done");
+  }
+  return state;
 }
 
 // ── Edit button ─────────────────────────────────────────────────────

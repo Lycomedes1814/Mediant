@@ -135,13 +135,16 @@ export function collectSomedayItems(entries: OrgEntry[]): SomedayItem[] {
   const results: SomedayItem[] = [];
 
   for (const entry of entries) {
-    if (entry.todo !== "TODO") continue;
+    if (entry.todo !== "TODO" && entry.todo !== "DONE") continue;
     if (entry.timestamps.length > 0) continue;
     if (entry.planning.length > 0) continue;
     results.push({ entry });
   }
 
-  results.sort((a, b) => a.entry.title.localeCompare(b.entry.title));
+  results.sort((a, b) => {
+    if (a.entry.todo !== b.entry.todo) return a.entry.todo === "DONE" ? 1 : -1;
+    return a.entry.title.localeCompare(b.entry.title);
+  });
   return results;
 }
 

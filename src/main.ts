@@ -532,6 +532,21 @@ function replaceOrgBlock(sourceLine: number, newText: string): void {
   render();
 }
 
+/**
+ * Flip TODO↔DONE on the heading line of the entry at `sourceLine`. Edits
+ * only the heading, leaving planning lines and body untouched.
+ */
+async function toggleDone(sourceLine: number): Promise<void> {
+  const lines = currentSource.split("\n");
+  const idx = sourceLine - 1;
+  if (idx < 0 || idx >= lines.length) return;
+  const m = lines[idx].match(/^(\*+\s+)(TODO|DONE)(\b.*)?$/);
+  if (!m) return;
+  const next = m[2] === "TODO" ? "DONE" : "TODO";
+  lines[idx] = `${m[1]}${next}${m[3] ?? ""}`;
+  await persistSource(lines.join("\n"));
+}
+
 function appendOrgText(orgText: string): void {
   const existing = localStorage.getItem("mediant-org-source") ?? "";
   const updated = existing.trimEnd() + "\n" + orgText + "\n";
@@ -791,6 +806,10 @@ function setupNavigation(): void {
     } else if (action === "edit") {
       const line = Number(btn.dataset.line);
       if (line) openEditPanel(line);
+    } else if (action === "toggle-done") {
+      e.stopPropagation();
+      const line = Number(btn.dataset.line);
+      if (line) void toggleDone(line);
     }
   });
 }
