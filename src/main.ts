@@ -11,6 +11,9 @@ const MAX_INPUT_BYTES = 4 * 1024 * 1024; // 4 MB
 
 let entries = parseOrg("");
 let currentStart = todayMidnight();
+let currentSource = localStorage.getItem("mediant-org-source") ?? "";
+let serverMode = false;
+let serverVersion: string | null = null;
 
 // ── Tag editor panel ────────────────────────────────────────────────
 
@@ -496,7 +499,7 @@ function buildOrgText(opts: BuildOrgOpts): string {
  * including) the next heading or EOF.
  */
 function replaceOrgBlock(sourceLine: number, newText: string): void {
-  const existing = localStorage.getItem("mediant-org-source") ?? "";
+  const existing = currentSource;
   const lines = existing.split("\n");
   const startIdx = sourceLine - 1;
   if (startIdx < 0 || startIdx >= lines.length) return;
@@ -523,25 +526,12 @@ function replaceOrgBlock(sourceLine: number, newText: string): void {
     ...lines.slice(endIdx),
   ].join("\n");
 
-  if (exceedsLimit(updated)) {
-    alert("Edit would exceed the 4 MB limit.");
-    return;
-  }
-  localStorage.setItem("mediant-org-source", updated);
-  entries = parseOrg(updated);
-  render();
+  void persistSource(updated);
 }
 
 function appendOrgText(orgText: string): void {
-  const existing = localStorage.getItem("mediant-org-source") ?? "";
-  const updated = existing.trimEnd() + "\n" + orgText + "\n";
-  if (exceedsLimit(updated)) {
-    alert("Adding this item would exceed the 4 MB limit.");
-    return;
-  }
-  localStorage.setItem("mediant-org-source", updated);
-  entries = parseOrg(updated);
-  render();
+  const updated = currentSource.trimEnd() + "\n" + orgText + "\n";
+  void persistSource(updated);
 }
 
 function openAddPanel(): void {
@@ -647,12 +637,23 @@ function closeAddPanel(): void {
 
 // ── Bootstrap ────────────────────────────────────────────────────────
 
-function init(): void {
+async function init(): Promise<void> {
   buildTagEditorPanel();
   buildAddPanel();
   setupNavigation();
-  showInput();
   startClockTicker();
+
+  // If a local Mediant server is running, hydrate from the configured
+  // Org file and skip the textarea input screen entirely.
+  const isServer = await probeServer();
+  if (isServer) {
+    entries = parseOrg(currentSource);
+    currentStart = todayMidnight();
+    render();
+    subscribeToServerChanges();
+  } else {
+    showInput();
+  }
 }
 
 /**
@@ -739,15 +740,95 @@ function exceedsLimit(source: string): boolean {
   return new Blob([source]).size > MAX_INPUT_BYTES;
 }
 
-function loadFromTextarea(source: string): void {
-  if (exceedsLimit(source)) {
-    alert("Input exceeds the 4 MB limit. Please use a smaller file.");
-    return;
+// ── Source persistence ─────────────────────────────────────────────
+
+/**
+ * Probe for a running Mediant server. In server mode, the UI reads/writes
+ * the configured Org file via /api/source instead of localStorage, and
+ * subscribes to /api/events for external file changes.
+ */
+async function probeServer(): Promise<boolean> {
+  try {
+    const r = await fetch("/api/source");
+    if (!r.ok) return false;
+    serverVersion = r.headers.get("X-Version");
+    currentSource = await r.text();
+    serverMode = true;
+    return true;
+  } catch {
+    return false;
   }
-  localStorage.setItem("mediant-org-source", source);
-  entries = parseOrg(source);
-  currentStart = todayMidnight();
+}
+
+/**
+ * Write `updated` to the active backend (server PUT or localStorage),
+ * then refresh entries and re-render. On a server version mismatch
+ * (409), reload the file from disk — the on-disk copy wins.
+ */
+async function persistSource(updated: string): Promise<boolean> {
+  if (exceedsLimit(updated)) {
+    alert("Source exceeds the 4 MB limit.");
+    return false;
+  }
+
+  if (serverMode) {
+    try {
+      const headers: Record<string, string> = { "Content-Type": "text/plain; charset=utf-8" };
+      if (serverVersion) headers["If-Match"] = serverVersion;
+      const r = await fetch("/api/source", { method: "PUT", headers, body: updated });
+      if (r.status === 409) {
+        alert("File was modified externally; reloading from disk.");
+        await reloadFromServer();
+        return false;
+      }
+      if (!r.ok) {
+        alert(`Failed to save: ${r.status} ${r.statusText}`);
+        return false;
+      }
+      serverVersion = r.headers.get("X-Version");
+      currentSource = updated;
+      entries = parseOrg(updated);
+      render();
+      return true;
+    } catch (e) {
+      alert(`Save failed: ${(e as Error).message}`);
+      return false;
+    }
+  }
+
+  localStorage.setItem("mediant-org-source", updated);
+  currentSource = updated;
+  entries = parseOrg(updated);
   render();
+  return true;
+}
+
+async function reloadFromServer(): Promise<void> {
+  try {
+    const r = await fetch("/api/source");
+    if (!r.ok) return;
+    serverVersion = r.headers.get("X-Version");
+    currentSource = await r.text();
+    entries = parseOrg(currentSource);
+    render();
+  } catch {
+    // swallow — next SSE event or user action will retry
+  }
+}
+
+function subscribeToServerChanges(): void {
+  const es = new EventSource("/api/events");
+  es.onmessage = (ev) => {
+    if (ev.data && ev.data !== serverVersion) {
+      void reloadFromServer();
+    }
+  };
+  // On transient disconnect EventSource auto-reconnects; nothing to do.
+}
+
+async function loadFromTextarea(source: string): Promise<void> {
+  currentStart = todayMidnight();
+  await persistSource(source);
 }
 
 // ── Render ───────────────────────────────────────────────────────────
@@ -806,4 +887,4 @@ function todayMidnight(): Date {
 if (localStorage.getItem("theme") === "dark") {
   document.documentElement.dataset.theme = "dark";
 }
-init();
+void init();

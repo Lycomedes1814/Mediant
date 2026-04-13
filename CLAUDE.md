@@ -2,7 +2,7 @@
 
 ## Project overview
 
-Mediant is a minimal Org-mode parser and agenda viewer. It parses a focused subset of Org syntax and renders a responsive rolling 7-day agenda in HTML/CSS. Users paste Org content into a textarea to load the agenda. No framework dependencies.
+Mediant is a minimal Org-mode parser and agenda viewer. It parses a focused subset of Org syntax and renders a responsive rolling 7-day agenda in HTML/CSS. It runs in two modes: a **static mode** where users paste Org content into a textarea (localStorage-backed), and a **server mode** where a local Node CLI (`mediant <file.org>`) serves the UI and streams the configured Org file over `/api/source` + SSE. No framework dependencies.
 
 ## Architecture
 
@@ -32,7 +32,8 @@ Three clearly separated stages — do not collapse them:
 | `src/ui/render.ts` | DOM rendering from `AgendaWeek` + `DeadlineItem[]` + `OverdueItem[]`. |
 | `src/ui/tagColors.ts` | Dynamic tag color management. Auto-assigns from palette, persists in localStorage. |
 | `src/ui/style.css` | All styles. CSS grid layout with fixed time column. |
-| `src/main.ts` | Entry point. Shows textarea input, wires parser → agenda → render. Tag editor & add-item panels. |
+| `src/main.ts` | Entry point. Probes `/api/source` on boot; if present, enters server mode (hydrates from the server, subscribes to `/api/events` for external file changes). Otherwise shows the textarea input screen backed by localStorage. Tag editor & add-item panels. |
+| `server/cli.mjs` | Node CLI + HTTP server. `mediant <file.org> [--port N] [--daemon]`. Serves `dist/` plus `GET/PUT /api/source` (with `If-Match` version checks) and `GET /api/events` SSE backed by `fs.watch`. Node built-ins only, no deps. |
 
 ## Commands
 
@@ -40,7 +41,18 @@ Three clearly separated stages — do not collapse them:
 npm test              # run all tests (vitest)
 npm run test:watch    # vitest in watch mode
 npx vite              # dev server (serves index.html)
+npm run build         # build dist/ for the server to serve
+npm start <file.org>  # build + start the local server against a file
 ```
+
+## Server mode
+
+- `server/cli.mjs` is a self-contained Node script — no dependencies beyond Node built-ins (`http`, `fs`, `child_process`, etc.). Do not add npm deps to it casually.
+- Version token is `mtimeMs` as a string. Client sends `If-Match: <version>` on `PUT /api/source`; mismatch → 409, client reloads from disk (disk wins).
+- `fs.watch` fires multiple times per write on some platforms — the watcher is debounced 100 ms and only broadcasts on real `mtimeMs` changes.
+- SSE clients receive `data: <version>\n\n`; the client ignores events whose version matches its own (so it doesn't reload after its own PUT).
+- Server binds to `127.0.0.1` only. Auth is intentionally absent — the assumption is Tailscale or equivalent for remote access.
+- `--daemon` re-execs the same node script detached with `MEDIANT_CHILD=1` and the flag stripped, then the parent prints the PID and exits. Stop with `kill <pid>`.
 
 ## Design principles
 
@@ -78,9 +90,9 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Now line** on today's card — red line positioned proportionally within the timed section
 - **Navigation** — prev/next by 7-day increments, "Today" button returns to today as start date
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE), sorted alphabetically
-- **Add-item panel** — slide-in panel for creating TODO tasks and events. Generates Org text and appends to localStorage source.
+- **Add-item panel** — slide-in panel for creating TODO tasks and events. Generates Org text and appends to the active source (server file or localStorage).
 - **Edit-item panel** — same slide-in panel, opened from a per-item edit button. Rewrites the existing Org block in place, preserving body lines.
-- **Org source persistence** — textarea content saved to `localStorage` (`mediant-org-source`) and auto-filled on reload
+- **Org source persistence** — in static mode, the textarea content is saved to `localStorage` (`mediant-org-source`). In server mode, the source is the file passed to `mediant <file.org>` and localStorage is not used for it. All writes flow through `persistSource()` in `main.ts`, which dispatches to the active backend.
 
 ## Testing
 

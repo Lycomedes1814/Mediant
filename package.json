@@ -3,8 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "mediant": "./server/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "server"
+  ],
   "scripts": {
     "build": "vite build",
+    "start": "vite build && node server/cli.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
