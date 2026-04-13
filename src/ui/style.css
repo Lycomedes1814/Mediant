@@ -224,6 +224,21 @@ body {
   gap: 0 0.5rem;
 }
 
+.allday-item.has-state {
+  grid-template-columns: auto 1fr auto;
+}
+
+.allday-item .item-state,
+.timed-item .item-state {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0 0.25rem;
+  line-height: 1.4;
+}
+
 .allday-item + .allday-item {
   border-top: 1px solid var(--border-light);
 }
@@ -245,6 +260,10 @@ body {
   font-size: 0.875rem;
   border-left: 3px solid transparent;
   gap: 0 0.5rem;
+}
+
+.timed-item.has-state {
+  grid-template-columns: var(--time-col) auto 1fr auto;
 }
 
 .timed-item + .timed-item,

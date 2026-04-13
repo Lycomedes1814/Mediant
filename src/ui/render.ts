@@ -286,7 +286,15 @@ function renderAllDayItem(item: AgendaItem): HTMLElement {
 
   const title = renderTitle(item.entry);
 
-  row.append(title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+  const children: HTMLElement[] = [];
+  if (item.entry.todo) {
+    row.classList.add("has-state");
+    const state = el("span", "item-state");
+    state.textContent = item.entry.todo;
+    children.push(state);
+  }
+  children.push(title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+  row.append(...children);
   return row;
 }
 
@@ -302,7 +310,15 @@ function renderTimedItem(item: AgendaItem): HTMLElement {
 
   const title = renderTitle(item.entry);
 
-  row.append(time, title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+  const children: HTMLElement[] = [time];
+  if (item.entry.todo) {
+    row.classList.add("has-state");
+    const state = el("span", "item-state");
+    state.textContent = item.entry.todo;
+    children.push(state);
+  }
+  children.push(title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+  row.append(...children);
   return row;
 }
 
