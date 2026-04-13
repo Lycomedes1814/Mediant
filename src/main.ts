@@ -759,7 +759,6 @@ async function probeServer(): Promise<boolean> {
   } catch {
     return false;
   }
-<<<<<<< HEAD
 }
 
 /**
