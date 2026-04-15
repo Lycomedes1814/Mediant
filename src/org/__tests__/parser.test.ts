@@ -158,6 +158,17 @@ describe("planning", () => {
     expect(entries[0].planning[1].kind).toBe("deadline");
   });
 
+  it("parses DEADLINE and SCHEDULED on the same line", () => {
+    const entries = parseOrg(
+      "** TODO both\nDEADLINE: <2026-04-19 Sun> SCHEDULED: <2026-04-18 Sat>\n",
+    );
+    expect(entries[0].planning).toHaveLength(2);
+    expect(entries[0].planning[0].kind).toBe("deadline");
+    expect(entries[0].planning[0].timestamp.date).toBe("2026-04-19");
+    expect(entries[0].planning[1].kind).toBe("scheduled");
+    expect(entries[0].planning[1].timestamp.date).toBe("2026-04-18");
+  });
+
   it("planning not accepted after body text starts", () => {
     const entries = parseOrg(
       "** Heading\nSome body text\nSCHEDULED: <2026-04-14 ti.>\n",

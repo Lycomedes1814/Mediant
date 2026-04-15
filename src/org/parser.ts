@@ -56,8 +56,15 @@ const TAGS_RE = /\s+(:[a-zA-Z0-9_@]+(?::[a-zA-Z0-9_@]+)*:)\s*$/;
 /** Matches a priority cookie at the start of a heading remainder. Group 1 = letter. */
 const PRIORITY_RE = /^\[#([A-C])\]\s*/;
 
-/** Matches a SCHEDULED or DEADLINE planning line. Groups: 1=keyword, 2=rest of line. */
-const PLANNING_RE = /^\s*(SCHEDULED|DEADLINE):\s*(.+)$/;
+/** Matches a line that begins with a planning keyword. */
+const PLANNING_LINE_RE = /^\s*(?:SCHEDULED|DEADLINE):/;
+
+/**
+ * Matches each "SCHEDULED: <ts>" / "DEADLINE: <ts>" pair on a planning line.
+ * Org writes both on the same line, space-separated, so a single line may
+ * contribute multiple planning entries.
+ */
+const PLANNING_PAIR_RE = /(SCHEDULED|DEADLINE):\s*(<[^>]*>)/g;
 
 /** Matches lines that are entirely a drawer boundary. */
 const DRAWER_OPEN_RE = /^\s*:[A-Z_]+:\s*$/;
@@ -122,18 +129,18 @@ export function parseOrg(source: string): OrgEntry[] {
     }
 
     // Planning line (SCHEDULED/DEADLINE) — only accepted immediately after heading.
-    // In v1, only the first active timestamp on the planning line is used.
-    // A line like "SCHEDULED: <ts1> <ts2>" would only capture <ts1>.
-    if (acceptPlanning) {
-      const planningMatch = line.match(PLANNING_RE);
-      if (planningMatch) {
-        const kind = planningMatch[1].toLowerCase() as OrgPlanning["kind"];
-        const timestamps = parseTimestamps(planningMatch[2]);
+    // Org writes both keywords on the same line, space-separated:
+    //   "DEADLINE: <ts1> SCHEDULED: <ts2>"
+    // so iterate every "KIND: <ts>" pair on the line.
+    if (acceptPlanning && PLANNING_LINE_RE.test(line)) {
+      for (const pm of line.matchAll(PLANNING_PAIR_RE)) {
+        const kind = pm[1].toLowerCase() as OrgPlanning["kind"];
+        const timestamps = parseTimestamps(pm[2]);
         if (timestamps.length > 0) {
           current.planning.push({ kind, timestamp: timestamps[0] });
         }
-        continue;
       }
+      continue;
     }
 
     // Once we see a non-planning line, stop accepting planning

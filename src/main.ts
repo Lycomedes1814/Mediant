@@ -485,10 +485,13 @@ function buildOrgText(opts: BuildOrgOpts): string {
     return `${headingLine}\n  ${makeTs(opts.date, opts.time, opts.repeater)}`;
   }
 
-  // TODO: up to one SCHEDULED and one DEADLINE
+  // TODO: up to one SCHEDULED and one DEADLINE, emitted together on a single
+  // planning line per Org convention (DEADLINE first, then SCHEDULED).
   const lines: string[] = [headingLine];
-  if (opts.schedDate) lines.push(`  SCHEDULED: ${makeTs(opts.schedDate, opts.schedTime, opts.schedRepeater)}`);
-  if (opts.deadDate) lines.push(`  DEADLINE: ${makeTs(opts.deadDate, opts.deadTime, opts.deadRepeater)}`);
+  const planningParts: string[] = [];
+  if (opts.deadDate) planningParts.push(`DEADLINE: ${makeTs(opts.deadDate, opts.deadTime, opts.deadRepeater)}`);
+  if (opts.schedDate) planningParts.push(`SCHEDULED: ${makeTs(opts.schedDate, opts.schedTime, opts.schedRepeater)}`);
+  if (planningParts.length > 0) lines.push("  " + planningParts.join(" "));
   return lines.join("\n");
 }
 
@@ -510,22 +513,22 @@ function replaceOrgBlock(sourceLine: number, newText: string): void {
     if (/^\*+\s/.test(lines[i])) { endIdx = i; break; }
   }
 
-  // The new block re-emits at most one SCHEDULED, one DEADLINE, and one
-  // bare timestamp. Drop only the first occurrence of each kind the new
-  // block actually contains; leave every other structural line alone so
-  // entries with multiple active timestamps don't lose data on save.
-  const schedRe = /^\s*SCHEDULED:\s*<\d{4}-\d{2}-\d{2}/;
-  const deadRe = /^\s*DEADLINE:\s*<\d{4}-\d{2}-\d{2}/;
+  // The new block re-emits at most one combined planning line (DEADLINE
+  // and/or SCHEDULED) and one bare timestamp. Since the edit panel always
+  // re-populates both planning fields from the entry before saving, the
+  // new block reflects the full desired planning state — so drop every
+  // old planning line when the new block has one. Leave every other
+  // structural line alone so entries with multiple active timestamps
+  // don't lose data on save.
+  const planningRe = /^\s*(?:SCHEDULED|DEADLINE):\s*</;
   const bareRe = /^\s*<\d{4}-\d{2}-\d{2}/;
   const newBlockLines = newText.split("\n");
-  let dropSched = newBlockLines.some(l => schedRe.test(l));
-  let dropDead = newBlockLines.some(l => deadRe.test(l));
+  const newHasPlanning = newBlockLines.some(l => planningRe.test(l));
   let dropBare = newBlockLines.some(l => bareRe.test(l));
   const preserved: string[] = [];
   for (let i = startIdx + 1; i < endIdx; i++) {
     const line = lines[i];
-    if (dropSched && schedRe.test(line)) { dropSched = false; continue; }
-    if (dropDead && deadRe.test(line)) { dropDead = false; continue; }
+    if (newHasPlanning && planningRe.test(line)) continue;
     if (dropBare && bareRe.test(line)) { dropBare = false; continue; }
     preserved.push(line);
   }
