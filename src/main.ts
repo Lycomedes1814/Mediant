@@ -700,6 +700,13 @@ async function init(): Promise<void> {
   setupNavigation();
   startClockTicker();
 
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (addPanelEl?.classList.contains("is-open")) closeAddPanel();
+      if (panelEl?.classList.contains("is-open")) closeTagEditor();
+    }
+  });
+
   // If a local Mediant server is running, hydrate from the configured
   // Org file and skip the textarea input screen entirely.
   const isServer = await probeServer();
