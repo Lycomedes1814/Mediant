@@ -502,7 +502,7 @@ function buildOrgText(opts: BuildOrgOpts): string {
 
   if (opts.type === "event") {
     if (!opts.date) return headingLine;
-    return `${headingLine}\n  ${makeTs(opts.date, opts.time, opts.repeater)}`;
+    return `${headingLine}\n${makeTs(opts.date, opts.time, opts.repeater)}`;
   }
 
   // TODO: up to one SCHEDULED and one DEADLINE, emitted together on a single
@@ -511,7 +511,7 @@ function buildOrgText(opts: BuildOrgOpts): string {
   const planningParts: string[] = [];
   if (opts.deadDate) planningParts.push(`DEADLINE: ${makeTs(opts.deadDate, opts.deadTime, opts.deadRepeater)}`);
   if (opts.schedDate) planningParts.push(`SCHEDULED: ${makeTs(opts.schedDate, opts.schedTime, opts.schedRepeater)}`);
-  if (planningParts.length > 0) lines.push("  " + planningParts.join(" "));
+  if (planningParts.length > 0) lines.push(planningParts.join(" "));
   return lines.join("\n");
 }
 
