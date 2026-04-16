@@ -976,6 +976,21 @@ body {
   color: #fff;
 }
 
+.add-radio-group input[value="A"]:checked + .add-radio-label {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.add-radio-group input[value="B"]:checked + .add-radio-label {
+  background: #d97706;
+  border-color: #d97706;
+}
+
+.add-radio-group input[value="C"]:checked + .add-radio-label {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
 .add-save-btn {
   padding: 0.5rem;
   background: var(--border-today);

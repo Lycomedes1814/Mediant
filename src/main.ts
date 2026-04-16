@@ -152,6 +152,7 @@ let editingDeadRepeater: string | null = null;
 
 interface AddPanelRefs {
   typeGroup: HTMLElement;
+  priorityGroup: HTMLElement;
   titleInput: HTMLInputElement;
   whenInput: HTMLInputElement;
   schedInput: HTMLInputElement;
@@ -199,6 +200,21 @@ function buildAddPanel(): void {
     { value: "event", label: "Event" },
   ]);
   form.appendChild(typeGroup.container);
+
+  // Priority
+  const priorityGroup = makeRadioGroup("Priority", "add-priority", [
+    { value: "A", label: "#A" },
+    { value: "B", label: "#B" },
+    { value: "C", label: "#C" },
+    { value: "", label: "None", checked: true },
+  ]);
+  form.appendChild(priorityGroup.container);
+
+  // Wire priority radios to editingPriority
+  const priorityRadios = priorityGroup.container.querySelectorAll<HTMLInputElement>("input[name='add-priority']");
+  priorityRadios.forEach(r => r.addEventListener("change", () => {
+    editingPriority = (r.value === "A" || r.value === "B" || r.value === "C") ? r.value : null;
+  }));
 
   // Title
   const titleInput = makeTextInput("Title", "add-title");
@@ -296,6 +312,7 @@ function buildAddPanel(): void {
 
   addPanelRefs = {
     typeGroup: typeGroup.container,
+    priorityGroup: priorityGroup.container,
     titleInput: titleInput.input,
     whenInput: whenInput.input,
     schedInput: schedInput.input,
@@ -581,6 +598,8 @@ function openAddPanel(): void {
   refs.repeatSelect.value = "";
   const todoRadio = refs.typeGroup.querySelector<HTMLInputElement>("input[value='todo']");
   if (todoRadio) todoRadio.checked = true;
+  const noPriorityRadio = refs.priorityGroup.querySelector<HTMLInputElement>("input[value='']");
+  if (noPriorityRadio) noPriorityRadio.checked = true;
   refs.syncVisibility();
 
   addOverlayEl.classList.add("is-open");
@@ -617,6 +636,10 @@ function openEditPanel(sourceLine: number): void {
 
   refs.titleInput.value = entry.title;
   refs.tagsInput.value = entry.tags.join(", ");
+
+  const prioVal = entry.priority ?? "";
+  const prioRadio = refs.priorityGroup.querySelector<HTMLInputElement>(`input[value="${prioVal}"]`);
+  if (prioRadio) prioRadio.checked = true;
 
   refs.whenInput.value = "";
   refs.schedInput.value = "";
