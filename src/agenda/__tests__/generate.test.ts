@@ -424,7 +424,7 @@ describe("collectOverdueItems", () => {
         todo: "TODO",
         planning: [{
           kind: "deadline",
-          timestamp: { date: "2026-04-07", startTime: null, endTime: null, repeater: null },
+          timestamp: { date: "2026-04-07", startTime: null, endTime: null, repeater: null, raw: "" },
         }],
       }),
     ];
@@ -441,7 +441,7 @@ describe("collectOverdueItems", () => {
         todo: "TODO",
         planning: [{
           kind: "scheduled",
-          timestamp: { date: "2026-04-08", startTime: null, endTime: null, repeater: null },
+          timestamp: { date: "2026-04-08", startTime: null, endTime: null, repeater: null, raw: "" },
         }],
       }),
     ];
@@ -458,7 +458,7 @@ describe("collectOverdueItems", () => {
         todo: "DONE",
         planning: [{
           kind: "deadline",
-          timestamp: { date: "2026-04-05", startTime: null, endTime: null, repeater: null },
+          timestamp: { date: "2026-04-05", startTime: null, endTime: null, repeater: null, raw: "" },
         }],
       }),
     ];
@@ -473,7 +473,7 @@ describe("collectOverdueItems", () => {
         todo: null,
         planning: [{
           kind: "deadline",
-          timestamp: { date: "2026-04-05", startTime: null, endTime: null, repeater: null },
+          timestamp: { date: "2026-04-05", startTime: null, endTime: null, repeater: null, raw: "" },
         }],
       }),
     ];
@@ -488,7 +488,7 @@ describe("collectOverdueItems", () => {
         todo: "TODO",
         planning: [{
           kind: "deadline",
-          timestamp: { date: "2026-04-10", startTime: null, endTime: null, repeater: null },
+          timestamp: { date: "2026-04-10", startTime: null, endTime: null, repeater: null, raw: "" },
         }],
       }),
       entry({
@@ -496,7 +496,7 @@ describe("collectOverdueItems", () => {
         todo: "TODO",
         planning: [{
           kind: "deadline",
-          timestamp: { date: "2026-04-15", startTime: null, endTime: null, repeater: null },
+          timestamp: { date: "2026-04-15", startTime: null, endTime: null, repeater: null, raw: "" },
         }],
       }),
     ];
@@ -511,7 +511,7 @@ describe("collectOverdueItems", () => {
         todo: "TODO",
         planning: [{
           kind: "deadline",
-          timestamp: { date: "2026-04-08", startTime: null, endTime: null, repeater: null },
+          timestamp: { date: "2026-04-08", startTime: null, endTime: null, repeater: null, raw: "" },
         }],
       }),
       entry({
@@ -519,7 +519,7 @@ describe("collectOverdueItems", () => {
         todo: "TODO",
         planning: [{
           kind: "scheduled",
-          timestamp: { date: "2026-04-05", startTime: null, endTime: null, repeater: null },
+          timestamp: { date: "2026-04-05", startTime: null, endTime: null, repeater: null, raw: "" },
         }],
       }),
     ];
@@ -537,11 +537,11 @@ describe("collectOverdueItems", () => {
         planning: [
           {
             kind: "scheduled",
-            timestamp: { date: "2026-04-06", startTime: null, endTime: null, repeater: null },
+            timestamp: { date: "2026-04-06", startTime: null, endTime: null, repeater: null, raw: "" },
           },
           {
             kind: "deadline",
-            timestamp: { date: "2026-04-07", startTime: null, endTime: null, repeater: null },
+            timestamp: { date: "2026-04-07", startTime: null, endTime: null, repeater: null, raw: "" },
           },
         ],
       }),

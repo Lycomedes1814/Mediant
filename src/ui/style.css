@@ -1070,62 +1070,12 @@ body {
 
 /* ── Edit button ───────────────────────────────────────────────────── */
 
-.timed-item,
-.scheduled-item,
-.day-deadline-item,
-.allday-item,
-.overdue-item,
-.deadline-item,
-.someday-item {
-  position: relative;
-}
 
-.item-edit-btn {
-  position: absolute;
-  top: 50%;
-  right: 0.35rem;
-  transform: translateY(-50%);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  background: var(--bg-card);
-  color: var(--text-dim);
+.item-title[data-action="edit"] {
   cursor: pointer;
-  border-radius: 3px;
-  opacity: 0.65;
 }
 
-.item-edit-btn:hover {
-  opacity: 1;
-  background: var(--border-light);
-}
-
-.item-edit-btn svg {
-  display: block;
-  pointer-events: none;
-}
-
-.timed-item:hover > .item-edit-btn,
-.scheduled-item:hover > .item-edit-btn,
-.day-deadline-item:hover > .item-edit-btn,
-.allday-item:hover > .item-edit-btn,
-.overdue-item:hover > .item-edit-btn,
-.deadline-item:hover > .item-edit-btn,
-.someday-item:hover > .item-edit-btn {
-  display: flex;
-}
-
-/* Shift tag badges left on hover so the edit button doesn't overlap them. */
-.timed-item:hover .tag-badges,
-.scheduled-item:hover .tag-badges,
-.day-deadline-item:hover .tag-badges,
-.allday-item:hover .tag-badges,
-.overdue-item:hover .tag-badges,
-.deadline-item:hover .tag-badges,
-.someday-item:hover .tag-badges {
-  margin-right: 1.5rem;
+.item-title[data-action="edit"]:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--text-dim);
 }

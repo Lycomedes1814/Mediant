@@ -130,7 +130,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
 
     const title = renderTitle(dl.entry);
 
-    row.append(time, state, title, renderTags(dl.entry.tags), renderEditBtn(dl.entry.sourceLineNumber));
+    row.append(time, state, title, renderTags(dl.entry.tags));
     section.appendChild(row);
   }
 
@@ -157,7 +157,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
 
     const title = renderTitle(item.entry);
 
-    row.append(time, kind, title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+    row.append(time, kind, title, renderTags(item.entry.tags));
     section.appendChild(row);
   }
 
@@ -181,7 +181,7 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
 
     const title = renderTitle(item.entry);
 
-    row.append(state, title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+    row.append(state, title, renderTags(item.entry.tags));
     section.appendChild(row);
   }
 
@@ -294,7 +294,7 @@ function renderAllDayItem(item: AgendaItem): HTMLElement {
     row.classList.add("has-state");
     children.push(renderStateBadge(item.entry));
   }
-  children.push(title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+  children.push(title, renderTags(item.entry.tags));
   row.append(...children);
   return row;
 }
@@ -316,7 +316,7 @@ function renderTimedItem(item: AgendaItem): HTMLElement {
     row.classList.add("has-state");
     children.push(renderStateBadge(item.entry));
   }
-  children.push(title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+  children.push(title, renderTags(item.entry.tags));
   row.append(...children);
   return row;
 }
@@ -336,9 +336,9 @@ function renderScheduledItem(item: AgendaItem): HTMLElement {
     row.classList.add("has-time");
     const time = el("span", "item-time");
     time.textContent = formatTimeRange(item.startTime, item.endTime);
-    row.append(time, state, title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+    row.append(time, state, title, renderTags(item.entry.tags));
   } else {
-    row.append(state, title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+    row.append(state, title, renderTags(item.entry.tags));
   }
   return row;
 }
@@ -359,9 +359,9 @@ function renderDayDeadlineItem(item: AgendaItem): HTMLElement {
     row.classList.add("has-time");
     const time = el("span", "item-time");
     time.textContent = formatTimeRange(item.startTime, item.endTime);
-    row.append(time, kind, title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+    row.append(time, kind, title, renderTags(item.entry.tags));
   } else {
-    row.append(kind, title, renderTags(item.entry.tags), renderEditBtn(item.entry.sourceLineNumber));
+    row.append(kind, title, renderTags(item.entry.tags));
   }
   return row;
 }
@@ -385,17 +385,6 @@ function renderStateBadge(
   return state;
 }
 
-// ── Edit button ─────────────────────────────────────────────────────
-
-function renderEditBtn(sourceLineNumber: number): HTMLElement {
-  const btn = el("button", "item-edit-btn");
-  btn.dataset.action = "edit";
-  btn.dataset.line = String(sourceLineNumber);
-  btn.setAttribute("aria-label", "Edit entry");
-  btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>`;
-  return btn;
-}
-
 // ── Now line ─────────────────────────────────────────────────────────
 
 function renderNowLine(): HTMLElement {
@@ -404,8 +393,12 @@ function renderNowLine(): HTMLElement {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function renderTitle(entry: { title: string; priority: "A" | "B" | "C" | null }): HTMLElement {
+function renderTitle(entry: { title: string; priority: "A" | "B" | "C" | null; sourceLineNumber: number }): HTMLElement {
   const title = el("span", "item-title");
+  title.dataset.action = "edit";
+  title.dataset.line = String(entry.sourceLineNumber);
+  title.setAttribute("role", "button");
+  title.setAttribute("tabindex", "0");
   if (entry.priority) {
     const badge = el("span", `item-priority priority-${entry.priority}`);
     badge.textContent = entry.priority;
