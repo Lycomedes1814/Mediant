@@ -146,6 +146,7 @@ let addPanelEl: HTMLElement | null = null;
 let addOverlayEl: HTMLElement | null = null;
 let addPanelTitleEl: HTMLElement | null = null;
 let editingLine: number | null = null;
+let editingLevel: number = 1;
 let editingPriority: "A" | "B" | "C" | null = null;
 let editingSchedRepeater: string | null = null;
 let editingDeadRepeater: string | null = null;
@@ -283,7 +284,7 @@ function buildAddPanel(): void {
       if (!dt.date) { whenInput.input.focus(); return; }
       const repeaterVal = repeatSelect.select.value || null;
       orgText = buildOrgText({
-        type: "event", heading, tags: tagsVal,
+        type: "event", level: editingLevel, heading, tags: tagsVal,
         priority: editingPriority,
         date: dt.date, time: dt.time, repeater: repeaterVal,
       });
@@ -291,7 +292,7 @@ function buildAddPanel(): void {
       const s = readDT(schedInput.input); if (s === null) return;
       const d = readDT(deadInput.input); if (d === null) return;
       orgText = buildOrgText({
-        type: "todo", heading, tags: tagsVal,
+        type: "todo", level: editingLevel, heading, tags: tagsVal,
         priority: editingPriority,
         schedDate: s.date, schedTime: s.time, schedRepeater: editingSchedRepeater,
         deadDate: d.date, deadTime: d.time, deadRepeater: editingDeadRepeater,
@@ -462,6 +463,7 @@ function parseDateTime(raw: string): { date: string; time: string } | null {
 
 interface BuildOrgOpts {
   type: "todo" | "event";
+  level: number;
   heading: string;
   tags: string;
   priority?: "A" | "B" | "C" | null;
@@ -487,7 +489,8 @@ function buildOrgText(opts: BuildOrgOpts): string {
 
   const todoPrefix = opts.type === "todo" ? "TODO " : "";
   const priorityPrefix = opts.priority ? `[#${opts.priority}] ` : "";
-  const headingLine = `* ${todoPrefix}${priorityPrefix}${opts.heading}${tagStr}`;
+  const stars = "*".repeat(opts.level);
+  const headingLine = `${stars} ${todoPrefix}${priorityPrefix}${opts.heading}${tagStr}`;
 
   const makeTs = (date: string, time: string | undefined, repeater: string | null | undefined): string => {
     const d = new Date(date + "T00:00:00");
@@ -584,6 +587,7 @@ function openAddPanel(): void {
   if (!addPanelEl || !addOverlayEl || !addPanelRefs) return;
 
   editingLine = null;
+  editingLevel = 1;
   editingPriority = null;
   editingSchedRepeater = null;
   editingDeadRepeater = null;
@@ -625,6 +629,7 @@ function openEditPanel(sourceLine: number): void {
   if (!entry) return;
 
   editingLine = sourceLine;
+  editingLevel = entry.level;
   editingPriority = entry.priority;
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Edit item";
 
