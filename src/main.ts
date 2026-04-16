@@ -151,6 +151,12 @@ let editingPriority: "A" | "B" | "C" | null = null;
 let editingSchedRepeater: string | null = null;
 let editingDeadRepeater: string | null = null;
 
+interface TagPicker {
+  container: HTMLElement;
+  getTags: () => string[];
+  setTags: (tags: string[]) => void;
+}
+
 interface AddPanelRefs {
   typeGroup: HTMLElement;
   priorityGroup: HTMLElement;
@@ -158,7 +164,7 @@ interface AddPanelRefs {
   whenInput: HTMLInputElement;
   schedInput: HTMLInputElement;
   deadInput: HTMLInputElement;
-  tagsInput: HTMLInputElement;
+  tagPicker: TagPicker;
   repeatSelect: HTMLSelectElement;
   syncVisibility: () => void;
 }
@@ -244,9 +250,8 @@ function buildAddPanel(): void {
   form.appendChild(repeatSelect.container);
 
   // Tags
-  const tagsInput = makeTextInput("Tags", "add-tags");
-  tagsInput.input.placeholder = "comma-separated";
-  form.appendChild(tagsInput.container);
+  const tagPicker = makeTagPicker("Tags", "add-tags");
+  form.appendChild(tagPicker.container);
 
   // Show/hide fields based on type
   const typeRadios = typeGroup.container.querySelectorAll<HTMLInputElement>("input[name='add-type']");
@@ -268,7 +273,7 @@ function buildAddPanel(): void {
     const type = (typeGroup.container.querySelector<HTMLInputElement>("input[name='add-type']:checked"))?.value ?? "todo";
     const heading = titleInput.input.value.trim();
     if (!heading) { titleInput.input.focus(); return; }
-    const tagsVal = tagsInput.input.value.trim();
+    const tagsVal = tagPicker.getTags().join(", ");
 
     const readDT = (inp: HTMLInputElement): { date: string; time: string } | null => {
       const raw = inp.value.trim();
@@ -318,7 +323,7 @@ function buildAddPanel(): void {
     whenInput: whenInput.input,
     schedInput: schedInput.input,
     deadInput: deadInput.input,
-    tagsInput: tagsInput.input,
+    tagPicker,
     repeatSelect: repeatSelect.select,
     syncVisibility,
   };
@@ -345,6 +350,142 @@ function makeSelect(label: string, id: string, options: { value: string; label: 
 
   container.append(lbl, select);
   return { container, select };
+}
+
+function makeTagPicker(label: string, id: string): TagPicker {
+  const container = document.createElement("div");
+  container.className = "add-field";
+
+  const lbl = document.createElement("label");
+  lbl.className = "add-label";
+  lbl.htmlFor = id;
+  lbl.textContent = label;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "tag-picker";
+
+  const pillsEl = document.createElement("div");
+  pillsEl.className = "tag-picker-pills";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.id = id;
+  input.className = "tag-picker-input";
+  input.placeholder = "Type to add…";
+  input.autocomplete = "off";
+
+  const dropdown = document.createElement("div");
+  dropdown.className = "tag-picker-dropdown";
+
+  wrapper.append(pillsEl, input, dropdown);
+  wrapper.addEventListener("click", () => input.focus());
+  container.append(lbl, wrapper);
+
+  let selected: string[] = [];
+
+  function renderPills(): void {
+    pillsEl.innerHTML = "";
+    for (const tag of selected) {
+      const pill = document.createElement("span");
+      pill.className = "tag-picker-pill";
+      pill.style.background = getTagColor(tag);
+
+      const text = document.createElement("span");
+      text.textContent = tag;
+
+      const remove = document.createElement("button");
+      remove.className = "tag-picker-pill-x";
+      remove.textContent = "×";
+      remove.type = "button";
+      remove.addEventListener("click", () => {
+        selected = selected.filter(t => t !== tag);
+        renderPills();
+        showDropdown();
+      });
+
+      pill.append(text, remove);
+      pillsEl.appendChild(pill);
+    }
+  }
+
+  function showDropdown(): void {
+    const query = input.value.trim().toLowerCase();
+    const allTags = collectAllTags().filter(t => !selected.includes(t));
+    const matches = query
+      ? allTags.filter(t => t.toLowerCase().includes(query))
+      : allTags;
+
+    dropdown.innerHTML = "";
+    for (const tag of matches) {
+      const opt = document.createElement("div");
+      opt.className = "tag-picker-option";
+      opt.textContent = tag;
+      const swatch = document.createElement("span");
+      swatch.className = "tag-picker-swatch";
+      swatch.style.background = getTagColor(tag);
+      opt.prepend(swatch);
+      opt.addEventListener("mousedown", (e) => {
+        e.preventDefault(); // keep focus on input
+        selected.push(tag);
+        input.value = "";
+        renderPills();
+        showDropdown();
+      });
+      dropdown.appendChild(opt);
+    }
+
+    // Show "add new" option if query doesn't match existing and isn't already selected
+    if (query && !collectAllTags().some(t => t.toLowerCase() === query) && !selected.some(t => t.toLowerCase() === query)) {
+      const addOpt = document.createElement("div");
+      addOpt.className = "tag-picker-option tag-picker-option-new";
+      addOpt.textContent = `Add "${input.value.trim()}"`;
+      addOpt.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        selected.push(input.value.trim());
+        input.value = "";
+        renderPills();
+        showDropdown();
+      });
+      dropdown.appendChild(addOpt);
+    }
+
+    dropdown.style.display = (matches.length > 0 || dropdown.children.length > 0) ? "block" : "none";
+  }
+
+  input.addEventListener("focus", showDropdown);
+  input.addEventListener("input", showDropdown);
+  input.addEventListener("blur", () => { dropdown.style.display = "none"; });
+
+  // Backspace on empty input removes last pill
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" && !input.value && selected.length > 0) {
+      selected.pop();
+      renderPills();
+      showDropdown();
+    }
+    // Enter commits typed text as new tag
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const val = input.value.trim();
+      if (val && !selected.some(t => t.toLowerCase() === val.toLowerCase())) {
+        selected.push(val);
+        input.value = "";
+        renderPills();
+        showDropdown();
+      }
+    }
+  });
+
+  return {
+    container,
+    getTags: () => [...selected],
+    setTags: (tags: string[]) => {
+      selected = [...tags];
+      input.value = "";
+      renderPills();
+      dropdown.style.display = "none";
+    },
+  };
 }
 
 function makeRadioGroup(label: string, name: string, options: { value: string; label: string; checked?: boolean }[]): { container: HTMLElement } {
@@ -598,7 +739,7 @@ function openAddPanel(): void {
   refs.whenInput.value = "";
   refs.schedInput.value = "";
   refs.deadInput.value = "";
-  refs.tagsInput.value = "";
+  refs.tagPicker.setTags([]);
   refs.repeatSelect.value = "";
   const todoRadio = refs.typeGroup.querySelector<HTMLInputElement>("input[value='todo']");
   if (todoRadio) todoRadio.checked = true;
@@ -640,7 +781,7 @@ function openEditPanel(sourceLine: number): void {
   if (typeRadio) typeRadio.checked = true;
 
   refs.titleInput.value = entry.title;
-  refs.tagsInput.value = entry.tags.join(", ");
+  refs.tagPicker.setTags([...entry.tags]);
 
   const prioVal = entry.priority ?? "";
   const prioRadio = refs.priorityGroup.querySelector<HTMLInputElement>(`input[value="${prioVal}"]`);
