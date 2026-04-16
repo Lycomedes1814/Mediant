@@ -199,7 +199,11 @@ function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
   // Header
   const header = el("header", "day-header");
   const label = el("span", "date-label");
-  label.textContent = `${DAY_NAMES[day.date.getDay()]} ${day.date.getDate()} ${MONTH_NAMES[day.date.getMonth()]}`;
+  let dayText = `${DAY_NAMES[day.date.getDay()]} ${day.date.getDate()} ${MONTH_NAMES[day.date.getMonth()]}`;
+  if (day.date.getDay() === 1) {
+    dayText += ` (W${getISOWeek(day.date)})`;
+  }
+  label.textContent = dayText;
   header.appendChild(label);
 
   if (isToday) {
@@ -433,6 +437,13 @@ function formatTimeRange(start: string | null, end: string | null): string {
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;
+}
+
+function getISOWeek(d: Date): number {
+  const tmp = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
+  const jan4 = new Date(tmp.getFullYear(), 0, 4);
+  return 1 + Math.round(((tmp.getTime() - jan4.getTime()) / 86400000 - 3 + ((jan4.getDay() + 6) % 7)) / 7);
 }
 
 function isSameDate(a: Date, b: Date): boolean {
