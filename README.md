@@ -5,6 +5,8 @@ A minimal Org-mode parser and week-agenda viewer. Runs in two modes:
 - **Static mode** — paste Org content into a textarea, everything lives in your browser's `localStorage`. Zero-install, usable straight from a static host.
 - **Server mode** — run `mediant <file.org>` to start a tiny local Node server that reads and writes a real `.org` file on disk. The browser UI hydrates from the file on load and picks up external edits (e.g. from Emacs) live over SSE.
 
+The server can run locally for near-instant two-way sync with Emacs (or any editor), or on a VPS for mobile access — use the cross-device sync layer of your choice (Syncthing, Dropbox, git, etc.) to keep the `.org` file in sync between machines.
+
 No framework dependencies. The server has no dependencies at all — it uses Node built-ins only.
 
 ## What it does
