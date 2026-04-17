@@ -1048,9 +1048,12 @@ body {
 
 .edit-checkbox-text {
   color: var(--text);
+  background: none;
+  font: inherit;
   flex: 1;
   min-width: 0;
   outline: none;
+  border: none;
   border-bottom: 1px solid transparent;
   padding: 0 0.125rem;
 }

@@ -249,7 +249,7 @@ function rebuildCheckboxUI(container: HTMLElement): void {
 
   for (let ci = 0; ci < editingCheckboxItems.length; ci++) {
     const item = editingCheckboxItems[ci];
-    const row = document.createElement("label");
+    const row = document.createElement("div");
     row.className = "edit-checkbox-row";
 
     const cb = document.createElement("input");
@@ -261,17 +261,34 @@ function rebuildCheckboxUI(container: HTMLElement): void {
       syncProgress();
     });
 
-    const text = document.createElement("span");
+    const text = document.createElement("input");
+    text.type = "text";
     text.className = "edit-checkbox-text";
-    text.contentEditable = "true";
-    text.textContent = item.text;
+    text.value = item.text;
+    text.placeholder = "Item text";
     if (item.checked) text.classList.add("edit-checkbox-done");
     text.addEventListener("input", () => {
-      editingCheckboxItems[ci].text = text.textContent ?? "";
+      editingCheckboxItems[ci].text = text.value;
     });
-    // Prevent Enter from inserting line breaks
     text.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { e.preventDefault(); text.blur(); }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        // Add a new item below and focus it
+        editingCheckboxItems.splice(ci + 1, 0, { text: "", checked: false });
+        rebuildCheckboxUI(container);
+        syncProgress();
+        const rows = container.querySelectorAll<HTMLElement>(".edit-checkbox-text");
+        (rows[ci + 1] as HTMLInputElement | undefined)?.focus();
+      } else if (e.key === "Backspace" && text.value === "") {
+        e.preventDefault();
+        editingCheckboxItems.splice(ci, 1);
+        rebuildCheckboxUI(container);
+        syncProgress();
+        // Focus the previous item, or the next if this was first
+        const rows = container.querySelectorAll<HTMLElement>(".edit-checkbox-text");
+        const target = ci > 0 ? rows[ci - 1] : rows[0];
+        (target as HTMLInputElement | undefined)?.focus();
+      }
     });
 
     const removeBtn = document.createElement("button");
