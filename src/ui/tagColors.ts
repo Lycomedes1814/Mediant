@@ -57,29 +57,11 @@ export function getTagColor(tag: string): string {
   return color;
 }
 
-/** Get color for a tag without auto-assigning (returns default if unknown). */
-export function peekTagColor(tag: string): string {
-  const map = load();
-  return map[tag] ?? DEFAULT_COLOR;
-}
-
 /** Set a custom color for a tag. */
 export function setTagColor(tag: string, color: string): void {
   const map = load();
   map[tag] = color;
   save();
-}
-
-/** Reset a tag's color back to auto-assignment. */
-export function resetTagColor(tag: string): void {
-  const map = load();
-  delete map[tag];
-  save();
-}
-
-/** Get all assigned tag colors. */
-export function getAllTagColors(): Readonly<Record<string, string>> {
-  return { ...load() };
 }
 
 /** Default fallback color. */

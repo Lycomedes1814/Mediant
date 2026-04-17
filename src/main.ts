@@ -1,6 +1,6 @@
 import { parseOrg } from "./org/parser.ts";
 import { generateWeek, collectDeadlines, collectOverdueItems, collectSomedayItems } from "./agenda/generate.ts";
-import { renderAgenda } from "./ui/render.ts";
+import { renderAgenda, createThemeToggle } from "./ui/render.ts";
 import { getTagColor } from "./ui/tagColors.ts";
 
 // ── Constants ───────────────────────────────────────────────────────
@@ -897,23 +897,6 @@ function showInput(): void {
   btn.textContent = "Load agenda";
   btn.addEventListener("click", () => loadFromTextarea(textarea.value));
 
-  const themeBtn = document.createElement("button");
-  themeBtn.className = "theme-toggle";
-  themeBtn.setAttribute("aria-label", "Toggle dark mode");
-  themeBtn.textContent = document.documentElement.dataset.theme === "dark" ? "\u2600" : "\u263E";
-  themeBtn.addEventListener("click", () => {
-    const isDark = document.documentElement.dataset.theme === "dark";
-    if (isDark) {
-      delete document.documentElement.dataset.theme;
-      localStorage.setItem("theme", "light");
-      themeBtn.textContent = "\u263E";
-    } else {
-      document.documentElement.dataset.theme = "dark";
-      localStorage.setItem("theme", "dark");
-      themeBtn.textContent = "\u2600";
-    }
-  });
-
   const ghLink = document.createElement("a");
   ghLink.className = "github-link";
   ghLink.href = "https://github.com/Lycomedes1814/Mediant";
@@ -924,7 +907,7 @@ function showInput(): void {
 
   const headerRight = document.createElement("div");
   headerRight.className = "input-header-right";
-  headerRight.append(ghLink, themeBtn);
+  headerRight.append(ghLink, createThemeToggle());
 
   const header = document.createElement("div");
   header.className = "input-header";

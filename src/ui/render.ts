@@ -8,6 +8,26 @@
 import type { AgendaWeek, AgendaDay, AgendaItem, DeadlineItem, OverdueItem, SomedayItem } from "../agenda/model.ts";
 import { getTagColor, setTagColor, TAG_DEFAULT_COLOR } from "./tagColors.ts";
 
+export function createThemeToggle(): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.className = "theme-toggle";
+  btn.setAttribute("aria-label", "Toggle dark mode");
+  btn.textContent = document.documentElement.dataset.theme === "dark" ? "\u2600" : "\u263E";
+  btn.addEventListener("click", () => {
+    const isDark = document.documentElement.dataset.theme === "dark";
+    if (isDark) {
+      delete document.documentElement.dataset.theme;
+      localStorage.setItem("theme", "light");
+      btn.textContent = "\u263E";
+    } else {
+      document.documentElement.dataset.theme = "dark";
+      localStorage.setItem("theme", "dark");
+      btn.textContent = "\u2600";
+    }
+  });
+  return btn;
+}
+
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"];
@@ -80,27 +100,11 @@ function renderHeader(startDate: Date, endDate: Date): HTMLElement {
   todayBtn.textContent = "Today";
   todayBtn.dataset.action = "today";
 
-  const themeBtn = el("button", "theme-toggle");
-  themeBtn.setAttribute("aria-label", "Toggle dark mode");
-  themeBtn.textContent = document.documentElement.dataset.theme === "dark" ? "\u2600" : "\u263E";
-  themeBtn.addEventListener("click", () => {
-    const isDark = document.documentElement.dataset.theme === "dark";
-    if (isDark) {
-      delete document.documentElement.dataset.theme;
-      localStorage.setItem("theme", "light");
-      themeBtn.textContent = "\u263E";
-    } else {
-      document.documentElement.dataset.theme = "dark";
-      localStorage.setItem("theme", "dark");
-      themeBtn.textContent = "\u2600";
-    }
-  });
-
   const addBtn = el("button", "add-item-btn");
   addBtn.textContent = "+Add";
   addBtn.dataset.action = "add";
 
-  actions.append(todayBtn, addBtn, themeBtn);
+  actions.append(todayBtn, addBtn, createThemeToggle());
   header.append(nav, actions);
   return header;
 }
@@ -280,90 +284,56 @@ function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
 
 // ── Item renderers ───────────────────────────────────────────────────
 
-function renderAllDayItem(item: AgendaItem): HTMLElement {
-  const row = el("div", "allday-item");
+function renderItem(
+  item: AgendaItem,
+  className: string,
+  badge?: HTMLElement,
+  showTime?: "always" | "optional",
+): HTMLElement {
+  const row = el("div", className);
   if (item.entry.todo === "DONE") row.classList.add("item-done");
 
   const primaryTag = item.entry.tags[0];
   if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
 
-  const title = renderTitle(item.entry);
-
   const children: HTMLElement[] = [];
-  if (item.entry.todo) {
+
+  const hasTime = showTime === "always" || (showTime === "optional" && item.startTime);
+  if (hasTime) {
+    if (showTime === "optional") row.classList.add("has-time");
+    const time = el("span", "item-time");
+    time.textContent = formatTimeRange(item.startTime, item.endTime);
+    children.push(time);
+  }
+
+  if (badge) {
+    children.push(badge);
+  } else if (item.entry.todo) {
     row.classList.add("has-state");
     children.push(renderStateBadge(item.entry));
   }
-  children.push(title, renderTags(item.entry.tags));
+
+  children.push(renderTitle(item.entry), renderTags(item.entry.tags));
   row.append(...children);
   return row;
+}
+
+function renderAllDayItem(item: AgendaItem): HTMLElement {
+  return renderItem(item, "allday-item");
 }
 
 function renderTimedItem(item: AgendaItem): HTMLElement {
-  const row = el("div", "timed-item");
-  if (item.entry.todo === "DONE") row.classList.add("item-done");
-
-  const primaryTag = item.entry.tags[0];
-  if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
-
-  const time = el("span", "item-time");
-  time.textContent = formatTimeRange(item.startTime, item.endTime);
-
-  const title = renderTitle(item.entry);
-
-  const children: HTMLElement[] = [time];
-  if (item.entry.todo) {
-    row.classList.add("has-state");
-    children.push(renderStateBadge(item.entry));
-  }
-  children.push(title, renderTags(item.entry.tags));
-  row.append(...children);
-  return row;
+  return renderItem(item, "timed-item", undefined, "always");
 }
 
 function renderScheduledItem(item: AgendaItem): HTMLElement {
-  const row = el("div", "scheduled-item");
-  if (item.entry.todo === "DONE") row.classList.add("item-done");
-
-  const primaryTag = item.entry.tags[0];
-  if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
-
-  const state = renderStateBadge(item.entry, "TODO");
-
-  const title = renderTitle(item.entry);
-
-  if (item.startTime) {
-    row.classList.add("has-time");
-    const time = el("span", "item-time");
-    time.textContent = formatTimeRange(item.startTime, item.endTime);
-    row.append(time, state, title, renderTags(item.entry.tags));
-  } else {
-    row.append(state, title, renderTags(item.entry.tags));
-  }
-  return row;
+  return renderItem(item, "scheduled-item", renderStateBadge(item.entry, "TODO"), "optional");
 }
 
 function renderDayDeadlineItem(item: AgendaItem): HTMLElement {
-  const row = el("div", "day-deadline-item");
-  if (item.entry.todo === "DONE") row.classList.add("item-done");
-
-  const primaryTag = item.entry.tags[0];
-  if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
-
   const kind = el("span", "item-kind");
   kind.textContent = "DEADLINE";
-
-  const title = renderTitle(item.entry);
-
-  if (item.startTime) {
-    row.classList.add("has-time");
-    const time = el("span", "item-time");
-    time.textContent = formatTimeRange(item.startTime, item.endTime);
-    row.append(time, kind, title, renderTags(item.entry.tags));
-  } else {
-    row.append(kind, title, renderTags(item.entry.tags));
-  }
-  return row;
+  return renderItem(item, "day-deadline-item", kind, "optional");
 }
 
 // ── State badge ─────────────────────────────────────────────────────
@@ -418,11 +388,7 @@ function renderTitle(entry: { title: string; priority: "A" | "B" | "C" | null; p
     title.appendChild(badge);
     title.appendChild(document.createTextNode(" "));
   }
-  if (entry.priority) {
-    title.appendChild(document.createTextNode(entry.title));
-  } else {
-    title.textContent = entry.title;
-  }
+  title.appendChild(document.createTextNode(entry.title));
   if (entry.progress) {
     title.appendChild(document.createTextNode(" "));
     const badge = el("span", "item-progress");
