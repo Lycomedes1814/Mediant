@@ -587,20 +587,29 @@ body {
 /* ── Now line ─────────────────────────────────────────────────────── */
 
 .now-line {
-  height: 2px;
-  background: var(--now-line);
+  display: grid;
+  grid-template-columns: var(--time-col) auto 1fr;
+  align-items: center;
+  padding: 0.25rem 1rem;
   pointer-events: none;
-  position: relative;
+  color: var(--now-line);
+  gap: 0 0.25rem;
 }
 
-.now-line::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: -3px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.now-time {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.now-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.now-rule {
+  height: 2px;
   background: var(--now-line);
 }
 

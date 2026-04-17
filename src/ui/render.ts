@@ -239,7 +239,7 @@ function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
       if (!nowLineInserted) {
         const itemMinutes = item.startTime ? timeToMinutes(item.startTime) : -1;
         if (itemMinutes >= nowMinutes) {
-          section.appendChild(renderNowLine());
+          section.appendChild(renderNowLine(today));
           nowLineInserted = true;
         }
       }
@@ -267,7 +267,7 @@ function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
 
     // If all items are before now, append the line at the end
     if (!nowLineInserted) {
-      section.appendChild(renderNowLine());
+      section.appendChild(renderNowLine(today));
     }
 
     card.appendChild(section);
@@ -392,8 +392,21 @@ function renderStateBadge(
 
 // ── Now line ─────────────────────────────────────────────────────────
 
-function renderNowLine(): HTMLElement {
-  return el("div", "now-line");
+function renderNowLine(today: Date): HTMLElement {
+  const row = el("div", "now-line");
+
+  const time = el("span", "now-time");
+  const hh = String(today.getHours()).padStart(2, "0");
+  const mm = String(today.getMinutes()).padStart(2, "0");
+  time.textContent = hh + ":" + mm;
+
+  const label = el("span", "now-label");
+  label.textContent = "\u25C4 now";
+
+  const rule = el("span", "now-rule");
+
+  row.append(time, label, rule);
+  return row;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
