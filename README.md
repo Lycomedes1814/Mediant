@@ -1,20 +1,15 @@
 # Mediant
 
-A minimal Org-mode parser and week-agenda viewer. Runs in two modes:
+A minimal, dependency-free web agenda for Org-mode files.
 
-- **Static mode** — paste Org content into a textarea, everything lives in your browser's `localStorage`. Zero-install, usable straight from a static host.
-- **Server mode** — run `mediant <file.org>` to start a tiny local Node server that reads and writes a real `.org` file on disk. The browser UI hydrates from the file on load and picks up external edits (e.g. from Emacs) live over SSE.
+Parses the subset of Org syntax needed for agenda views and renders a responsive rolling week view. Runs in two modes:
 
-The server can run locally for near-instant two-way sync with Emacs (or any editor), or on a VPS for mobile access (behind a reverse proxy, SSH tunnel, or private VPN mesh like Tailscale — the server has no auth) — use the cross-device sync layer of your choice (Syncthing, Dropbox, git, etc.) to keep the `.org` file in sync between machines.
+- **Static mode** — paste Org content into a textarea, everything stays in `localStorage`. Zero-install, works from any static host.
+- **Server mode** — `mediant <file.org>` starts a local Node server that reads and writes a real `.org` file. The UI hydrates from the file on load and picks up external edits (e.g. from Emacs) live via SSE.
 
-No framework dependencies. The server has no dependencies at all — it uses Node built-ins only.
+The server can run locally for near-instant sync with your editor, or on a VPS for mobile access (behind Tailscale, an SSH tunnel, or a reverse proxy — no built-in auth). Keep the `.org` file in sync between machines with Syncthing, Dropbox, git, or whatever you prefer.
 
-## What it does
-
-1. **Parses** Org content — only the subset of syntax needed for agenda views
-2. **Models** the parsed data faithfully to Org semantics before any display logic
-3. **Generates** a week-based agenda structure, expanding recurring events within the requested week only
-4. **Renders** a responsive week-agenda UI with clear visual distinctions between event types
+No framework dependencies. The server uses Node built-ins only — zero npm deps.
 
 ## Supported Org syntax
 
@@ -45,11 +40,9 @@ npm test         # run all tests
 npm run build    # produce dist/
 ```
 
-The dev server serves `index.html` with a textarea to paste Org content.
-
 ### Server mode
 
-To run against a real Org file on disk:
+To run against a real `.org` file:
 
 ```sh
 npm run build                    # produce dist/ (required once)
@@ -64,11 +57,11 @@ Or, after `npm install -g .` (or `npm link`), just:
 mediant ~/org/todo.org [--port N] [--daemon]
 ```
 
-When the server is running, the browser UI skips the paste screen and hydrates directly from the file. Every edit made through the UI is written back to disk, and external edits (from Emacs, another editor, Syncthing, etc.) are picked up automatically over Server-Sent Events.
+The browser UI hydrates directly from the file. Edits made in the UI are written back to disk, and external edits (from Emacs, Syncthing, etc.) are picked up automatically via SSE.
 
-**Security:** the server binds to `127.0.0.1` and has no authentication. Expose it to other machines via Tailscale, an SSH tunnel, or a reverse proxy — not directly.
+**Security:** the server binds to `127.0.0.1` with no authentication. For remote access, use Tailscale, an SSH tunnel, or a reverse proxy.
 
-**Stopping a daemonised instance:** `kill <pid>` (the PID is printed when `--daemon` starts).
+**Stopping a daemon:** `kill <pid>` (printed on `--daemon` start).
 
 ### API
 
@@ -80,7 +73,7 @@ The server exposes three endpoints on top of the static UI:
 | `PUT` | `/api/source` | Writes the file. Accepts `If-Match: <version>`; mismatch returns `409`. Response header `X-Version` is the new version. |
 | `GET` | `/api/events` | Server-Sent Events stream. Emits `data: <version>` whenever the file changes on disk. |
 
-Conflict strategy is simple: **the on-disk copy wins**. If you edit in the UI while the file has changed underneath you, the server rejects the write with 409 and the UI reloads from disk.
+Conflict strategy: **disk wins**. If the file changes underneath you, the server rejects the write (409) and the UI reloads from disk.
 
 ## Architecture
 
@@ -144,9 +137,9 @@ index.html             — Minimal shell with #agenda container
 - **TypeScript** — parser, data model, agenda generation, rendering
 - **Vite** — dev server and bundling
 - **Vitest** — 149 tests across parser, timestamp, and agenda suites
-- **HTML/CSS** — responsive week-agenda UI with CSS grid
-- **Node** (built-ins only) — optional local server (`server/cli.mjs`)
-- No framework dependencies, no runtime npm dependencies
+- **HTML/CSS** — responsive week view with CSS grid
+- **Node** (built-ins only) — optional local server
+- Zero runtime npm dependencies
 
 ## Non-goals (v1)
 
@@ -154,10 +147,10 @@ index.html             — Minimal shell with #agenda container
 - Heading hierarchy in the agenda
 - Properties, drawers, habits, clocking
 - Timezone handling beyond local time
-- Advanced state workflows / custom TODO keyword sequences
-- Multi-file agenda, export to other formats
-- Server-side authentication or multi-user access control (use Tailscale / SSH tunnel / reverse proxy)
-- Collaborative editing / CRDT sync (last write loses to disk; the file is the source of truth)
+- Advanced state workflows / custom TODO keywords
+- Multi-file agenda or export
+- Built-in authentication (use Tailscale / SSH tunnel / reverse proxy)
+- Collaborative editing (the file on disk is the single source of truth)
 
 ## Local storage
 
@@ -169,7 +162,7 @@ Mediant uses your browser's `localStorage` for the following:
 | `mediant-tag-colors` | Tag-to-color assignments, so tag colors stay consistent |
 | `theme` | Light/dark mode preference |
 
-In **static mode** all data stays in your browser — nothing is sent to a server. In **server mode** the Org source lives in the file you passed to the CLI, and `mediant-org-source` is not used; tag colors and theme are still browser-local.
+In static mode all data stays in the browser. In server mode the Org source lives in the file you passed to the CLI; tag colors and theme are still browser-local.
 
 ## License
 
