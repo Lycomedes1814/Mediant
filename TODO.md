@@ -42,4 +42,4 @@
 ## Add/edit item UI
 - [X] Select from existing tags or add new
 - [X] Select priority (none, A, B, C)
-- [ ] Multi-timestamp awareness
+- [X] Multi-timestamp awareness
