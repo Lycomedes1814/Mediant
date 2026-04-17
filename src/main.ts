@@ -166,6 +166,7 @@ interface AddPanelRefs {
   deadInput: HTMLInputElement;
   tagPicker: TagPicker;
   repeatSelect: HTMLSelectElement;
+  checkboxSection: HTMLElement;
   syncVisibility: () => void;
 }
 let addPanelRefs: AddPanelRefs | null = null;
@@ -265,6 +266,12 @@ function buildAddPanel(): void {
   typeRadios.forEach(r => r.addEventListener("change", syncVisibility));
   syncVisibility();
 
+  // Checkbox section (only visible when editing an entry with checkboxes)
+  const checkboxSection = document.createElement("div");
+  checkboxSection.className = "add-field edit-checkboxes";
+  checkboxSection.style.display = "none";
+  form.appendChild(checkboxSection);
+
   // Save button
   const saveBtn = document.createElement("button");
   saveBtn.className = "add-save-btn";
@@ -325,6 +332,7 @@ function buildAddPanel(): void {
     deadInput: deadInput.input,
     tagPicker,
     repeatSelect: repeatSelect.select,
+    checkboxSection,
     syncVisibility,
   };
 }
@@ -719,6 +727,60 @@ async function toggleDone(sourceLine: number): Promise<void> {
   await persistSource(lines.join("\n"));
 }
 
+/**
+ * Toggle a checkbox item's checked state in the Org source and recalculate
+ * the progress cookie in the heading if present.
+ */
+async function toggleCheckboxItem(sourceLine: number, itemIndex: number, checked: boolean): Promise<void> {
+  const lines = currentSource.split("\n");
+  const startIdx = sourceLine - 1;
+  if (startIdx < 0 || startIdx >= lines.length) return;
+
+  // Find end of block
+  let endIdx = lines.length;
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    if (/^\*+\s/.test(lines[i])) { endIdx = i; break; }
+  }
+
+  // Find the nth checkbox line in the block
+  const checkboxRe = /^(\s*-\s+\[)([ X])(\]\s+.+)/;
+  let found = 0;
+  for (let i = startIdx + 1; i < endIdx; i++) {
+    const m = lines[i].match(checkboxRe);
+    if (m) {
+      if (found === itemIndex) {
+        lines[i] = `${m[1]}${checked ? "X" : " "}${m[3]}`;
+        break;
+      }
+      found++;
+    }
+  }
+
+  // Recalculate progress cookie in the heading
+  const progressFracRe = /\[(\d+)\/(\d+)\]/;
+  const progressPctRe = /\[(\d+)%\]/;
+  const heading = lines[startIdx];
+  if (progressFracRe.test(heading) || progressPctRe.test(heading)) {
+    // Count checked/total checkboxes
+    let total = 0, done = 0;
+    for (let i = startIdx + 1; i < endIdx; i++) {
+      const m = lines[i].match(checkboxRe);
+      if (m) {
+        total++;
+        if (m[2] === "X") done++;
+      }
+    }
+    if (progressFracRe.test(heading)) {
+      lines[startIdx] = heading.replace(progressFracRe, `[${done}/${total}]`);
+    } else {
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      lines[startIdx] = heading.replace(progressPctRe, `[${pct}%]`);
+    }
+  }
+
+  await persistSource(lines.join("\n"));
+}
+
 function appendOrgText(orgText: string): void {
   const updated = currentSource.trimEnd() + "\n" + orgText + "\n";
   void persistSource(updated);
@@ -741,6 +803,8 @@ function openAddPanel(): void {
   refs.deadInput.value = "";
   refs.tagPicker.setTags([]);
   refs.repeatSelect.value = "";
+  refs.checkboxSection.style.display = "none";
+  refs.checkboxSection.innerHTML = "";
   const todoRadio = refs.typeGroup.querySelector<HTMLInputElement>("input[value='todo']");
   if (todoRadio) todoRadio.checked = true;
   const noPriorityRadio = refs.priorityGroup.querySelector<HTMLInputElement>("input[value='']");
@@ -813,6 +877,43 @@ function openEditPanel(sourceLine: number): void {
       editingDeadRepeater = deadline.timestamp.repeater
         ? `+${deadline.timestamp.repeater.value}${deadline.timestamp.repeater.unit}` : null;
     }
+  }
+
+  // Populate checkbox items
+  refs.checkboxSection.innerHTML = "";
+  if (entry.checkboxItems.length > 0) {
+    const lbl = document.createElement("label");
+    lbl.className = "add-label";
+    lbl.textContent = "Checklist";
+    refs.checkboxSection.appendChild(lbl);
+
+    for (let ci = 0; ci < entry.checkboxItems.length; ci++) {
+      const item = entry.checkboxItems[ci];
+      const row = document.createElement("label");
+      row.className = "edit-checkbox-row";
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = item.checked;
+      cb.addEventListener("change", () => {
+        toggleCheckboxItem(sourceLine, ci, cb.checked);
+      });
+
+      const text = document.createElement("span");
+      text.className = "edit-checkbox-text";
+      text.textContent = item.text;
+      if (item.checked) text.classList.add("edit-checkbox-done");
+
+      cb.addEventListener("change", () => {
+        text.classList.toggle("edit-checkbox-done", cb.checked);
+      });
+
+      row.append(cb, text);
+      refs.checkboxSection.appendChild(row);
+    }
+    refs.checkboxSection.style.display = "";
+  } else {
+    refs.checkboxSection.style.display = "none";
   }
 
   refs.syncVisibility();

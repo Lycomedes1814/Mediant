@@ -258,6 +258,11 @@ function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
         body.textContent = item.entry.body;
         section.appendChild(body);
       }
+
+      // Checkbox items
+      if (item.entry.checkboxItems.length > 0) {
+        section.appendChild(renderCheckboxItems(item.entry.checkboxItems));
+      }
     }
 
     // If all items are before now, append the line at the end
@@ -393,7 +398,7 @@ function renderNowLine(): HTMLElement {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function renderTitle(entry: { title: string; priority: "A" | "B" | "C" | null; sourceLineNumber: number }): HTMLElement {
+function renderTitle(entry: { title: string; priority: "A" | "B" | "C" | null; progress?: { done: number; total: number } | null; sourceLineNumber: number }): HTMLElement {
   const title = el("span", "item-title");
   title.dataset.action = "edit";
   title.dataset.line = String(entry.sourceLineNumber);
@@ -403,11 +408,38 @@ function renderTitle(entry: { title: string; priority: "A" | "B" | "C" | null; s
     const badge = el("span", `item-priority priority-${entry.priority}`);
     badge.textContent = entry.priority;
     title.appendChild(badge);
-    title.appendChild(document.createTextNode(" " + entry.title));
+    title.appendChild(document.createTextNode(" "));
+  }
+  if (entry.progress) {
+    const badge = el("span", "item-progress");
+    badge.textContent = `${entry.progress.done}/${entry.progress.total}`;
+    if (entry.progress.done === entry.progress.total && entry.progress.total > 0) {
+      badge.classList.add("progress-complete");
+    }
+    title.appendChild(badge);
+    title.appendChild(document.createTextNode(" "));
+  }
+  if (entry.priority || entry.progress) {
+    title.appendChild(document.createTextNode(entry.title));
   } else {
     title.textContent = entry.title;
   }
   return title;
+}
+
+function renderCheckboxItems(items: readonly { text: string; checked: boolean }[]): HTMLElement {
+  const list = el("div", "checkbox-list");
+  for (const item of items) {
+    const row = el("div", "checkbox-item");
+    if (item.checked) row.classList.add("checkbox-checked");
+    const icon = el("span", "checkbox-icon");
+    icon.textContent = item.checked ? "\u2611" : "\u2610";
+    const label = el("span", "checkbox-label");
+    label.textContent = item.text;
+    row.append(icon, label);
+    list.appendChild(row);
+  }
+  return list;
 }
 
 function renderTags(tags: readonly string[]): HTMLElement {

@@ -107,6 +107,34 @@ DEADLINE: <2026-05-05 ti.>
 - Same rules as SCHEDULED.
 - Produces a planning entry with `kind: "deadline"`.
 
+### Checkbox lists
+
+```org
+** TODO Grocery list [2/3]
+- [X] Milk
+- [X] Bread
+- [ ] Eggs
+```
+
+- Lines matching `- [ ] text` or `- [X] text` inside an entry are parsed as checkbox items.
+- Parsed into `checkboxItems` on the entry (array of `{ text, checked }`), not included in body text.
+- Indented checkbox items are supported.
+- Rendered in the agenda as a mini checklist under the item.
+- In the edit panel, checkboxes are interactive toggles that update the Org source.
+
+### Progress cookies
+
+```org
+** TODO Task [2/3]
+** TODO Task [66%]
+```
+
+- `[N/M]` (fractional) or `[N%]` (percentage) after the priority cookie (or heading start).
+- Parsed into `progress` on the entry (`{ done, total }` or `null`). For percentage form, stored as `{ done: N, total: 100 }`.
+- Stripped from the title.
+- Rendered as a small badge next to the title (green when complete, gray otherwise).
+- Toggling a checkbox in the edit panel recalculates the progress cookie in the source.
+
 ### Body text
 
 ```org
@@ -207,7 +235,7 @@ CLOSED: [2026-04-07 ti. 14:00]
 
 - Preserved as-is in body text. No rendering of markup in v1.
 
-### Lists
+### Lists (plain)
 
 ```org
 - Item one
@@ -216,7 +244,8 @@ CLOSED: [2026-04-07 ti. 14:00]
 1. Ordered item
 ```
 
-- Treated as body text. No special list handling.
+- Plain list items (without checkbox syntax) are treated as body text. No special list handling.
+- Checkbox list items (`- [ ]` / `- [X]`) are **supported** — see the Checkbox lists section above.
 
 ### Tables
 

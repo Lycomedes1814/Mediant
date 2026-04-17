@@ -5,6 +5,14 @@ export type TodoState = "TODO" | "DONE" | null;
 export type Priority = "A" | "B" | "C" | null;
 
 /**
+ * A single checkbox list item (`- [ ] text` / `- [X] text`).
+ */
+export interface CheckboxItem {
+  readonly text: string;
+  readonly checked: boolean;
+}
+
+/**
  * A SCHEDULED or DEADLINE planning entry attached to a heading.
  */
 export interface OrgPlanning {
@@ -41,6 +49,8 @@ export interface OrgEntry {
   readonly tags: readonly string[];
   readonly planning: readonly OrgPlanning[];
   readonly timestamps: readonly OrgTimestamp[];
+  readonly checkboxItems: readonly CheckboxItem[];
+  readonly progress: { readonly done: number; readonly total: number } | null;
   readonly body: string;
   readonly sourceLineNumber: number;
 }

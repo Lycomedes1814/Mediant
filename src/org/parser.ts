@@ -41,7 +41,7 @@
  *     want to avoid treating drawer syntax as body text.
  */
 
-import type { OrgEntry, OrgPlanning, Priority, TodoState } from "./model.ts";
+import type { CheckboxItem, OrgEntry, OrgPlanning, Priority, TodoState } from "./model.ts";
 import type { OrgTimestamp } from "./timestamp.ts";
 import { parseTimestamps, TIMESTAMP_RE } from "./timestamp.ts";
 
@@ -75,6 +75,13 @@ const KEYWORD_RE = /^\s*#\+/;
 
 /** Comment lines */
 const COMMENT_RE = /^\s*#\s/;
+
+/** Matches a checkbox list item. Groups: 1=checked marker (" " or "X"), 2=text */
+const CHECKBOX_RE = /^\s*-\s+\[([ X])\]\s+(.+)/;
+
+/** Matches a progress cookie in a heading. Groups: 1=done, 2=total (fractional) or 1=percent (percentage) */
+const PROGRESS_FRAC_RE = /\[(\d+)\/(\d+)\]/;
+const PROGRESS_PCT_RE = /\[(\d+)%\]/;
 
 // ── Parser ───────────────────────────────────────────────────────────
 
@@ -156,6 +163,16 @@ export function parseOrg(source: string): OrgEntry[] {
       continue;
     }
 
+    // Check if the line is a checkbox item
+    const checkboxMatch = line.match(CHECKBOX_RE);
+    if (checkboxMatch) {
+      current.checkboxItems.push({
+        text: checkboxMatch[2],
+        checked: checkboxMatch[1] === "X",
+      });
+      continue;
+    }
+
     // Check if the line is solely an active timestamp
     const lineTimestamps = parseTimestamps(line);
     if (lineTimestamps.length > 0 && isTimestampOnlyLine(line)) {
@@ -191,6 +208,8 @@ interface MutableEntry {
   tags: string[];
   planning: OrgPlanning[];
   timestamps: OrgTimestamp[];
+  checkboxItems: CheckboxItem[];
+  progress: { done: number; total: number } | null;
   body: string;
   sourceLineNumber: number;
 }
@@ -224,6 +243,20 @@ function parseHeading(match: RegExpMatchArray, lineNumber: number): MutableEntry
     remainder = remainder.slice(0, -tagsMatch[0].length);
   }
 
+  // Extract progress cookie ([2/3] or [66%]) from the remainder
+  let progress: { done: number; total: number } | null = null;
+  const fracMatch = remainder.match(PROGRESS_FRAC_RE);
+  if (fracMatch) {
+    progress = { done: Number(fracMatch[1]), total: Number(fracMatch[2]) };
+    remainder = remainder.replace(fracMatch[0], "").replace(/\s{2,}/g, " ").trim();
+  } else {
+    const pctMatch = remainder.match(PROGRESS_PCT_RE);
+    if (pctMatch) {
+      progress = { done: Number(pctMatch[1]), total: 100 };
+      remainder = remainder.replace(pctMatch[0], "").replace(/\s{2,}/g, " ").trim();
+    }
+  }
+
   // Extract any inline timestamps from the title
   const inlineTimestamps = parseTimestamps(remainder);
   const title = remainder.replace(new RegExp(TIMESTAMP_RE.source, "g"), "").trim();
@@ -236,6 +269,8 @@ function parseHeading(match: RegExpMatchArray, lineNumber: number): MutableEntry
     tags,
     planning: [],
     timestamps: inlineTimestamps,
+    checkboxItems: [],
+    progress,
     body: "",
     sourceLineNumber: lineNumber,
   };
@@ -259,6 +294,8 @@ function finalizeEntry(entry: MutableEntry): OrgEntry {
     tags: entry.tags,
     planning: entry.planning,
     timestamps: entry.timestamps,
+    checkboxItems: entry.checkboxItems,
+    progress: entry.progress,
     body: entry.body,
     sourceLineNumber: entry.sourceLineNumber,
   };

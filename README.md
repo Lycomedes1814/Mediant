@@ -28,6 +28,8 @@ See [ORG-SYNTAX.md](ORG-SYNTAX.md) for the full breakdown of supported, graceful
 | Repeater | `<2026-04-07 ti. 15:15-16:00 +1w>` |
 | SCHEDULED | `SCHEDULED: <2026-04-14 ti. 12:00>` |
 | DEADLINE | `DEADLINE: <2026-05-05 ti.>` |
+| Checkbox lists | `- [ ] Pending` / `- [X] Done` |
+| Progress cookies | `** TODO Task [2/3]` / `** TODO Task [66%]` |
 | Body text | Free text lines under a heading |
 
 Anything outside this subset is ignored gracefully — it will not cause errors.
@@ -87,7 +89,7 @@ Three clearly separated stages:
               OrgEntry[]           AgendaWeek             HTML/CSS
 ```
 
-- **Parser types** reflect Org source faithfully (headings, timestamps, planning, tags, body)
+- **Parser types** reflect Org source faithfully (headings, timestamps, planning, tags, checkbox items, progress cookies, body)
 - **Agenda types** reflect UI needs (render categories, week/day grouping, deadline collection)
 - Classification into display categories happens at the agenda stage, never during parsing
 
@@ -96,7 +98,7 @@ Three clearly separated stages:
 ```
 src/
   org/
-    model.ts           — Parser output types (OrgEntry, OrgPlanning, TodoState, Priority)
+    model.ts           — Parser output types (OrgEntry, OrgPlanning, TodoState, Priority, CheckboxItem)
     timestamp.ts       — Timestamp parsing, Date conversion, recurrence expansion
     parser.ts          — Line-by-line Org file parser
     __tests__/         — Timestamp and parser tests
@@ -123,6 +125,8 @@ index.html             — Minimal shell with #agenda container
   - Timed events with monospace time column, tag-colored left border, tag badges (colors auto-assigned from a palette, persisted in localStorage)
   - Scheduled tasks inline (time → TODO/DONE badge → title)
 - **Priority badges** — A/B/C priority cookies rendered as small colored badges (red/amber/blue) before the item title
+- **Progress badges** — `[2/3]` shown as a small badge next to the title (green when complete, gray otherwise)
+- **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under agenda items; toggleable in the edit panel
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE)
 - **DONE items** rendered at reduced opacity with line-through
 - **Today** indicated by blue card border and small dot marker
@@ -137,7 +141,7 @@ index.html             — Minimal shell with #agenda container
 
 - **TypeScript** — parser, data model, agenda generation, rendering
 - **Vite** — dev server and bundling
-- **Vitest** — 133 tests across parser, timestamp, and agenda suites
+- **Vitest** — 149 tests across parser, timestamp, and agenda suites
 - **HTML/CSS** — responsive week-agenda UI with CSS grid
 - **Node** (built-ins only) — optional local server (`server/cli.mjs`)
 - No framework dependencies, no runtime npm dependencies

@@ -26,7 +26,7 @@ Three clearly separated stages — do not collapse them:
 |---|---|
 | `src/org/timestamp.ts` | Timestamp parsing, Date conversion, recurrence expansion. **Only** module that does date arithmetic. |
 | `src/org/parser.ts` | Line-by-line Org parser → `OrgEntry[]`. Delegates all timestamp work to `timestamp.ts`. |
-| `src/org/model.ts` | Parser output types: `OrgEntry`, `OrgPlanning`, `TodoState`, `Priority`. |
+| `src/org/model.ts` | Parser output types: `OrgEntry`, `OrgPlanning`, `TodoState`, `Priority`, `CheckboxItem`. |
 | `src/agenda/model.ts` | Agenda/render types: `AgendaItem`, `AgendaDay`, `AgendaWeek`, `DeadlineItem`, `OverdueItem`, `SomedayItem`, `RenderCategory`. |
 | `src/agenda/generate.ts` | 7-day generation from a start date, recurrence expansion (bounded to requested range), classification, sorting, overdue/someday collection. |
 | `src/ui/render.ts` | DOM rendering from `AgendaWeek` + `DeadlineItem[]` + `OverdueItem[]`. |
@@ -67,9 +67,9 @@ npm start <file.org>  # build + start the local server against a file
 
 See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and unsupported syntax.
 
-**Supported:** headings, TODO/DONE, priority cookies (`[#A]`/`[#B]`/`[#C]`), tags, active timestamps, time ranges, repeaters (+Nd/w/m/y), SCHEDULED, DEADLINE, body text.
+**Supported:** headings, TODO/DONE, priority cookies (`[#A]`/`[#B]`/`[#C]`), tags, active timestamps, time ranges, repeaters (+Nd/w/m/y), SCHEDULED, DEADLINE, body text, checkbox lists (`- [ ]`/`- [X]`), progress cookies (`[2/3]`/`[66%]`).
 
-**Gracefully ignored:** file keywords (#+), inactive timestamps, drawers, properties, comments, links, inline markup, lists, tables.
+**Gracefully ignored:** file keywords (#+), inactive timestamps, drawers, properties, comments, links, inline markup, plain lists, tables.
 
 **Not supported:** .+/++ repeaters, diary sexp, custom TODO keywords, tag inheritance, habits, clocking.
 
@@ -87,11 +87,13 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Empty days** always present, shown with a subtle em dash
 - **Tags** rendered as colored badge pills, right-aligned. Colors auto-assigned from a palette and persisted in localStorage (`mediant-tag-colors`)
 - **Priority badges** — `[#A]`/`[#B]`/`[#C]` rendered as small colored badges (red/amber/blue) nested inside the item title so the row grid templates stay fixed
+- **Progress badges** — `[2/3]` rendered as a small badge next to the title (green when complete, gray otherwise)
+- **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under the agenda item; checked items dimmed with strikethrough
 - **Now line** on today's card — red line positioned proportionally within the timed section
 - **Navigation** — prev/next by 7-day increments, "Today" button returns to today as start date
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE), sorted alphabetically
 - **Add-item panel** — slide-in panel for creating TODO tasks and events. Generates Org text and appends to the active source (server file or localStorage).
-- **Edit-item panel** — same slide-in panel, opened from a per-item edit button. Rewrites the existing Org block in place, preserving body lines.
+- **Edit-item panel** — same slide-in panel, opened from a per-item edit button. Rewrites the existing Org block in place, preserving body lines. Shows interactive checkbox toggles for entries with checkbox items.
 - **Org source persistence** — in static mode, the textarea content is saved to `localStorage` (`mediant-org-source`). In server mode, the source is the file passed to `mediant <file.org>` and localStorage is not used for it. All writes flow through `persistSource()` in `main.ts`, which dispatches to the active backend.
 
 ## Testing
@@ -99,7 +101,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 Tests across three suites:
 
 - `src/org/__tests__/timestamp.test.ts` — parsing, helpers, recurrence expansion edge cases (month boundaries, leap years)
-- `src/org/__tests__/parser.test.ts` — headings, states, tags, planning, timestamps, body text, drawers, full integration
+- `src/org/__tests__/parser.test.ts` — headings, states, tags, planning, timestamps, body text, drawers, checkbox items, progress cookies, full integration
 - `src/agenda/__tests__/generate.test.ts` — classification, recurrence, sorting, 7-day structure, full integration
 
 Always run tests after changes to parser, timestamp, or agenda logic.
@@ -111,6 +113,7 @@ Always run tests after changes to parser, timestamp, or agenda logic.
 - Body text is a **single string** with lines joined by `\n`, leading whitespace trimmed
 - Planning lines only accepted **immediately after a heading** (or another planning line)
 - Timestamp-only body lines are captured as timestamps; mixed prose+timestamp lines are body text
+- Checkbox list items (`- [ ]`/`- [X]`) are captured into `checkboxItems`, not body text
 - `#+` keyword lines and `# ` comment lines inside entries are **skipped, not preserved as body**
 - Any `:UPPERCASENAME:...:END:` block is skipped (covers all drawers)
 

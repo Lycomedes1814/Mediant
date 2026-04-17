@@ -341,6 +341,93 @@ describe("multiple entries", () => {
   });
 });
 
+// ── Checkbox items ──────────────────────────────────────────────────
+
+describe("checkbox items", () => {
+  it("parses basic checkbox items", () => {
+    const entries = parseOrg("** TODO Grocery list\n- [ ] Milk\n- [X] Bread\n- [ ] Eggs\n");
+    expect(entries[0].checkboxItems).toHaveLength(3);
+    expect(entries[0].checkboxItems[0]).toEqual({ text: "Milk", checked: false });
+    expect(entries[0].checkboxItems[1]).toEqual({ text: "Bread", checked: true });
+    expect(entries[0].checkboxItems[2]).toEqual({ text: "Eggs", checked: false });
+  });
+
+  it("does not include checkbox items in body", () => {
+    const entries = parseOrg("** TODO Task\n- [X] Done item\n- [ ] Pending\n");
+    expect(entries[0].body).toBe("");
+  });
+
+  it("handles entries with no checkboxes", () => {
+    const entries = parseOrg("** TODO Simple task\n");
+    expect(entries[0].checkboxItems).toEqual([]);
+  });
+
+  it("mixes body text and checkboxes (body first)", () => {
+    const entries = parseOrg("** TODO Task\nSome notes.\n- [ ] Step one\n- [X] Step two\n");
+    expect(entries[0].body).toBe("Some notes.");
+    expect(entries[0].checkboxItems).toHaveLength(2);
+  });
+
+  it("does not parse nested list items as checkboxes", () => {
+    // Plain list items without checkbox syntax are body text
+    const entries = parseOrg("** Notes\n- Plain item\n- Another item\n");
+    expect(entries[0].checkboxItems).toEqual([]);
+    expect(entries[0].body).toContain("Plain item");
+  });
+
+  it("handles indented checkbox items", () => {
+    const entries = parseOrg("** TODO Task\n  - [ ] Indented\n  - [X] Also indented\n");
+    expect(entries[0].checkboxItems).toHaveLength(2);
+    expect(entries[0].checkboxItems[0]).toEqual({ text: "Indented", checked: false });
+    expect(entries[0].checkboxItems[1]).toEqual({ text: "Also indented", checked: true });
+  });
+});
+
+// ── Progress cookies ────────────────────────────────────────────────
+
+describe("progress cookies", () => {
+  it("parses fractional progress cookie [2/3]", () => {
+    const entries = parseOrg("** TODO Task [2/3]\n");
+    expect(entries[0].progress).toEqual({ done: 2, total: 3 });
+    expect(entries[0].title).toBe("Task");
+  });
+
+  it("parses percentage progress cookie [66%]", () => {
+    const entries = parseOrg("** TODO Task [66%]\n");
+    expect(entries[0].progress).toEqual({ done: 66, total: 100 });
+    expect(entries[0].title).toBe("Task");
+  });
+
+  it("progress is null when no cookie present", () => {
+    const entries = parseOrg("** TODO Plain task\n");
+    expect(entries[0].progress).toBeNull();
+  });
+
+  it("parses progress cookie without TODO state", () => {
+    const entries = parseOrg("** Heading [1/5]\n");
+    expect(entries[0].progress).toEqual({ done: 1, total: 5 });
+    expect(entries[0].title).toBe("Heading");
+  });
+
+  it("parses progress cookie with priority and tags", () => {
+    const entries = parseOrg("** TODO [#A] Important [3/4] :work:\n");
+    expect(entries[0].priority).toBe("A");
+    expect(entries[0].progress).toEqual({ done: 3, total: 4 });
+    expect(entries[0].title).toBe("Important");
+    expect(entries[0].tags).toEqual(["work"]);
+  });
+
+  it("parses [0/0] cookie", () => {
+    const entries = parseOrg("** Task [0/0]\n");
+    expect(entries[0].progress).toEqual({ done: 0, total: 0 });
+  });
+
+  it("parses [0%] cookie", () => {
+    const entries = parseOrg("** Task [0%]\n");
+    expect(entries[0].progress).toEqual({ done: 0, total: 100 });
+  });
+});
+
 // ── Full inbox.org integration test ──────────────────────────────────
 
 describe("inbox.org integration", () => {
