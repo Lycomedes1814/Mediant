@@ -1,7 +1,7 @@
 import { parseOrg } from "./org/parser.ts";
 import { generateWeek, collectDeadlines, collectOverdueItems, collectSomedayItems } from "./agenda/generate.ts";
 import { renderAgenda } from "./ui/render.ts";
-import { getTagColor, setTagColor, resetTagColor } from "./ui/tagColors.ts";
+import { getTagColor } from "./ui/tagColors.ts";
 
 // ── Constants ───────────────────────────────────────────────────────
 
@@ -16,37 +16,6 @@ let serverMode = false;
 let serverVersion: string | null = null;
 let agendaLoaded = false;
 
-// ── Tag editor panel ────────────────────────────────────────────────
-
-let panelEl: HTMLElement | null = null;
-let overlayEl: HTMLElement | null = null;
-
-function buildTagEditorPanel(): void {
-  overlayEl = document.createElement("div");
-  overlayEl.className = "te-overlay";
-  overlayEl.addEventListener("click", closeTagEditor);
-
-  panelEl = document.createElement("aside");
-  panelEl.className = "te-panel";
-
-  const header = document.createElement("div");
-  header.className = "te-header";
-
-  const title = document.createElement("span");
-  title.textContent = "Tag colors";
-
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "te-close";
-  closeBtn.textContent = "\u00D7";
-  closeBtn.setAttribute("aria-label", "Close");
-  closeBtn.addEventListener("click", closeTagEditor);
-
-  header.append(title, closeBtn);
-  panelEl.appendChild(header);
-
-  document.body.append(overlayEl, panelEl);
-}
-
 /** Collect every unique tag from the current parsed entries. */
 function collectAllTags(): string[] {
   const tags = new Set<string>();
@@ -54,90 +23,6 @@ function collectAllTags(): string[] {
     for (const tag of entry.tags) tags.add(tag);
   }
   return [...tags].sort();
-}
-
-function openTagEditor(): void {
-  if (!panelEl || !overlayEl) return;
-
-  // Rebuild list each time
-  const existing = panelEl.querySelector(".te-list");
-  if (existing) existing.remove();
-
-  const allTags = collectAllTags();
-
-  if (allTags.length === 0) {
-    const msg = document.createElement("p");
-    msg.className = "te-empty";
-    msg.textContent = "No tags in current agenda";
-    panelEl.appendChild(msg);
-    overlayEl.classList.add("is-open");
-    panelEl.classList.add("is-open");
-    return;
-  }
-
-  // Ensure every tag has a color assigned
-  for (const tag of allTags) getTagColor(tag);
-
-  const list = document.createElement("ul");
-  list.className = "te-list";
-
-  for (const tag of allTags) {
-    const row = document.createElement("li");
-    row.className = "te-row";
-
-    const swatch = document.createElement("input");
-    swatch.type = "color";
-    swatch.className = "te-swatch-hidden";
-    swatch.value = getTagColor(tag);
-
-    const label = document.createElement("span");
-    label.className = "te-label";
-    label.textContent = tag;
-    label.style.background = swatch.value;
-
-    const resetBtn = document.createElement("button");
-    resetBtn.className = "te-reset";
-    resetBtn.textContent = "Reset";
-    resetBtn.setAttribute("aria-label", `Reset ${tag} color`);
-
-    label.addEventListener("click", () => swatch.click());
-
-    swatch.addEventListener("input", () => {
-      setTagColor(tag, swatch.value);
-      label.style.background = swatch.value;
-    });
-
-    resetBtn.addEventListener("click", () => {
-      resetTagColor(tag);
-      const fresh = getTagColor(tag);
-      swatch.value = fresh;
-      label.style.background = fresh;
-    });
-
-    const spacer = document.createElement("span");
-    spacer.className = "te-spacer";
-
-    row.append(swatch, label, spacer, resetBtn);
-    list.appendChild(row);
-  }
-
-  panelEl.appendChild(list);
-  overlayEl.classList.add("is-open");
-  panelEl.classList.add("is-open");
-}
-
-function closeTagEditor(): void {
-  if (!panelEl || !overlayEl) return;
-  overlayEl.classList.remove("is-open");
-  panelEl.classList.remove("is-open");
-
-  // Clean up list / empty message so it's rebuilt fresh next open
-  const list = panelEl.querySelector(".te-list");
-  if (list) list.remove();
-  const msg = panelEl.querySelector(".te-empty");
-  if (msg) msg.remove();
-
-  render();
 }
 
 // ── Add-item panel ─────────────────────────────────────────────────
@@ -947,7 +832,6 @@ function closeAddPanel(): void {
 // ── Bootstrap ────────────────────────────────────────────────────────
 
 async function init(): Promise<void> {
-  buildTagEditorPanel();
   buildAddPanel();
   setupNavigation();
   startClockTicker();
@@ -955,7 +839,6 @@ async function init(): Promise<void> {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (addPanelEl?.classList.contains("is-open")) closeAddPanel();
-      if (panelEl?.classList.contains("is-open")) closeTagEditor();
     }
   });
 
@@ -1185,8 +1068,6 @@ function setupNavigation(): void {
     } else if (action === "today") {
       currentStart = todayMidnight();
       render();
-    } else if (action === "tags") {
-      openTagEditor();
     } else if (action === "add") {
       openAddPanel();
     } else if (action === "edit") {

@@ -6,7 +6,7 @@
  */
 
 import type { AgendaWeek, AgendaDay, AgendaItem, DeadlineItem, OverdueItem, SomedayItem } from "../agenda/model.ts";
-import { getTagColor, TAG_DEFAULT_COLOR } from "./tagColors.ts";
+import { getTagColor, setTagColor, TAG_DEFAULT_COLOR } from "./tagColors.ts";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
@@ -80,11 +80,6 @@ function renderHeader(startDate: Date, endDate: Date): HTMLElement {
   todayBtn.textContent = "Today";
   todayBtn.dataset.action = "today";
 
-  const tagsBtn = el("button", "tags-editor-btn");
-  tagsBtn.setAttribute("aria-label", "Edit tag colors");
-  tagsBtn.textContent = "Tags";
-  tagsBtn.dataset.action = "tags";
-
   const themeBtn = el("button", "theme-toggle");
   themeBtn.setAttribute("aria-label", "Toggle dark mode");
   themeBtn.textContent = document.documentElement.dataset.theme === "dark" ? "\u2600" : "\u263E";
@@ -105,7 +100,7 @@ function renderHeader(startDate: Date, endDate: Date): HTMLElement {
   addBtn.textContent = "+Add";
   addBtn.dataset.action = "add";
 
-  actions.append(todayBtn, tagsBtn, addBtn, themeBtn);
+  actions.append(todayBtn, addBtn, themeBtn);
   header.append(nav, actions);
   return header;
 }
@@ -459,8 +454,28 @@ function renderTags(tags: readonly string[]): HTMLElement {
   const badges = el("span", "tag-badges");
   for (const tag of tags) {
     const span = el("span", "tag");
+    span.dataset.tag = tag;
     span.style.background = getTagColor(tag);
     span.textContent = tag;
+
+    const picker = document.createElement("input");
+    picker.type = "color";
+    picker.className = "tag-color-picker";
+    picker.value = getTagColor(tag);
+
+    span.addEventListener("click", (e) => {
+      e.stopPropagation();
+      picker.click();
+    });
+
+    picker.addEventListener("input", () => {
+      setTagColor(tag, picker.value);
+      document.querySelectorAll<HTMLElement>(`.tag[data-tag="${tag}"]`).forEach((el) => {
+        el.style.background = picker.value;
+      });
+    });
+
+    span.appendChild(picker);
     badges.appendChild(span);
   }
   return badges;
