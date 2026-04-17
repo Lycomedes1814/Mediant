@@ -36,6 +36,7 @@ let editingPriority: "A" | "B" | "C" | null = null;
 let editingSchedRepeater: string | null = null;
 let editingDeadRepeater: string | null = null;
 let editingProgress: { done: number; total: number } | null = null;
+let editingCheckboxItems: { text: string; checked: boolean }[] = [];
 
 interface TagPicker {
   container: HTMLElement;
@@ -152,10 +153,9 @@ function buildAddPanel(): void {
   typeRadios.forEach(r => r.addEventListener("change", syncVisibility));
   syncVisibility();
 
-  // Checkbox section (only visible when editing an entry with checkboxes)
+  // Checkbox section
   const checkboxSection = document.createElement("div");
   checkboxSection.className = "add-field edit-checkboxes";
-  checkboxSection.style.display = "none";
   form.appendChild(checkboxSection);
 
   // Save button
@@ -176,6 +176,15 @@ function buildAddPanel(): void {
       return parsed;
     };
 
+    // Strip empty checkbox items and sync progress before save
+    const cbItems = editingCheckboxItems.filter(ci => ci.text.trim() !== "");
+    if (cbItems.length > 0) {
+      const done = cbItems.filter(ci => ci.checked).length;
+      editingProgress = { done, total: cbItems.length };
+    } else if (editingProgress && editingCheckboxItems.length === 0) {
+      editingProgress = null;
+    }
+
     let orgText: string;
     if (type === "event") {
       const dt = readDT(whenInput.input); if (dt === null) return;
@@ -185,6 +194,7 @@ function buildAddPanel(): void {
         type: "event", level: editingLevel, heading, tags: tagsVal,
         priority: editingPriority, progress: editingProgress,
         date: dt.date, time: dt.time, repeater: repeaterVal,
+        checkboxItems: cbItems,
       });
     } else {
       const s = readDT(schedInput.input); if (s === null) return;
@@ -194,6 +204,7 @@ function buildAddPanel(): void {
         priority: editingPriority, progress: editingProgress,
         schedDate: s.date, schedTime: s.time, schedRepeater: editingSchedRepeater,
         deadDate: d.date, deadTime: d.time, deadRepeater: editingDeadRepeater,
+        checkboxItems: cbItems,
       });
     }
 
@@ -221,6 +232,86 @@ function buildAddPanel(): void {
     checkboxSection,
     syncVisibility,
   };
+}
+
+/**
+ * Rebuild the checkbox editor UI inside the given container from
+ * editingCheckboxItems. Each item gets a checkbox, editable text, and
+ * a remove button. An "Add item" button at the bottom appends new items.
+ */
+function rebuildCheckboxUI(container: HTMLElement): void {
+  container.innerHTML = "";
+
+  const lbl = document.createElement("label");
+  lbl.className = "add-label";
+  lbl.textContent = "Checklist";
+  container.appendChild(lbl);
+
+  for (let ci = 0; ci < editingCheckboxItems.length; ci++) {
+    const item = editingCheckboxItems[ci];
+    const row = document.createElement("label");
+    row.className = "edit-checkbox-row";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = item.checked;
+    cb.addEventListener("change", () => {
+      editingCheckboxItems[ci].checked = cb.checked;
+      text.classList.toggle("edit-checkbox-done", cb.checked);
+      syncProgress();
+    });
+
+    const text = document.createElement("span");
+    text.className = "edit-checkbox-text";
+    text.contentEditable = "true";
+    text.textContent = item.text;
+    if (item.checked) text.classList.add("edit-checkbox-done");
+    text.addEventListener("input", () => {
+      editingCheckboxItems[ci].text = text.textContent ?? "";
+    });
+    // Prevent Enter from inserting line breaks
+    text.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); text.blur(); }
+    });
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "edit-checkbox-remove";
+    removeBtn.textContent = "\u00d7";
+    removeBtn.title = "Remove item";
+    removeBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      editingCheckboxItems.splice(ci, 1);
+      rebuildCheckboxUI(container);
+      syncProgress();
+    });
+
+    row.append(cb, text, removeBtn);
+    container.appendChild(row);
+  }
+
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "edit-checkbox-add";
+  addBtn.textContent = "+ Add item";
+  addBtn.addEventListener("click", () => {
+    editingCheckboxItems.push({ text: "", checked: false });
+    rebuildCheckboxUI(container);
+    syncProgress();
+    // Focus the new item's text
+    const rows = container.querySelectorAll<HTMLElement>(".edit-checkbox-text");
+    rows[rows.length - 1]?.focus();
+  });
+  container.appendChild(addBtn);
+
+  function syncProgress(): void {
+    if (editingCheckboxItems.length === 0) {
+      editingProgress = null;
+    } else {
+      const done = editingCheckboxItems.filter(i => i.checked).length;
+      editingProgress = { done, total: editingCheckboxItems.length };
+    }
+  }
 }
 
 function makeSelect(label: string, id: string, options: { value: string; label: string }[]): { container: HTMLElement; select: HTMLSelectElement } {
@@ -514,6 +605,7 @@ interface BuildOrgOpts {
   deadDate?: string;
   deadTime?: string;
   deadRepeater?: string | null;
+  checkboxItems?: { text: string; checked: boolean }[];
 }
 
 function buildOrgText(opts: BuildOrgOpts): string {
@@ -537,9 +629,13 @@ function buildOrgText(opts: BuildOrgOpts): string {
     return `<${date} ${dayAbbrev}${timeStr}${repStr}>`;
   };
 
+  const cbLines = (opts.checkboxItems ?? []).map(
+    ci => `- [${ci.checked ? "X" : " "}] ${ci.text}`
+  );
+
   if (opts.type === "event") {
-    if (!opts.date) return headingLine;
-    return `${headingLine}\n${makeTs(opts.date, opts.time, opts.repeater)}`;
+    if (!opts.date) return [headingLine, ...cbLines].join("\n");
+    return [headingLine, makeTs(opts.date, opts.time, opts.repeater), ...cbLines].join("\n");
   }
 
   // TODO: up to one SCHEDULED and one DEADLINE, emitted together on a single
@@ -549,6 +645,7 @@ function buildOrgText(opts: BuildOrgOpts): string {
   if (opts.deadDate) planningParts.push(`DEADLINE: ${makeTs(opts.deadDate, opts.deadTime, opts.deadRepeater)}`);
   if (opts.schedDate) planningParts.push(`SCHEDULED: ${makeTs(opts.schedDate, opts.schedTime, opts.schedRepeater)}`);
   if (planningParts.length > 0) lines.push(planningParts.join(" "));
+  lines.push(...cbLines);
   return lines.join("\n");
 }
 
@@ -579,6 +676,7 @@ function replaceOrgBlock(sourceLine: number, newText: string): void {
   // don't lose data on save.
   const planningRe = /^\s*(?:SCHEDULED|DEADLINE):\s*</;
   const bareRe = /^\s*<\d{4}-\d{2}-\d{2}/;
+  const checkboxRe = /^\s*-\s+\[[ X]\]\s+/;
   const newBlockLines = newText.split("\n");
   const newHasPlanning = newBlockLines.some(l => planningRe.test(l));
   let dropBare = newBlockLines.some(l => bareRe.test(l));
@@ -587,6 +685,7 @@ function replaceOrgBlock(sourceLine: number, newText: string): void {
     const line = lines[i];
     if (newHasPlanning && planningRe.test(line)) continue;
     if (dropBare && bareRe.test(line)) { dropBare = false; continue; }
+    if (checkboxRe.test(line)) continue;
     preserved.push(line);
   }
 
@@ -615,60 +714,6 @@ async function toggleDone(sourceLine: number): Promise<void> {
   await persistSource(lines.join("\n"));
 }
 
-/**
- * Toggle a checkbox item's checked state in the Org source and recalculate
- * the progress cookie in the heading if present.
- */
-async function toggleCheckboxItem(sourceLine: number, itemIndex: number, checked: boolean): Promise<void> {
-  const lines = currentSource.split("\n");
-  const startIdx = sourceLine - 1;
-  if (startIdx < 0 || startIdx >= lines.length) return;
-
-  // Find end of block
-  let endIdx = lines.length;
-  for (let i = startIdx + 1; i < lines.length; i++) {
-    if (/^\*+\s/.test(lines[i])) { endIdx = i; break; }
-  }
-
-  // Find the nth checkbox line in the block
-  const checkboxRe = /^(\s*-\s+\[)([ X])(\]\s+.+)/;
-  let found = 0;
-  for (let i = startIdx + 1; i < endIdx; i++) {
-    const m = lines[i].match(checkboxRe);
-    if (m) {
-      if (found === itemIndex) {
-        lines[i] = `${m[1]}${checked ? "X" : " "}${m[3]}`;
-        break;
-      }
-      found++;
-    }
-  }
-
-  // Recalculate progress cookie in the heading
-  const progressFracRe = /\[(\d+)\/(\d+)\]/;
-  const progressPctRe = /\[(\d+)%\]/;
-  const heading = lines[startIdx];
-  if (progressFracRe.test(heading) || progressPctRe.test(heading)) {
-    // Count checked/total checkboxes
-    let total = 0, done = 0;
-    for (let i = startIdx + 1; i < endIdx; i++) {
-      const m = lines[i].match(checkboxRe);
-      if (m) {
-        total++;
-        if (m[2] === "X") done++;
-      }
-    }
-    if (progressFracRe.test(heading)) {
-      lines[startIdx] = heading.replace(progressFracRe, `[${done}/${total}]`);
-    } else {
-      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-      lines[startIdx] = heading.replace(progressPctRe, `[${pct}%]`);
-    }
-  }
-
-  await persistSource(lines.join("\n"));
-}
-
 function appendOrgText(orgText: string): void {
   const updated = currentSource.trimEnd() + "\n" + orgText + "\n";
   void persistSource(updated);
@@ -683,6 +728,7 @@ function openAddPanel(): void {
   editingSchedRepeater = null;
   editingDeadRepeater = null;
   editingProgress = null;
+  editingCheckboxItems = [];
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Add item";
 
   const refs = addPanelRefs;
@@ -692,8 +738,7 @@ function openAddPanel(): void {
   refs.deadInput.value = "";
   refs.tagPicker.setTags([]);
   refs.repeatSelect.value = "";
-  refs.checkboxSection.style.display = "none";
-  refs.checkboxSection.innerHTML = "";
+  rebuildCheckboxUI(refs.checkboxSection);
   const todoRadio = refs.typeGroup.querySelector<HTMLInputElement>("input[value='todo']");
   if (todoRadio) todoRadio.checked = true;
   const noPriorityRadio = refs.priorityGroup.querySelector<HTMLInputElement>("input[value='']");
@@ -770,46 +815,8 @@ function openEditPanel(sourceLine: number): void {
   }
 
   // Populate checkbox items
-  refs.checkboxSection.innerHTML = "";
-  if (entry.checkboxItems.length > 0) {
-    const lbl = document.createElement("label");
-    lbl.className = "add-label";
-    lbl.textContent = "Checklist";
-    refs.checkboxSection.appendChild(lbl);
-
-    for (let ci = 0; ci < entry.checkboxItems.length; ci++) {
-      const item = entry.checkboxItems[ci];
-      const row = document.createElement("label");
-      row.className = "edit-checkbox-row";
-
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = item.checked;
-      cb.addEventListener("change", () => {
-        toggleCheckboxItem(sourceLine, ci, cb.checked);
-        // Keep editingProgress in sync so save doesn't overwrite with stale counts
-        const allCbs = refs.checkboxSection.querySelectorAll<HTMLInputElement>("input[type=checkbox]");
-        let done = 0;
-        allCbs.forEach(c => { if (c.checked) done++; });
-        editingProgress = { done, total: allCbs.length };
-      });
-
-      const text = document.createElement("span");
-      text.className = "edit-checkbox-text";
-      text.textContent = item.text;
-      if (item.checked) text.classList.add("edit-checkbox-done");
-
-      cb.addEventListener("change", () => {
-        text.classList.toggle("edit-checkbox-done", cb.checked);
-      });
-
-      row.append(cb, text);
-      refs.checkboxSection.appendChild(row);
-    }
-    refs.checkboxSection.style.display = "";
-  } else {
-    refs.checkboxSection.style.display = "none";
-  }
+  editingCheckboxItems = entry.checkboxItems.map(ci => ({ text: ci.text, checked: ci.checked }));
+  rebuildCheckboxUI(refs.checkboxSection);
 
   refs.syncVisibility();
 
