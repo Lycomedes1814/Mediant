@@ -1140,6 +1140,10 @@ function subscribeToServerChanges(): void {
     }
   };
   // On transient disconnect EventSource auto-reconnects; nothing to do.
+
+  // Re-fetch when the window regains focus — catches edits made while the
+  // tab was in the background (e.g. editing the .org file in Emacs).
+  window.addEventListener("focus", () => void reloadFromServer());
 }
 
 async function loadFromTextarea(source: string): Promise<void> {
