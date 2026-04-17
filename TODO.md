@@ -40,6 +40,6 @@
 - [ ] **ORG-SYNTAX.md**: update the Lists section to document checkbox support
 
 ## Add/edit item UI
-- [ ] Select from existing tags or add new
+- [X] Select from existing tags or add new
 - [X] Select priority (none, A, B, C)
 - [ ] Multi-timestamp awareness
