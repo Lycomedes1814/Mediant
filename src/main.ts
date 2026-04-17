@@ -150,6 +150,7 @@ let editingLevel: number = 1;
 let editingPriority: "A" | "B" | "C" | null = null;
 let editingSchedRepeater: string | null = null;
 let editingDeadRepeater: string | null = null;
+let editingProgress: { done: number; total: number } | null = null;
 
 interface TagPicker {
   container: HTMLElement;
@@ -297,7 +298,7 @@ function buildAddPanel(): void {
       const repeaterVal = repeatSelect.select.value || null;
       orgText = buildOrgText({
         type: "event", level: editingLevel, heading, tags: tagsVal,
-        priority: editingPriority,
+        priority: editingPriority, progress: editingProgress,
         date: dt.date, time: dt.time, repeater: repeaterVal,
       });
     } else {
@@ -305,7 +306,7 @@ function buildAddPanel(): void {
       const d = readDT(deadInput.input); if (d === null) return;
       orgText = buildOrgText({
         type: "todo", level: editingLevel, heading, tags: tagsVal,
-        priority: editingPriority,
+        priority: editingPriority, progress: editingProgress,
         schedDate: s.date, schedTime: s.time, schedRepeater: editingSchedRepeater,
         deadDate: d.date, deadTime: d.time, deadRepeater: editingDeadRepeater,
       });
@@ -616,6 +617,7 @@ interface BuildOrgOpts {
   heading: string;
   tags: string;
   priority?: "A" | "B" | "C" | null;
+  progress?: { done: number; total: number } | null;
   // event
   date?: string;
   time?: string;
@@ -638,8 +640,9 @@ function buildOrgText(opts: BuildOrgOpts): string {
 
   const todoPrefix = opts.type === "todo" ? "TODO " : "";
   const priorityPrefix = opts.priority ? `[#${opts.priority}] ` : "";
+  const progressStr = opts.progress ? ` [${opts.progress.done}/${opts.progress.total}]` : "";
   const stars = "*".repeat(opts.level);
-  const headingLine = `${stars} ${todoPrefix}${priorityPrefix}${opts.heading}${tagStr}`;
+  const headingLine = `${stars} ${todoPrefix}${priorityPrefix}${opts.heading}${progressStr}${tagStr}`;
 
   const makeTs = (date: string, time: string | undefined, repeater: string | null | undefined): string => {
     const d = new Date(date + "T00:00:00");
@@ -794,6 +797,7 @@ function openAddPanel(): void {
   editingPriority = null;
   editingSchedRepeater = null;
   editingDeadRepeater = null;
+  editingProgress = null;
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Add item";
 
   const refs = addPanelRefs;
@@ -836,6 +840,7 @@ function openEditPanel(sourceLine: number): void {
   editingLine = sourceLine;
   editingLevel = entry.level;
   editingPriority = entry.priority;
+  editingProgress = entry.progress;
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Edit item";
 
   const refs = addPanelRefs;
@@ -897,6 +902,11 @@ function openEditPanel(sourceLine: number): void {
       cb.checked = item.checked;
       cb.addEventListener("change", () => {
         toggleCheckboxItem(sourceLine, ci, cb.checked);
+        // Keep editingProgress in sync so save doesn't overwrite with stale counts
+        const allCbs = refs.checkboxSection.querySelectorAll<HTMLInputElement>("input[type=checkbox]");
+        let done = 0;
+        allCbs.forEach(c => { if (c.checked) done++; });
+        editingProgress = { done, total: allCbs.length };
       });
 
       const text = document.createElement("span");

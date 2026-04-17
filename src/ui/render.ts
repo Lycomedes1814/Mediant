@@ -410,19 +410,19 @@ function renderTitle(entry: { title: string; priority: "A" | "B" | "C" | null; p
     title.appendChild(badge);
     title.appendChild(document.createTextNode(" "));
   }
+  if (entry.priority) {
+    title.appendChild(document.createTextNode(entry.title));
+  } else {
+    title.textContent = entry.title;
+  }
   if (entry.progress) {
+    title.appendChild(document.createTextNode(" "));
     const badge = el("span", "item-progress");
     badge.textContent = `${entry.progress.done}/${entry.progress.total}`;
     if (entry.progress.done === entry.progress.total && entry.progress.total > 0) {
       badge.classList.add("progress-complete");
     }
     title.appendChild(badge);
-    title.appendChild(document.createTextNode(" "));
-  }
-  if (entry.priority || entry.progress) {
-    title.appendChild(document.createTextNode(entry.title));
-  } else {
-    title.textContent = entry.title;
   }
   return title;
 }
