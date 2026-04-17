@@ -126,6 +126,12 @@ describe("tags", () => {
     expect(entries[0].title).toBe("Levér semesteroppgave");
     expect(entries[0].tags).toEqual(["studie"]);
   });
+
+  it("parses Unicode tags", () => {
+    const entries = parseOrg("** TODO Åpent møte :résumé:økonomi:\n");
+    expect(entries[0].title).toBe("Åpent møte");
+    expect(entries[0].tags).toEqual(["résumé", "økonomi"]);
+  });
 });
 
 // ── Planning lines (SCHEDULED / DEADLINE) ────────────────────────────

@@ -51,7 +51,7 @@ import { parseTimestamps, TIMESTAMP_RE } from "./timestamp.ts";
 const HEADING_RE = /^(\*+)\s+((?:TODO|DONE)\s+)?(.+)$/;
 
 /** Matches tags at the end of a heading title. Group 1 = full tag string including colons. */
-const TAGS_RE = /\s+(:[a-zA-Z0-9_@]+(?::[a-zA-Z0-9_@]+)*:)\s*$/;
+const TAGS_RE = /\s+(:[\p{L}a-zA-Z0-9_@]+(?::[\p{L}a-zA-Z0-9_@]+)*:)\s*$/u;
 
 /** Matches a priority cookie at the start of a heading remainder. Group 1 = letter. */
 const PRIORITY_RE = /^\[#([A-C])\]\s*/;
