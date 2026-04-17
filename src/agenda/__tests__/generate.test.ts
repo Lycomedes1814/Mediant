@@ -16,6 +16,8 @@ function entry(overrides: Partial<OrgEntry> & { title: string }): OrgEntry {
     planning: [],
     timestamps: [],
     body: "",
+    checkboxItems: [],
+    progress: null,
     sourceLineNumber: 1,
     ...overrides,
   };
