@@ -30,7 +30,7 @@
   /* Category accents */
   --accent-deadline: #ef4444;
   --accent-scheduled: #6b7280;
-  --now-line: #ef4444;
+  --now-line: #f97316;
 }
 
 [data-theme="dark"] {
