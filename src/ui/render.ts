@@ -429,9 +429,8 @@ function renderTags(tags: readonly string[]): HTMLElement {
     picker.className = "tag-color-picker";
     picker.value = getTagColor(tag);
 
-    span.addEventListener("click", (e) => {
+    picker.addEventListener("click", (e) => {
       e.stopPropagation();
-      picker.click();
     });
 
     picker.addEventListener("input", () => {
