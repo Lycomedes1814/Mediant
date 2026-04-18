@@ -32,7 +32,7 @@ Three clearly separated stages — do not collapse them:
 | `src/ui/render.ts` | DOM rendering from `AgendaWeek` + `DeadlineItem[]` + `OverdueItem[]`. |
 | `src/ui/tagColors.ts` | Dynamic tag color management. Auto-assigns from palette, persists in localStorage. |
 | `src/ui/style.css` | All styles. CSS grid layout with fixed time column. |
-| `src/main.ts` | Entry point. Probes `/api/source` on boot; if present, enters server mode (hydrates from the server, subscribes to `/api/events` for external file changes). Otherwise shows the textarea input screen backed by localStorage. Tag editor & add-item panels. |
+| `src/main.ts` | Entry point. Probes `/api/source` on boot; if present, enters server mode (hydrates from the server, subscribes to `/api/events` for external file changes). Otherwise shows the textarea input screen backed by localStorage. Add-item & edit-item panels with tag picker. |
 | `server/cli.mjs` | Node CLI + HTTP server. `mediant <file.org> [--port N] [--daemon]`. Serves `dist/` plus `GET/PUT /api/source` (with `If-Match` version checks) and `GET /api/events` SSE backed by `fs.watch`. Node built-ins only, no deps. |
 
 ## Commands
@@ -89,7 +89,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Priority badges** — `[#A]`/`[#B]`/`[#C]` rendered as small colored badges (red/amber/blue) nested inside the item title so the row grid templates stay fixed
 - **Progress badges** — `[2/3]` rendered as a small badge next to the title (green when complete, gray otherwise)
 - **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under the agenda item; checked items dimmed with strikethrough
-- **Now line** on today's card — red line positioned proportionally within the timed section
+- **Now line** on today's card — orange line positioned proportionally within the timed section
 - **Navigation** — prev/next by 7-day increments, "Today" button returns to today as start date
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE), sorted alphabetically
 - **Add-item panel** — slide-in panel for creating TODO tasks and events. Generates Org text and appends to the active source (server file or localStorage).
