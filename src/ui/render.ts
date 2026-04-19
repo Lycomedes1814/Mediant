@@ -149,7 +149,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
     const row = el("div", "overdue-item");
 
     const time = el("span", "item-time");
-    time.textContent = `${item.daysOverdue} days ago`;
+    time.textContent = `${item.daysOverdue} days overdue`;
 
     const kind = el("span", "item-kind");
     kind.textContent = item.kind === "deadline" ? "DEADLINE" : "SCHEDULED";
