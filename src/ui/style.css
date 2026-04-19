@@ -270,10 +270,13 @@ body {
   gap: 0 0.375rem;
 }
 
-.overdue-item + .overdue-item {
+.overdue-meta {
+  display: contents;
 }
 
 .overdue-item .item-time {
+  grid-column: 1;
+  grid-row: 1;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
@@ -281,6 +284,8 @@ body {
 }
 
 .overdue-item .item-kind {
+  grid-column: 2;
+  grid-row: 1;
   font-size: 0.6875rem;
   font-weight: 500;
   color: var(--accent-deadline);
@@ -290,7 +295,13 @@ body {
 }
 
 .overdue-item .item-title {
+  grid-column: 3;
+  grid-row: 1;
   min-width: 0;
+}
+
+.overdue-item .tag-badges {
+  grid-row: 1;
 }
 
 /* ── Upcoming Deadlines section (top of agenda) ───────────────────── */
@@ -1158,10 +1169,29 @@ body {
 }
 
 @media (max-width: 480px) {
-  .deadline-item {
+  .deadline-item,
+  .overdue-item {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  .overdue-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .overdue-meta .item-time {
+    font-size: 0.75rem;
+  }
+
+  .overdue-meta .item-kind::before {
+    content: "·";
+    margin-right: 0.375rem;
+    color: var(--text-dim);
   }
 
   .deadline-meta {
@@ -1219,7 +1249,8 @@ body {
   .scheduled-item .tag-badges,
   .day-deadline-item .tag-badges,
   .someday-item .tag-badges,
-  .allday-item .tag-badges {
+  .allday-item .tag-badges,
+  .overdue-item .tag-badges {
     align-self: flex-start;
   }
 

@@ -154,15 +154,16 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
   for (const item of items) {
     const row = el("div", "overdue-item");
 
+    const meta = el("span", "overdue-meta");
     const time = el("span", "item-time");
     time.textContent = `${item.daysOverdue} days overdue`;
-
     const kind = el("span", "item-kind");
     kind.textContent = item.kind === "deadline" ? "DEADLINE" : "SCHEDULED";
+    meta.append(time, kind);
 
     const title = renderTitle(item.entry);
 
-    row.append(time, kind, title, renderTags(item.entry.tags));
+    row.append(title, meta, renderTags(item.entry.tags));
     section.appendChild(row);
   }
 
