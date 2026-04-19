@@ -33,9 +33,11 @@ export function createNotificationToggle(): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.className = "notification-toggle";
   btn.setAttribute("aria-label", "Toggle notifications");
+  const bellOutline = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
+  const bellFilled = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
   const update = () => {
     const on = notificationsEnabled();
-    btn.textContent = on ? "\uD83D\uDD14" : "\uD83D\uDD15";
+    btn.innerHTML = on ? bellFilled : bellOutline;
     btn.classList.toggle("is-on", on);
   };
   update();
