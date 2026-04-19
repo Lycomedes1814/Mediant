@@ -321,10 +321,13 @@ body {
   gap: 0 0.375rem;
 }
 
-.deadline-item + .deadline-item {
+.deadline-meta {
+  display: contents;
 }
 
 .deadline-item .item-time {
+  grid-column: 1;
+  grid-row: 1;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
@@ -332,6 +335,8 @@ body {
 }
 
 .deadline-item .item-state {
+  grid-column: 2;
+  grid-row: 1;
   font-size: 0.6875rem;
   font-weight: 500;
   color: var(--text-dim);
@@ -341,7 +346,17 @@ body {
 }
 
 .deadline-item .item-title {
+  grid-column: 3;
+  grid-row: 1;
   min-width: 0;
+}
+
+.deadline-item .tag-badges {
+  grid-row: 1;
+}
+
+.deadline-item .deadline-meta-priority {
+  display: none;
 }
 
 /* ── Scheduled items ──────────────────────────────────────────────── */
@@ -1143,6 +1158,69 @@ body {
 }
 
 @media (max-width: 480px) {
+  .deadline-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .deadline-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .deadline-meta .item-time {
+    font-size: 0.75rem;
+  }
+
+  .deadline-meta .item-state::before {
+    content: "·";
+    margin-right: 0.375rem;
+    color: var(--text-dim);
+  }
+
+  .deadline-item .deadline-meta-priority {
+    display: inline;
+  }
+
+  .deadline-meta-priority::before {
+    content: "·";
+    margin-right: 0.375rem;
+    color: var(--text-dim);
+  }
+
+  .deadline-item .item-title .item-priority {
+    display: none;
+  }
+
+  /* ── Day-card micro-cards ──────────────────────────────────────── */
+
+  .timed-item,
+  .timed-item.has-state,
+  .scheduled-item,
+  .scheduled-item.has-time,
+  .day-deadline-item,
+  .day-deadline-item.has-time {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .timed-item .item-time,
+  .scheduled-item .item-time,
+  .day-deadline-item .item-time {
+    font-size: 0.75rem;
+  }
+
+  .timed-item .tag-badges,
+  .scheduled-item .tag-badges,
+  .day-deadline-item .tag-badges {
+    align-self: flex-start;
+  }
+
   .add-panel {
     width: 100%;
   }

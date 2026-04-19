@@ -122,14 +122,20 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     const row = el("div", "deadline-item");
     if (dl.entry.todo === "DONE") row.classList.add("item-done");
 
+    const meta = el("span", "deadline-meta");
     const time = el("span", "item-time");
     time.textContent = dl.daysUntil === 0 ? "Today" : `In ${dl.daysUntil} days`;
-
     const state = renderStateBadge(dl.entry);
+    meta.append(time, state);
+    if (dl.entry.priority) {
+      const pri = el("span", `item-priority priority-${dl.entry.priority} deadline-meta-priority`);
+      pri.textContent = dl.entry.priority;
+      meta.appendChild(pri);
+    }
 
     const title = renderTitle(dl.entry);
 
-    row.append(time, state, title, renderTags(dl.entry.tags));
+    row.append(title, meta, renderTags(dl.entry.tags));
     section.appendChild(row);
   }
 
