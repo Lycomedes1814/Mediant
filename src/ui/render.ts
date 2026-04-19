@@ -184,7 +184,6 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
     if (item.entry.todo === "DONE") row.classList.add("item-done");
 
     const state = renderStateBadge(item.entry, "TODO");
-
     const title = renderTitle(item.entry);
 
     row.append(state, title, renderTags(item.entry.tags));
