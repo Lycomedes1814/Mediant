@@ -1110,7 +1110,14 @@ body {
   color: var(--text);
 }
 
+.add-btn-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
 .add-save-btn {
+  flex: 1;
   padding: 0.5rem;
   background: var(--border-today);
   color: #fff;
@@ -1119,11 +1126,30 @@ body {
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  margin-top: 0.25rem;
 }
 
 .add-save-btn:hover {
   filter: brightness(1.1);
+}
+
+.add-delete-btn {
+  display: none;
+  padding: 0.5rem 1rem;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-delete-btn:hover {
+  filter: brightness(1.1);
+}
+
+.add-panel.is-editing .add-delete-btn {
+  display: inline-block;
 }
 
 /* ── Responsive ───────────────────────────────────────────────────── */

@@ -216,7 +216,22 @@ function buildAddPanel(): void {
     }
     closeAddPanel();
   });
-  form.appendChild(saveBtn);
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.className = "add-delete-btn";
+  deleteBtn.textContent = "Delete";
+  deleteBtn.type = "button";
+  deleteBtn.addEventListener("click", () => {
+    if (editingLine === null) return;
+    if (!confirm("Delete this item?")) return;
+    deleteOrgBlock(editingLine);
+    closeAddPanel();
+  });
+
+  const btnRow = document.createElement("div");
+  btnRow.className = "add-btn-row";
+  btnRow.append(deleteBtn, saveBtn);
+  form.appendChild(btnRow);
 
   addPanelEl.appendChild(form);
   document.body.append(addOverlayEl, addPanelEl);
@@ -732,6 +747,26 @@ async function toggleDone(sourceLine: number): Promise<void> {
   await persistSource(lines.join("\n"));
 }
 
+function deleteOrgBlock(sourceLine: number): void {
+  const lines = currentSource.split("\n");
+  const startIdx = sourceLine - 1;
+  if (startIdx < 0 || startIdx >= lines.length) return;
+
+  let endIdx = lines.length;
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    if (/^\*+\s/.test(lines[i])) { endIdx = i; break; }
+  }
+
+  // Remove the block and any trailing blank line left behind
+  const before = lines.slice(0, startIdx);
+  const after = lines.slice(endIdx);
+  if (before.length > 0 && before[before.length - 1] === "" && (after.length === 0 || after[0] === "")) {
+    before.pop();
+  }
+
+  void persistSource([...before, ...after].join("\n"));
+}
+
 function appendOrgText(orgText: string): void {
   const updated = currentSource.trimEnd() + "\n" + orgText + "\n";
   void persistSource(updated);
@@ -748,6 +783,7 @@ function openAddPanel(): void {
   editingProgress = null;
   editingCheckboxItems = [];
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Add item";
+  addPanelEl.classList.remove("is-editing");
 
   const refs = addPanelRefs;
   refs.titleInput.value = "";
@@ -790,6 +826,7 @@ function openEditPanel(sourceLine: number): void {
   editingPriority = entry.priority;
   editingProgress = entry.progress;
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Edit item";
+  addPanelEl.classList.add("is-editing");
 
   const refs = addPanelRefs;
 
