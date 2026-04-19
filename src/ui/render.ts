@@ -123,7 +123,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     if (dl.entry.todo === "DONE") row.classList.add("item-done");
 
     const time = el("span", "item-time");
-    time.textContent = dl.daysUntil === 0 ? "Due today" : `Due ${dl.daysUntil}d`;
+    time.textContent = dl.daysUntil === 0 ? "Today" : `In ${dl.daysUntil} days`;
 
     const state = renderStateBadge(dl.entry);
 
@@ -149,7 +149,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
     const row = el("div", "overdue-item");
 
     const time = el("span", "item-time");
-    time.textContent = `${item.daysOverdue}d ago`;
+    time.textContent = `${item.daysOverdue} days ago`;
 
     const kind = el("span", "item-kind");
     kind.textContent = item.kind === "deadline" ? "DEADLINE" : "SCHEDULED";
