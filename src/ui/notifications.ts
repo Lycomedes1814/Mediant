@@ -67,6 +67,7 @@ export function scheduleNotifications(
     if (delay > 0) {
       const timer = setTimeout(() => {
         new Notification(item.title, {
+          icon: "/icon.svg",
           body: `Starts in 1 hour \u00B7 ${item.startTime}`,
           tag: `mediant-${item.dateStr}-${item.startTime}-${item.title}`,
         });
