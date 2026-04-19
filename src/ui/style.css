@@ -677,6 +677,28 @@ body {
   background: var(--bg);
 }
 
+/* ── Notification toggle ─────────────────────────────────────────── */
+
+.notification-toggle {
+  background: var(--bg-card);
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  line-height: 1;
+  color: var(--text);
+  opacity: 0.5;
+}
+
+.notification-toggle.is-on {
+  opacity: 1;
+}
+
+.notification-toggle:hover {
+  background: var(--bg);
+}
+
 /* ── Input screen ────────────────────────────────────────────────── */
 
 .input-screen {

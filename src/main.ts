@@ -2,6 +2,7 @@ import { parseOrg } from "./org/parser.ts";
 import { generateWeek, collectDeadlines, collectOverdueItems, collectSomedayItems } from "./agenda/generate.ts";
 import { renderAgenda, createThemeToggle } from "./ui/render.ts";
 import { getTagColor } from "./ui/tagColors.ts";
+import { scheduleNotifications } from "./ui/notifications.ts";
 
 // ── Constants ───────────────────────────────────────────────────────
 
@@ -866,6 +867,10 @@ async function init(): Promise<void> {
     }
   });
 
+  document.addEventListener("notification-toggled", () => {
+    if (agendaLoaded) render();
+  });
+
   // If a local Mediant server is running, hydrate from the configured
   // Org file and skip the textarea input screen entirely.
   const isServer = await probeServer();
@@ -1055,6 +1060,22 @@ function render(): void {
   const someday = collectSomedayItems(entries);
 
   renderAgenda(container, week, deadlines, overdue, someday, today);
+
+  // Schedule notifications for today's timed events
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const notifItems: { title: string; dateStr: string; startTime: string }[] = [];
+  for (const day of week) {
+    for (const item of day.items) {
+      if (item.startTime) {
+        const d = item.date;
+        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        if (ds === todayStr) {
+          notifItems.push({ title: item.entry.title, dateStr: ds, startTime: item.startTime });
+        }
+      }
+    }
+  }
+  scheduleNotifications(notifItems);
 }
 
 // ── Navigation ───────────────────────────────────────────────────────

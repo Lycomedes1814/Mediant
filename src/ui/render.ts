@@ -7,6 +7,7 @@
 
 import type { AgendaWeek, AgendaDay, AgendaItem, DeadlineItem, OverdueItem, SomedayItem } from "../agenda/model.ts";
 import { getTagColor, setTagColor, TAG_DEFAULT_COLOR } from "./tagColors.ts";
+import { notificationsEnabled, setNotificationsEnabled, requestPermission, clearScheduled, scheduleNotifications } from "./notifications.ts";
 
 export function createThemeToggle(): HTMLButtonElement {
   const btn = document.createElement("button");
@@ -24,6 +25,32 @@ export function createThemeToggle(): HTMLButtonElement {
       localStorage.setItem("theme", "dark");
       btn.textContent = "\u2600";
     }
+  });
+  return btn;
+}
+
+export function createNotificationToggle(): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.className = "notification-toggle";
+  btn.setAttribute("aria-label", "Toggle notifications");
+  const update = () => {
+    const on = notificationsEnabled();
+    btn.textContent = on ? "\uD83D\uDD14" : "\uD83D\uDD15";
+    btn.classList.toggle("is-on", on);
+  };
+  update();
+  btn.addEventListener("click", async () => {
+    if (notificationsEnabled()) {
+      setNotificationsEnabled(false);
+      clearScheduled();
+    } else {
+      const granted = await requestPermission();
+      if (!granted) return;
+      setNotificationsEnabled(true);
+    }
+    update();
+    // Re-render to pick up scheduling
+    btn.dispatchEvent(new CustomEvent("notification-toggled", { bubbles: true }));
   });
   return btn;
 }
@@ -104,7 +131,7 @@ function renderHeader(startDate: Date, endDate: Date): HTMLElement {
   addBtn.textContent = "+Add";
   addBtn.dataset.action = "add";
 
-  actions.append(todayBtn, addBtn, createThemeToggle());
+  actions.append(todayBtn, addBtn, createNotificationToggle(), createThemeToggle());
   header.append(nav, actions);
   return header;
 }
