@@ -1217,8 +1217,19 @@ body {
 
   .timed-item .tag-badges,
   .scheduled-item .tag-badges,
-  .day-deadline-item .tag-badges {
+  .day-deadline-item .tag-badges,
+  .someday-item .tag-badges,
+  .allday-item .tag-badges {
     align-self: flex-start;
+  }
+
+  .someday-item,
+  .allday-item,
+  .allday-item.has-state {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.125rem;
   }
 
   .add-panel {
