@@ -19,6 +19,7 @@ function entry(overrides: Partial<OrgEntry> & { title: string }): OrgEntry {
     checkboxItems: [],
     progress: null,
     sourceLineNumber: 1,
+    exceptions: new Map(),
     ...overrides,
   };
 }

@@ -41,7 +41,15 @@
  *     want to avoid treating drawer syntax as body text.
  */
 
-import type { CheckboxItem, OrgEntry, OrgPlanning, Priority, TodoState } from "./model.ts";
+import type {
+  CheckboxItem,
+  OrgEntry,
+  OrgPlanning,
+  Priority,
+  RecurrenceException,
+  RecurrenceOverride,
+  TodoState,
+} from "./model.ts";
 import type { OrgTimestamp } from "./timestamp.ts";
 import { parseTimestamps, TIMESTAMP_RE } from "./timestamp.ts";
 
@@ -66,9 +74,21 @@ const PLANNING_LINE_RE = /^\s*(?:SCHEDULED|DEADLINE):/;
  */
 const PLANNING_PAIR_RE = /(SCHEDULED|DEADLINE):\s*(<[^>]*>)/g;
 
-/** Matches lines that are entirely a drawer boundary. */
-const DRAWER_OPEN_RE = /^\s*:[A-Z_]+:\s*$/;
+/** Matches lines that are entirely a drawer boundary. Group 1 = drawer name. */
+const DRAWER_OPEN_RE = /^\s*:([A-Z_]+):\s*$/;
 const DRAWER_CLOSE_RE = /^\s*:END:\s*$/;
+
+/** Per-occurrence override property: `:EXCEPTION-YYYY-MM-DD: <value>`. */
+const EXCEPTION_KEY_RE = /^\s*:EXCEPTION-(\d{4}-\d{2}-\d{2}):\s*(.*?)\s*$/;
+
+/** Per-occurrence note property: `:EXCEPTION-NOTE-YYYY-MM-DD: <text>`. */
+const EXCEPTION_NOTE_KEY_RE = /^\s*:EXCEPTION-NOTE-(\d{4}-\d{2}-\d{2}):\s*(.*?)\s*$/;
+
+/** Override grammars (matched against the trimmed value after the property key). */
+const OVERRIDE_CANCELLED_RE = /^cancelled$/;
+const OVERRIDE_SHIFT_RE = /^shift\s+([+-]\d+)([mhd])$/;
+const OVERRIDE_RESCHEDULE_RE =
+  /^reschedule\s+(\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?)?$/;
 
 /** File-level keyword lines (#+title:, #+startup:, etc.) */
 const KEYWORD_RE = /^\s*#\+/;
@@ -98,25 +118,34 @@ export function parseOrg(source: string): OrgEntry[] {
 
   let current: MutableEntry | null = null;
   let acceptPlanning = false;
-  let insideDrawer = false;
+  // null = not in a drawer; otherwise the drawer's uppercase name (e.g. "PROPERTIES", "LOGBOOK").
+  let drawerKind: string | null = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const lineNumber = i + 1; // 1-based
 
-    // Skip drawer contents
-    if (insideDrawer) {
+    // Inside a drawer: either close it, or (for PROPERTIES) pluck exception keys.
+    // All other drawer contents are skipped as today.
+    if (drawerKind !== null) {
       if (DRAWER_CLOSE_RE.test(line)) {
-        insideDrawer = false;
+        drawerKind = null;
+        continue;
+      }
+      if (drawerKind === "PROPERTIES" && current) {
+        absorbExceptionProperty(line, current);
       }
       continue;
     }
 
     // Check for drawer open (only within an entry)
-    if (current && DRAWER_OPEN_RE.test(line)) {
-      insideDrawer = true;
-      acceptPlanning = false;
-      continue;
+    if (current) {
+      const drawerOpen = line.match(DRAWER_OPEN_RE);
+      if (drawerOpen) {
+        drawerKind = drawerOpen[1];
+        acceptPlanning = false;
+        continue;
+      }
     }
 
     // Heading line — starts a new entry
@@ -212,6 +241,13 @@ interface MutableEntry {
   progress: { done: number; total: number } | null;
   body: string;
   sourceLineNumber: number;
+  exceptions: Map<string, MutableException>;
+}
+
+/** Mutable exception accumulator — override and note may arrive in either order. */
+interface MutableException {
+  override: RecurrenceOverride | null;
+  note: string | null;
 }
 
 function parseHeading(match: RegExpMatchArray, lineNumber: number): MutableEntry {
@@ -273,6 +309,7 @@ function parseHeading(match: RegExpMatchArray, lineNumber: number): MutableEntry
     progress,
     body: "",
     sourceLineNumber: lineNumber,
+    exceptions: new Map(),
   };
 }
 
@@ -285,7 +322,88 @@ function isTimestampOnlyLine(line: string): boolean {
   return stripped.trim() === "";
 }
 
+/**
+ * If `line` is an `:EXCEPTION-…:` or `:EXCEPTION-NOTE-…:` property,
+ * merge it into the entry's exception map. Malformed override values
+ * are silently dropped (note for the same date, if any, is preserved).
+ * Empty notes are treated as absent.
+ *
+ * Note: this also runs on entries that have no repeating timestamp.
+ * The map is populated but never applied — see the comment on
+ * `OrgEntry.exceptions` for the rationale.
+ */
+function absorbExceptionProperty(line: string, current: MutableEntry): void {
+  const noteMatch = line.match(EXCEPTION_NOTE_KEY_RE);
+  if (noteMatch) {
+    const date = noteMatch[1];
+    const text = noteMatch[2].trim();
+    if (text.length === 0) return; // empty note → absent
+    const ex = current.exceptions.get(date) ?? { override: null, note: null };
+    ex.note = text;
+    current.exceptions.set(date, ex);
+    return;
+  }
+
+  const overrideMatch = line.match(EXCEPTION_KEY_RE);
+  if (overrideMatch) {
+    const override = parseOverride(overrideMatch[2]);
+    if (override === null) return; // malformed → drop, keep any existing note
+    const date = overrideMatch[1];
+    const ex = current.exceptions.get(date) ?? { override: null, note: null };
+    ex.override = override;
+    current.exceptions.set(date, ex);
+  }
+}
+
+/**
+ * Parse the value portion of an `:EXCEPTION-<date>:` property into a
+ * `RecurrenceOverride`, or return `null` if it doesn't match the
+ * supported grammar exactly. Conservative on purpose: unknown variants
+ * are dropped rather than half-parsed.
+ *
+ * Grammar:
+ *   cancelled
+ *   shift [+-]N(m|h|d)
+ *   reschedule YYYY-MM-DD
+ *   reschedule YYYY-MM-DD HH:MM
+ *   reschedule YYYY-MM-DD HH:MM-HH:MM
+ */
+export function parseOverride(raw: string): RecurrenceOverride | null {
+  const trimmed = raw.trim();
+
+  if (OVERRIDE_CANCELLED_RE.test(trimmed)) {
+    return { kind: "cancelled" };
+  }
+
+  const shiftMatch = trimmed.match(OVERRIDE_SHIFT_RE);
+  if (shiftMatch) {
+    const value = parseInt(shiftMatch[1], 10);
+    if (!Number.isFinite(value) || value === 0) return null;
+    const unit = shiftMatch[2] as "m" | "h" | "d";
+    const offsetMinutes = unit === "m" ? value : unit === "h" ? value * 60 : value * 60 * 24;
+    return { kind: "shift", offsetMinutes };
+  }
+
+  const rescheduleMatch = trimmed.match(OVERRIDE_RESCHEDULE_RE);
+  if (rescheduleMatch) {
+    const date = rescheduleMatch[1];
+    const startTime = rescheduleMatch[2] ?? null;
+    const endTime = rescheduleMatch[3] ?? null;
+    // Reject obviously invalid time ranges (end ≤ start) — drop the whole
+    // override rather than half-parse.
+    if (startTime !== null && endTime !== null && endTime <= startTime) return null;
+    return { kind: "reschedule", date, startTime, endTime };
+  }
+
+  return null;
+}
+
 function finalizeEntry(entry: MutableEntry): OrgEntry {
+  const exceptions = new Map<string, RecurrenceException>();
+  for (const [date, ex] of entry.exceptions) {
+    if (ex.override === null && ex.note === null) continue;
+    exceptions.set(date, { override: ex.override, note: ex.note });
+  }
   return {
     level: entry.level,
     todo: entry.todo,
@@ -298,5 +416,6 @@ function finalizeEntry(entry: MutableEntry): OrgEntry {
     progress: entry.progress,
     body: entry.body,
     sourceLineNumber: entry.sourceLineNumber,
+    exceptions,
   };
 }

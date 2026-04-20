@@ -1,3 +1,5 @@
+import type { RecurrenceException, RecurrenceOverride } from "./model.ts";
+
 /**
  * Timestamp parsing, normalization, and recurrence expansion.
  *
@@ -232,4 +234,242 @@ function stepDate(
       break;
   }
   return result;
+}
+
+// ── Per-occurrence exceptions ────────────────────────────────────────
+
+/**
+ * One concrete occurrence of a (possibly recurring) timestamp, with any
+ * per-occurrence exception already applied.
+ *
+ * `date`, `startTime`, `endTime` are the *final* values after applying
+ * any shift/reschedule. `baseDate` and `baseStartMinutes` describe the
+ * unshifted slot — used by the agenda renderer to surface the original
+ * position and by the edit panel to round-trip back to the right
+ * `:EXCEPTION-<date>:` property key.
+ *
+ * `override` is the override that was applied (`shift` or `reschedule`),
+ * or `null` if no override was applied. `cancelled` is filtered out
+ * during expansion and never appears here.
+ */
+export interface OccurrenceInstance {
+  readonly date: Date;
+  readonly startTime: string | null;
+  readonly endTime: string | null;
+  readonly baseDate: string;
+  readonly baseStartMinutes: number | null;
+  readonly override: RecurrenceOverride | null;
+  readonly note: string | null;
+}
+
+/**
+ * How many days outside the requested range we still expand base
+ * occurrences for, so that a shift can pull an occurrence from just
+ * outside the range into it (or push one just inside it out). Bigger
+ * shifts than this remain a corner case; reschedules that move from a
+ * far-out base into range are handled separately by iterating the
+ * exception map.
+ */
+const SHIFT_BUFFER_DAYS = 7;
+
+/**
+ * Expand a timestamp's occurrences into a date range, applying any
+ * per-occurrence exceptions on the way.
+ *
+ * For non-recurring timestamps, the exception map is **inert** by design
+ * (mirrors the `OrgEntry.exceptions` invariant): the base timestamp is
+ * emitted as-is and the map is ignored.
+ *
+ * For recurring timestamps:
+ *   - cancelled occurrences are dropped
+ *   - shifted occurrences move their start (and end, if present); if the
+ *     shift crosses midnight, the final calendar day moves with it but
+ *     `baseDate` stays at the original slot
+ *   - rescheduled occurrences move to a new date and (optionally) new
+ *     time, preserving base duration when only a start time is given
+ *   - notes attach to the final occurrence
+ *   - reschedules that pull an occurrence from outside the page into the
+ *     range are surfaced by iterating the exception map directly
+ */
+export function expandOccurrences(
+  ts: OrgTimestamp,
+  exceptions: ReadonlyMap<string, RecurrenceException>,
+  rangeStart: Date,
+  rangeEnd: Date,
+): OccurrenceInstance[] {
+  // Non-recurring: inert. Emit the single base occurrence (if any), no overrides.
+  if (!ts.repeater) {
+    return expandRecurrences(ts, rangeStart, rangeEnd).map((date) =>
+      buildOccurrence(ts, date, null, null),
+    );
+  }
+
+  const results: OccurrenceInstance[] = [];
+  const seenBaseKeys = new Set<string>();
+
+  // Step 1: expand base occurrences in a slightly wider window so shifts
+  // that tip across the range edge are still considered.
+  const wideStart = addDays(rangeStart, -SHIFT_BUFFER_DAYS);
+  const wideEnd = addDays(rangeEnd, SHIFT_BUFFER_DAYS);
+  for (const baseDate of expandRecurrences(ts, wideStart, wideEnd)) {
+    const baseKey = formatYMD(baseDate);
+    seenBaseKeys.add(baseKey);
+    const exception = exceptions.get(baseKey) ?? null;
+    const occ = applyException(ts, baseDate, baseKey, exception);
+    if (occ === null) continue; // cancelled
+    if (occ.date < rangeStart || occ.date > rangeEnd) continue;
+    results.push(occ);
+  }
+
+  // Step 2: pick up reschedules whose base date is outside the wider
+  // window but whose target lands inside the requested range. We trust
+  // the exception's base key to identify a real slot in the series; if
+  // the user wrote a key that doesn't line up with the repeater, we
+  // still emit (harmless and cheap).
+  for (const [baseKey, exception] of exceptions) {
+    if (seenBaseKeys.has(baseKey)) continue;
+    if (exception.override?.kind !== "reschedule") continue;
+    const baseDate = parseYMDWithTime(baseKey, ts.startTime);
+    const occ = applyException(ts, baseDate, baseKey, exception);
+    if (occ === null) continue;
+    if (occ.date < rangeStart || occ.date > rangeEnd) continue;
+    results.push(occ);
+  }
+
+  return results;
+}
+
+function applyException(
+  ts: OrgTimestamp,
+  baseDate: Date,
+  baseKey: string,
+  exception: RecurrenceException | null,
+): OccurrenceInstance | null {
+  const baseStartMinutes = ts.startTime !== null ? hhmmToMinutes(ts.startTime) : null;
+
+  if (exception === null) {
+    return buildOccurrence(ts, baseDate, null, null, baseKey, baseStartMinutes);
+  }
+
+  const { override, note } = exception;
+
+  if (override?.kind === "cancelled") return null;
+
+  if (override?.kind === "shift") {
+    const shiftedStart = new Date(baseDate.getTime() + override.offsetMinutes * 60_000);
+    const finalStartTime = ts.startTime !== null ? formatHHMM(shiftedStart) : null;
+    let finalEndTime: string | null = null;
+    if (ts.startTime !== null && ts.endTime !== null) {
+      let durationMin =
+        hhmmToMinutes(ts.endTime) - hhmmToMinutes(ts.startTime);
+      if (durationMin < 0) durationMin += 1440; // wrap: end was next-day
+      const shiftedEnd = new Date(shiftedStart.getTime() + durationMin * 60_000);
+      finalEndTime = formatHHMM(shiftedEnd);
+    }
+    return {
+      date: shiftedStart,
+      startTime: finalStartTime,
+      endTime: finalEndTime,
+      baseDate: baseKey,
+      baseStartMinutes,
+      override,
+      note,
+    };
+  }
+
+  if (override?.kind === "reschedule") {
+    let finalStartTime: string | null = ts.startTime;
+    let finalEndTime: string | null = ts.endTime;
+    if (override.startTime !== null) {
+      finalStartTime = override.startTime;
+      if (override.endTime !== null) {
+        finalEndTime = override.endTime;
+      } else if (ts.startTime !== null && ts.endTime !== null) {
+        // Preserve base duration, with same wrap-around handling as shift.
+        let durationMin = hhmmToMinutes(ts.endTime) - hhmmToMinutes(ts.startTime);
+        if (durationMin < 0) durationMin += 1440;
+        const newStartMin = hhmmToMinutes(override.startTime);
+        const newEndMin = (newStartMin + durationMin) % 1440;
+        finalEndTime = minutesToHHMM(newEndMin);
+      } else {
+        finalEndTime = null;
+      }
+    }
+    const finalDate = parseYMDWithTime(override.date, finalStartTime);
+    return {
+      date: finalDate,
+      startTime: finalStartTime,
+      endTime: finalEndTime,
+      baseDate: baseKey,
+      baseStartMinutes,
+      override,
+      note,
+    };
+  }
+
+  // No override but possibly a note.
+  return buildOccurrence(ts, baseDate, null, note, baseKey, baseStartMinutes);
+}
+
+function buildOccurrence(
+  ts: OrgTimestamp,
+  date: Date,
+  override: RecurrenceOverride | null,
+  note: string | null,
+  baseKey?: string,
+  baseStartMinutes?: number | null,
+): OccurrenceInstance {
+  return {
+    date,
+    startTime: ts.startTime,
+    endTime: ts.endTime,
+    baseDate: baseKey ?? formatYMD(date),
+    baseStartMinutes:
+      baseStartMinutes !== undefined
+        ? baseStartMinutes
+        : ts.startTime !== null
+          ? hhmmToMinutes(ts.startTime)
+          : null,
+    override,
+    note,
+  };
+}
+
+// ── Small date/time helpers used by exception application ────────────
+
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function formatYMD(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function formatHHMM(date: Date): string {
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+function hhmmToMinutes(s: string): number {
+  const [h, m] = s.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minutesToHHMM(minutes: number): string {
+  const h = String(Math.floor(minutes / 60)).padStart(2, "0");
+  const m = String(minutes % 60).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+function parseYMDWithTime(ymd: string, time: string | null): Date {
+  const [y, mo, d] = ymd.split("-").map(Number);
+  if (time === null) return new Date(y, mo - 1, d, 0, 0, 0, 0);
+  const [h, mi] = time.split(":").map(Number);
+  return new Date(y, mo - 1, d, h, mi, 0, 0);
 }

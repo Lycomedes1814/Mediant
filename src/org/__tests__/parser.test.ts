@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseOrg } from "../parser.ts";
+import { parseOrg, parseOverride } from "../parser.ts";
 
 // ── File-level behavior ──────────────────────────────────────────────
 
@@ -324,6 +324,231 @@ describe("drawers", () => {
       "** Entry\n:LOGBOOK:\nCLOCK: [2026-04-07 ti.]\n:END:\nBody.\n",
     );
     expect(entries[0].body).toBe("Body.");
+  });
+});
+
+// ── Exception properties ────────────────────────────────────────────
+
+describe("parseOverride", () => {
+  it("parses cancelled", () => {
+    expect(parseOverride("cancelled")).toEqual({ kind: "cancelled" });
+  });
+
+  it("parses shift in minutes / hours / days", () => {
+    expect(parseOverride("shift +45m")).toEqual({ kind: "shift", offsetMinutes: 45 });
+    expect(parseOverride("shift -1h")).toEqual({ kind: "shift", offsetMinutes: -60 });
+    expect(parseOverride("shift +1d")).toEqual({ kind: "shift", offsetMinutes: 1440 });
+  });
+
+  it("rejects shift without sign or with zero", () => {
+    expect(parseOverride("shift 45m")).toBeNull();
+    expect(parseOverride("shift +0m")).toBeNull();
+  });
+
+  it("rejects unsupported shift units", () => {
+    expect(parseOverride("shift +1w")).toBeNull();
+  });
+
+  it("parses reschedule with date only", () => {
+    expect(parseOverride("reschedule 2026-05-12")).toEqual({
+      kind: "reschedule",
+      date: "2026-05-12",
+      startTime: null,
+      endTime: null,
+    });
+  });
+
+  it("parses reschedule with date + start time", () => {
+    expect(parseOverride("reschedule 2026-05-12 18:00")).toEqual({
+      kind: "reschedule",
+      date: "2026-05-12",
+      startTime: "18:00",
+      endTime: null,
+    });
+  });
+
+  it("parses reschedule with date + start-end range", () => {
+    expect(parseOverride("reschedule 2026-05-12 18:00-19:30")).toEqual({
+      kind: "reschedule",
+      date: "2026-05-12",
+      startTime: "18:00",
+      endTime: "19:30",
+    });
+  });
+
+  it("rejects reschedule with end ≤ start", () => {
+    expect(parseOverride("reschedule 2026-05-12 18:00-18:00")).toBeNull();
+    expect(parseOverride("reschedule 2026-05-12 18:00-17:00")).toBeNull();
+  });
+
+  it("rejects unknown override grammar", () => {
+    expect(parseOverride("postpone 2026-05-12")).toBeNull();
+    expect(parseOverride("")).toBeNull();
+    expect(parseOverride("CANCELLED")).toBeNull(); // case-sensitive
+  });
+});
+
+describe("exception properties in PROPERTIES drawer", () => {
+  it("captures a cancelled override", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: cancelled\n" +
+        ":END:\n",
+    );
+    const ex = entries[0].exceptions.get("2026-04-27");
+    expect(ex).toEqual({ override: { kind: "cancelled" }, note: null });
+  });
+
+  it("captures a shift override", () => {
+    const entries = parseOrg(
+      "** Entry\n:PROPERTIES:\n:EXCEPTION-2026-05-04: shift +45m\n:END:\n",
+    );
+    expect(entries[0].exceptions.get("2026-05-04")).toEqual({
+      override: { kind: "shift", offsetMinutes: 45 },
+      note: null,
+    });
+  });
+
+  it("captures a reschedule override with time", () => {
+    const entries = parseOrg(
+      "** Entry\n:PROPERTIES:\n:EXCEPTION-2026-05-11: reschedule 2026-05-12 18:00\n:END:\n",
+    );
+    expect(entries[0].exceptions.get("2026-05-11")).toEqual({
+      override: {
+        kind: "reschedule",
+        date: "2026-05-12",
+        startTime: "18:00",
+        endTime: null,
+      },
+      note: null,
+    });
+  });
+
+  it("captures a note-only entry", () => {
+    const entries = parseOrg(
+      "** Entry\n:PROPERTIES:\n:EXCEPTION-NOTE-2026-05-18: Bring water\n:END:\n",
+    );
+    expect(entries[0].exceptions.get("2026-05-18")).toEqual({
+      override: null,
+      note: "Bring water",
+    });
+  });
+
+  it("merges override + note for the same date", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-05-04: shift +45m\n" +
+        ":EXCEPTION-NOTE-2026-05-04: Bring mat and water\n" +
+        ":END:\n",
+    );
+    expect(entries[0].exceptions.get("2026-05-04")).toEqual({
+      override: { kind: "shift", offsetMinutes: 45 },
+      note: "Bring mat and water",
+    });
+  });
+
+  it("merges in either source order (note first, override second)", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-NOTE-2026-05-04: Note first\n" +
+        ":EXCEPTION-2026-05-04: cancelled\n" +
+        ":END:\n",
+    );
+    expect(entries[0].exceptions.get("2026-05-04")).toEqual({
+      override: { kind: "cancelled" },
+      note: "Note first",
+    });
+  });
+
+  it("drops a malformed override but keeps the note", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-05-04: nonsense xyz\n" +
+        ":EXCEPTION-NOTE-2026-05-04: Real note\n" +
+        ":END:\n",
+    );
+    expect(entries[0].exceptions.get("2026-05-04")).toEqual({
+      override: null,
+      note: "Real note",
+    });
+  });
+
+  it("treats empty note as absent", () => {
+    const entries = parseOrg(
+      "** Entry\n:PROPERTIES:\n:EXCEPTION-NOTE-2026-05-18:\n:END:\n",
+    );
+    expect(entries[0].exceptions.size).toBe(0);
+  });
+
+  it("drops an invalid reschedule range (override absent), preserving any note", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-05-04: reschedule 2026-05-12 18:00-17:00\n" +
+        ":EXCEPTION-NOTE-2026-05-04: Still attached\n" +
+        ":END:\n",
+    );
+    expect(entries[0].exceptions.get("2026-05-04")).toEqual({
+      override: null,
+      note: "Still attached",
+    });
+  });
+
+  it("ignores other property keys", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":PROPERTIES:\n" +
+        ":CATEGORY: work\n" +
+        ":Effort: 1:30\n" +
+        ":EXCEPTION-2026-05-04: cancelled\n" +
+        ":END:\n",
+    );
+    expect(entries[0].exceptions.size).toBe(1);
+    expect(entries[0].exceptions.get("2026-05-04")?.override?.kind).toBe("cancelled");
+  });
+
+  it("does not capture EXCEPTION-shaped lines inside other drawers", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":LOGBOOK:\n" +
+        ":EXCEPTION-2026-05-04: cancelled\n" +
+        ":END:\n",
+    );
+    expect(entries[0].exceptions.size).toBe(0);
+  });
+
+  it("collects exceptions across multiple dates", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: cancelled\n" +
+        ":EXCEPTION-2026-05-04: shift +45m\n" +
+        ":EXCEPTION-NOTE-2026-05-11: A note\n" +
+        ":END:\n",
+    );
+    expect(entries[0].exceptions.size).toBe(3);
+  });
+
+  it("parses exceptions even when the entry has no repeater (inert by design)", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        "<2026-04-27 ma. 12:00>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: cancelled\n" +
+        ":END:\n",
+    );
+    // Map is populated; expansion (which never runs against a non-repeater
+    // here) is what would have applied it. See OrgEntry.exceptions docs.
+    expect(entries[0].exceptions.size).toBe(1);
+  });
+
+  it("entry with no exception properties has an empty map", () => {
+    const entries = parseOrg("** Entry\nBody.\n");
+    expect(entries[0].exceptions.size).toBe(0);
   });
 });
 

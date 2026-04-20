@@ -6,7 +6,9 @@ import {
   isDateOnly,
   isTimed,
   expandRecurrences,
+  expandOccurrences,
 } from "../timestamp.ts";
+import type { RecurrenceException } from "../model.ts";
 
 // ── Parsing ──────────────────────────────────────────────────────────
 
@@ -343,5 +345,284 @@ describe("expandRecurrences", () => {
       const dates = expandRecurrences(ts, weekStart, weekEnd);
       expect(dates).toHaveLength(1);
     });
+  });
+});
+
+// ── expandOccurrences (with per-occurrence exceptions) ──────────────
+
+describe("expandOccurrences", () => {
+  // The 7-day window we use for most tests: Mon May 4 → Sun May 10, 2026.
+  const may4 = new Date(2026, 4, 4);
+  const may10End = new Date(2026, 4, 10, 23, 59, 59, 999);
+
+  function ex(input: Partial<RecurrenceException>): RecurrenceException {
+    return { override: input.override ?? null, note: input.note ?? null };
+  }
+
+  function emptyMap(): ReadonlyMap<string, RecurrenceException> {
+    return new Map();
+  }
+
+  it("emits base occurrences when no exceptions apply", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00-18:00 +1w>")[0];
+    const occs = expandOccurrences(ts, emptyMap(), may4, may10End);
+    expect(occs).toHaveLength(1);
+    expect(occs[0].baseDate).toBe("2026-05-04");
+    expect(occs[0].startTime).toBe("17:00");
+    expect(occs[0].endTime).toBe("18:00");
+    expect(occs[0].override).toBeNull();
+    expect(occs[0].note).toBeNull();
+    expect(occs[0].baseStartMinutes).toBe(17 * 60);
+  });
+
+  it("drops a cancelled occurrence even if it carries a note", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      ["2026-05-04", ex({ override: { kind: "cancelled" }, note: "bortreist" })],
+    ]);
+    const occs = expandOccurrences(ts, exceptions, may4, may10End);
+    expect(occs).toHaveLength(0);
+  });
+
+  it("applies a positive shift, preserving duration", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00-18:00 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      ["2026-05-04", ex({ override: { kind: "shift", offsetMinutes: 45 } })],
+    ]);
+    const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
+    expect(occ.startTime).toBe("17:45");
+    expect(occ.endTime).toBe("18:45");
+    expect(occ.baseDate).toBe("2026-05-04");
+    expect(occ.override).toEqual({ kind: "shift", offsetMinutes: 45 });
+  });
+
+  it("applies a negative shift", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00-18:00 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      ["2026-05-04", ex({ override: { kind: "shift", offsetMinutes: -30 } })],
+    ]);
+    const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
+    expect(occ.startTime).toBe("16:30");
+    expect(occ.endTime).toBe("17:30");
+  });
+
+  it("shift across midnight forward — final date moves to the next day", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 23:30-00:30 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      ["2026-05-04", ex({ override: { kind: "shift", offsetMinutes: 45 } })],
+    ]);
+    const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
+    // 23:30 + 45m → 00:15 next day; baseDate stays at the unshifted slot.
+    expect(occ.date.getFullYear()).toBe(2026);
+    expect(occ.date.getMonth()).toBe(4); // May
+    expect(occ.date.getDate()).toBe(5);
+    expect(occ.startTime).toBe("00:15");
+    // duration was 60 min (00:30 → wraps as next-day), end after shift is 01:15.
+    expect(occ.endTime).toBe("01:15");
+    expect(occ.baseDate).toBe("2026-05-04");
+  });
+
+  it("shift across midnight backward — final date moves to the previous day", () => {
+    const ts = parseTimestamps("<2026-05-05 ti. 00:15-01:15 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      ["2026-05-05", ex({ override: { kind: "shift", offsetMinutes: -45 } })],
+    ]);
+    const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
+    expect(occ.date.getDate()).toBe(4);
+    expect(occ.startTime).toBe("23:30");
+    expect(occ.endTime).toBe("00:30"); // baseDuration 60m, applied to 23:30 → wraps
+    expect(occ.baseDate).toBe("2026-05-05");
+  });
+
+  it("reschedule with date only preserves base time and end time", () => {
+    const ts = parseTimestamps("<2026-05-11 ma. 17:00-18:00 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      [
+        "2026-05-11",
+        ex({
+          override: { kind: "reschedule", date: "2026-05-08", startTime: null, endTime: null },
+        }),
+      ],
+    ]);
+    const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
+    expect(occ.date.getDate()).toBe(8);
+    expect(occ.startTime).toBe("17:00");
+    expect(occ.endTime).toBe("18:00");
+    expect(occ.baseDate).toBe("2026-05-11");
+  });
+
+  it("reschedule with new start time preserves base duration when base has end", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00-18:00 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      [
+        "2026-05-04",
+        ex({
+          override: { kind: "reschedule", date: "2026-05-06", startTime: "19:00", endTime: null },
+        }),
+      ],
+    ]);
+    const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
+    expect(occ.date.getDate()).toBe(6);
+    expect(occ.startTime).toBe("19:00");
+    expect(occ.endTime).toBe("20:00"); // 60-min duration preserved
+  });
+
+  it("reschedule with new start time and no base end → no end", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      [
+        "2026-05-04",
+        ex({
+          override: { kind: "reschedule", date: "2026-05-06", startTime: "19:00", endTime: null },
+        }),
+      ],
+    ]);
+    const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
+    expect(occ.startTime).toBe("19:00");
+    expect(occ.endTime).toBeNull();
+  });
+
+  it("reschedule with explicit start-end range overrides both", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00-18:00 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      [
+        "2026-05-04",
+        ex({
+          override: {
+            kind: "reschedule",
+            date: "2026-05-06",
+            startTime: "20:00",
+            endTime: "22:00",
+          },
+        }),
+      ],
+    ]);
+    const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
+    expect(occ.startTime).toBe("20:00");
+    expect(occ.endTime).toBe("22:00");
+  });
+
+  it("drops a reschedule whose final date is outside the requested range", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      [
+        "2026-05-04",
+        ex({
+          override: { kind: "reschedule", date: "2026-06-10", startTime: null, endTime: null },
+        }),
+      ],
+    ]);
+    expect(expandOccurrences(ts, exceptions, may4, may10End)).toHaveLength(0);
+  });
+
+  it("emits a reschedule that pulls a far-future occurrence into the page", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    // Base 2026-07-20 (way outside the page) gets rescheduled into 2026-05-07.
+    const exceptions = new Map<string, RecurrenceException>([
+      [
+        "2026-07-20",
+        ex({
+          override: { kind: "reschedule", date: "2026-05-07", startTime: null, endTime: null },
+        }),
+      ],
+    ]);
+    const occs = expandOccurrences(ts, exceptions, may4, may10End);
+    // The base 2026-05-04 occurrence + the rescheduled one.
+    expect(occs).toHaveLength(2);
+    const moved = occs.find((o) => o.baseDate === "2026-07-20");
+    expect(moved).toBeDefined();
+    expect(moved!.date.getDate()).toBe(7);
+  });
+
+  it("renders a reschedule onto the same day as another base occurrence (no merge)", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      // 2026-05-04 reschedules to 2026-05-11 — already a base occurrence next week,
+      // but our window is just may4..may10. Use 2026-05-11 base → 2026-05-04 collision.
+    ]);
+    // Reverse: move next week's 2026-05-11 onto 2026-05-04.
+    const ex2 = new Map<string, RecurrenceException>([
+      [
+        "2026-05-11",
+        ex({
+          override: { kind: "reschedule", date: "2026-05-04", startTime: null, endTime: null },
+        }),
+      ],
+    ]);
+    const occs = expandOccurrences(ts, ex2, may4, may10End);
+    // Base 2026-05-04 + rescheduled 2026-05-11 both land on 2026-05-04.
+    const onMay4 = occs.filter((o) => o.date.getDate() === 4);
+    expect(onMay4).toHaveLength(2);
+    expect(occs).toHaveLength(2);
+  });
+
+  it("attaches a note to a base occurrence with no override", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      ["2026-05-04", ex({ note: "Bring vannflaske" })],
+    ]);
+    const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
+    expect(occ.note).toBe("Bring vannflaske");
+    expect(occ.override).toBeNull();
+  });
+
+  it("emits override + note together on the shifted occurrence", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      [
+        "2026-05-04",
+        ex({
+          override: { kind: "shift", offsetMinutes: 60 },
+          note: "Lengre økt i dag",
+        }),
+      ],
+    ]);
+    const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
+    expect(occ.startTime).toBe("18:00");
+    expect(occ.note).toBe("Lengre økt i dag");
+    expect(occ.override).toEqual({ kind: "shift", offsetMinutes: 60 });
+  });
+
+  it("ignores exceptions on a non-repeating timestamp (parsed but inert)", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      ["2026-05-04", ex({ override: { kind: "cancelled" } })],
+    ]);
+    const occs = expandOccurrences(ts, exceptions, may4, may10End);
+    // Non-recurring → exception map is inert, base occurrence is emitted as-is.
+    expect(occs).toHaveLength(1);
+    expect(occs[0].override).toBeNull();
+  });
+
+  it("collects multiple exceptions across a longer window", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00-18:00 +1w>")[0];
+    const longEnd = new Date(2026, 4, 31, 23, 59, 59, 999);
+    const exceptions = new Map<string, RecurrenceException>([
+      ["2026-05-04", ex({ override: { kind: "cancelled" } })],
+      ["2026-05-11", ex({ override: { kind: "shift", offsetMinutes: 45 } })],
+      ["2026-05-18", ex({ note: "Husk matte" })],
+    ]);
+    const occs = expandOccurrences(ts, exceptions, may4, longEnd);
+    // Bases: 04, 11, 18, 25. 04 dropped → 3 occurrences.
+    expect(occs).toHaveLength(3);
+    expect(occs.map((o) => o.baseDate)).toEqual([
+      "2026-05-11",
+      "2026-05-18",
+      "2026-05-25",
+    ]);
+    expect(occs[0].startTime).toBe("17:45");
+    expect(occs[1].note).toBe("Husk matte");
+    expect(occs[2].override).toBeNull();
+  });
+
+  it("date-only timestamp: shift by days moves the day, not the time", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. +1w>")[0];
+    const exceptions = new Map<string, RecurrenceException>([
+      ["2026-05-04", ex({ override: { kind: "shift", offsetMinutes: 24 * 60 } })],
+    ]);
+    const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
+    expect(occ.date.getDate()).toBe(5);
+    expect(occ.startTime).toBeNull();
+    expect(occ.endTime).toBeNull();
   });
 });

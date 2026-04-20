@@ -21,6 +21,35 @@ export interface OrgPlanning {
 }
 
 /**
+ * Behaviour override for a single recurrence occurrence.
+ * Stored in the entry's property drawer keyed by the base (unshifted)
+ * occurrence date. See `RecurrenceException`.
+ */
+export type RecurrenceOverride =
+  | { readonly kind: "cancelled" }
+  | { readonly kind: "shift"; readonly offsetMinutes: number }
+  | {
+      readonly kind: "reschedule";
+      readonly date: string;
+      readonly startTime: string | null;
+      readonly endTime: string | null;
+    };
+
+/**
+ * A per-occurrence deviation from the base recurrence.
+ *
+ * `override` is behaviour (cancelled / shift / reschedule).
+ * `note` is metadata — independent of any override, so a single
+ * occurrence can e.g. be shifted AND carry a note, or be cancelled
+ * AND carry a note (the note remains visible in the edit panel even
+ * if the occurrence is not rendered).
+ */
+export interface RecurrenceException {
+  readonly override: RecurrenceOverride | null;
+  readonly note: string | null;
+}
+
+/**
  * A single parsed Org heading with all its associated data.
  *
  * This is the parser's output — it mirrors Org semantics faithfully
@@ -53,4 +82,15 @@ export interface OrgEntry {
   readonly progress: { readonly done: number; readonly total: number } | null;
   readonly body: string;
   readonly sourceLineNumber: number;
+  /**
+   * Per-occurrence deviations keyed by base date (YYYY-MM-DD).
+   * Always present; an empty map means no exceptions. The map is
+   * populated from any `:EXCEPTION-<date>:` / `:EXCEPTION-NOTE-<date>:`
+   * properties on the heading, regardless of whether the entry actually
+   * has a repeating timestamp — on non-recurring entries the map is
+   * **parsed but inert** (expansion never runs, so nothing ever applies).
+   * That is intentional; don't "fix" it by applying the map to a single
+   * timestamp.
+   */
+  readonly exceptions: ReadonlyMap<string, RecurrenceException>;
 }
