@@ -1,6 +1,12 @@
 import { parseOrg } from "./org/parser.ts";
 import { upsertProperty, removeProperty } from "./org/drawer.ts";
 import type { OrgEntry, RecurrenceException, RecurrenceOverride } from "./org/model.ts";
+import {
+  appendOrgTextToSource,
+  deleteOrgBlockInSource,
+  replaceOrgBlockInSource,
+  toggleDoneInSource,
+} from "./org/sourceEdit.ts";
 import { generateWeek, collectDeadlines, collectOverdueItems, collectSomedayItems } from "./agenda/generate.ts";
 import { renderAgenda, createThemeToggle } from "./ui/render.ts";
 import { getTagColor } from "./ui/tagColors.ts";
@@ -37,6 +43,7 @@ let editingLine: number | null = null;
 let editingBaseDate: string | null = null;
 let editingLevel: number = 1;
 let editingPriority: "A" | "B" | "C" | null = null;
+let editingTodoState: "TODO" | "DONE" = "TODO";
 let editingSchedRepeater: string | null = null;
 let editingDeadRepeater: string | null = null;
 let editingProgress: { done: number; total: number } | null = null;
@@ -321,6 +328,7 @@ function buildAddPanel(): void {
       const d = readDT(deadInput.input); if (d === null) return;
       orgText = buildOrgText({
         type: "todo", level: editingLevel, heading, tags: tagsVal,
+        todoState: editingTodoState,
         priority: editingPriority, progress: editingProgress,
         schedDate: s.date, schedTime: s.time, schedRepeater: editingSchedRepeater,
         deadDate: d.date, deadTime: d.time, deadRepeater: editingDeadRepeater,
@@ -753,6 +761,7 @@ interface BuildOrgOpts {
   level: number;
   heading: string;
   tags: string;
+  todoState?: "TODO" | "DONE";
   priority?: "A" | "B" | "C" | null;
   progress?: { done: number; total: number } | null;
   // event
@@ -776,7 +785,7 @@ function buildOrgText(opts: BuildOrgOpts): string {
     if (tagList.length > 0) tagStr = " :" + tagList.join(":") + ":";
   }
 
-  const todoPrefix = opts.type === "todo" ? "TODO " : "";
+  const todoPrefix = opts.type === "todo" ? `${opts.todoState ?? "TODO"} ` : "";
   const priorityPrefix = opts.priority ? `[#${opts.priority}] ` : "";
   const progressStr = opts.progress ? ` [${opts.progress.done}/${opts.progress.total}]` : "";
   const stars = "*".repeat(opts.level);
@@ -810,94 +819,21 @@ function buildOrgText(opts: BuildOrgOpts): string {
   return lines.join("\n");
 }
 
-/**
- * Replace the block for an entry at `sourceLine` with `newText`, preserving
- * any body text (non-planning, non-bare-timestamp lines) that followed the
- * original heading. The block extends from the heading line up to (but not
- * including) the next heading or EOF.
- */
 function replaceOrgBlock(sourceLine: number, newText: string): void {
-  const existing = currentSource;
-  const lines = existing.split("\n");
-  const startIdx = sourceLine - 1;
-  if (startIdx < 0 || startIdx >= lines.length) return;
-
-  // Find end of block: next heading or EOF
-  let endIdx = lines.length;
-  for (let i = startIdx + 1; i < lines.length; i++) {
-    if (/^\*+\s/.test(lines[i])) { endIdx = i; break; }
-  }
-
-  // The new block re-emits at most one combined planning line (DEADLINE
-  // and/or SCHEDULED) and one bare timestamp. Since the edit panel always
-  // re-populates both planning fields from the entry before saving, the
-  // new block reflects the full desired planning state — so drop every
-  // old planning line when the new block has one. Leave every other
-  // structural line alone so entries with multiple active timestamps
-  // don't lose data on save.
-  const planningRe = /^\s*(?:SCHEDULED|DEADLINE):\s*</;
-  const bareRe = /^\s*<\d{4}-\d{2}-\d{2}/;
-  const checkboxRe = /^\s*-\s+\[[ X]\]\s+/;
-  const newBlockLines = newText.split("\n");
-  const newHasPlanning = newBlockLines.some(l => planningRe.test(l));
-  let dropBare = newBlockLines.some(l => bareRe.test(l));
-  const preserved: string[] = [];
-  for (let i = startIdx + 1; i < endIdx; i++) {
-    const line = lines[i];
-    if (newHasPlanning && planningRe.test(line)) continue;
-    if (dropBare && bareRe.test(line)) { dropBare = false; continue; }
-    if (checkboxRe.test(line)) continue;
-    preserved.push(line);
-  }
-
-  const updated = [
-    ...lines.slice(0, startIdx),
-    ...newBlockLines,
-    ...preserved,
-    ...lines.slice(endIdx),
-  ].join("\n");
-
+  const updated = replaceOrgBlockInSource(currentSource, sourceLine, newText);
   void persistSource(updated);
 }
 
-/**
- * Flip TODO↔DONE on the heading line of the entry at `sourceLine`. Edits
- * only the heading, leaving planning lines and body untouched.
- */
 async function toggleDone(sourceLine: number): Promise<void> {
-  const lines = currentSource.split("\n");
-  const idx = sourceLine - 1;
-  if (idx < 0 || idx >= lines.length) return;
-  const m = lines[idx].match(/^(\*+\s+)(TODO|DONE)(\b.*)?$/);
-  if (!m) return;
-  const next = m[2] === "TODO" ? "DONE" : "TODO";
-  lines[idx] = `${m[1]}${next}${m[3] ?? ""}`;
-  await persistSource(lines.join("\n"));
+  await persistSource(toggleDoneInSource(currentSource, sourceLine));
 }
 
 function deleteOrgBlock(sourceLine: number): void {
-  const lines = currentSource.split("\n");
-  const startIdx = sourceLine - 1;
-  if (startIdx < 0 || startIdx >= lines.length) return;
-
-  let endIdx = lines.length;
-  for (let i = startIdx + 1; i < lines.length; i++) {
-    if (/^\*+\s/.test(lines[i])) { endIdx = i; break; }
-  }
-
-  // Remove the block and any trailing blank line left behind
-  const before = lines.slice(0, startIdx);
-  const after = lines.slice(endIdx);
-  if (before.length > 0 && before[before.length - 1] === "" && (after.length === 0 || after[0] === "")) {
-    before.pop();
-  }
-
-  void persistSource([...before, ...after].join("\n"));
+  void persistSource(deleteOrgBlockInSource(currentSource, sourceLine));
 }
 
 function appendOrgText(orgText: string): void {
-  const updated = currentSource.trimEnd() + "\n" + orgText + "\n";
-  void persistSource(updated);
+  void persistSource(appendOrgTextToSource(currentSource, orgText));
 }
 
 function openAddPanel(): void {
@@ -907,6 +843,7 @@ function openAddPanel(): void {
   editingBaseDate = null;
   editingLevel = 1;
   editingPriority = null;
+  editingTodoState = "TODO";
   editingSchedRepeater = null;
   editingDeadRepeater = null;
   editingProgress = null;
@@ -955,6 +892,7 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   editingBaseDate = baseDate;
   editingLevel = entry.level;
   editingPriority = entry.priority;
+  editingTodoState = entry.todo === "DONE" ? "DONE" : "TODO";
   editingProgress = entry.progress;
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Edit item";
   addPanelEl.classList.add("is-editing");
