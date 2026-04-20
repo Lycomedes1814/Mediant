@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .claude/
+/.codex
 /.agent-shell/
 .env
 deploy.sh
