@@ -89,15 +89,14 @@ export function collectDeadlines(entries: OrgEntry[], referenceDate: Date): Dead
   for (const entry of entries) {
     for (const plan of entry.planning) {
       if (plan.kind !== "deadline") continue;
-      const dueDate = toDate(plan.timestamp);
-      const diffMs = dueDate.getTime() - today.getTime();
-      const daysUntil = Math.round(diffMs / (1000 * 60 * 60 * 24));
-      if (daysUntil < 0) continue;
+      const dueDate = findNextPlanningOccurrence(entry, plan.timestamp, today);
+      if (dueDate === null) continue;
+      const daysUntil = diffCalendarDays(dueDate, today);
       results.push({ entry, dueDate, daysUntil, sourceTimestamp: plan.timestamp });
     }
   }
 
-  results.sort((a, b) => a.daysUntil - b.daysUntil);
+  results.sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
   return results;
 }
 
@@ -114,15 +113,18 @@ export function collectOverdueItems(entries: OrgEntry[], referenceDate: Date): O
     if (entry.todo !== "TODO") continue;
 
     for (const plan of entry.planning) {
-      const dueDate = toDate(plan.timestamp);
-      const diffMs = today.getTime() - dueDate.getTime();
-      const daysOverdue = Math.round(diffMs / (1000 * 60 * 60 * 24));
-      if (daysOverdue <= 0) continue;
+      const dueDate = findLatestPastPlanningOccurrence(entry, plan.timestamp, today);
+      if (dueDate === null) continue;
+      const daysOverdue = diffCalendarDays(today, dueDate);
       results.push({ entry, dueDate, daysOverdue, kind: plan.kind, sourceTimestamp: plan.timestamp });
     }
   }
 
-  results.sort((a, b) => b.daysOverdue - a.daysOverdue);
+  results.sort((a, b) => {
+    const overdueDiff = b.daysOverdue - a.daysOverdue;
+    if (overdueDiff !== 0) return overdueDiff;
+    return a.dueDate.getTime() - b.dueDate.getTime();
+  });
   return results;
 }
 
@@ -175,6 +177,69 @@ function collectOccurrences(
   }
 }
 
+const PLANNING_SEARCH_INITIAL_DAYS = 366;
+const PLANNING_SEARCH_MAX_DAYS = 366 * 20;
+
+function findNextPlanningOccurrence(
+  entry: OrgEntry,
+  ts: OrgTimestamp,
+  today: Date,
+): Date | null {
+  if (!ts.repeater) {
+    const dueDate = toDate(ts);
+    return diffCalendarDays(dueDate, today) >= 0 ? dueDate : null;
+  }
+
+  let windowDays = PLANNING_SEARCH_INITIAL_DAYS;
+  while (windowDays <= PLANNING_SEARCH_MAX_DAYS) {
+    const rangeEnd = endOfDay(addDays(today, windowDays - 1));
+    const occurrences = expandOccurrences(ts, entry.exceptions, today, rangeEnd);
+    if (occurrences.length > 0) return earliestOccurrence(occurrences).date;
+    windowDays *= 2;
+  }
+
+  return null;
+}
+
+function findLatestPastPlanningOccurrence(
+  entry: OrgEntry,
+  ts: OrgTimestamp,
+  today: Date,
+): Date | null {
+  const yesterdayEnd = new Date(today.getTime() - 1);
+
+  if (!ts.repeater) {
+    const dueDate = toDate(ts);
+    return diffCalendarDays(dueDate, today) < 0 ? dueDate : null;
+  }
+
+  let windowDays = PLANNING_SEARCH_INITIAL_DAYS;
+  while (windowDays <= PLANNING_SEARCH_MAX_DAYS) {
+    const rangeStart = addDays(today, -windowDays);
+    const occurrences = expandOccurrences(ts, entry.exceptions, rangeStart, yesterdayEnd);
+    if (occurrences.length > 0) return latestOccurrence(occurrences).date;
+    windowDays *= 2;
+  }
+
+  return null;
+}
+
+function earliestOccurrence(occurrences: readonly OccurrenceInstance[]): OccurrenceInstance {
+  let earliest = occurrences[0];
+  for (let i = 1; i < occurrences.length; i++) {
+    if (occurrences[i].date < earliest.date) earliest = occurrences[i];
+  }
+  return earliest;
+}
+
+function latestOccurrence(occurrences: readonly OccurrenceInstance[]): OccurrenceInstance {
+  let latest = occurrences[0];
+  for (let i = 1; i < occurrences.length; i++) {
+    if (occurrences[i].date > latest.date) latest = occurrences[i];
+  }
+  return latest;
+}
+
 function buildAgendaItem(
   entry: OrgEntry,
   ts: OrgTimestamp,
@@ -223,6 +288,22 @@ function dayOffsetIndex(date: Date, rangeStart: Date): number {
   const dateMs = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   const startMs = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate()).getTime();
   return Math.round((dateMs - startMs) / (1000 * 60 * 60 * 24));
+}
+
+function diffCalendarDays(a: Date, b: Date): number {
+  const aMidnight = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
+  const bMidnight = new Date(b.getFullYear(), b.getMonth(), b.getDate()).getTime();
+  return Math.round((aMidnight - bMidnight) / (1000 * 60 * 60 * 24));
+}
+
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function endOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
 }
 
 /**

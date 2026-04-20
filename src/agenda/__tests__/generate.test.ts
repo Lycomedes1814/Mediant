@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateWeek, collectOverdueItems } from "../generate.ts";
+import { collectDeadlines, collectOverdueItems, generateWeek } from "../generate.ts";
 import { parseOrg } from "../../org/parser.ts";
 import type { OrgEntry } from "../../org/model.ts";
 
@@ -689,5 +689,119 @@ describe("collectOverdueItems", () => {
     expect(items).toHaveLength(2);
     expect(items[0].kind).toBe("scheduled"); // 4 days overdue
     expect(items[1].kind).toBe("deadline");  // 3 days overdue
+  });
+
+  it("treats a timed deadline later today as not overdue", () => {
+    const entries = [
+      entry({
+        title: "Tonight",
+        todo: "TODO",
+        planning: [{
+          kind: "deadline",
+          timestamp: { date: "2026-04-10", startTime: "19:00", endTime: null, repeater: null, raw: "" },
+        }],
+      }),
+    ];
+    const items = collectOverdueItems(entries, new Date(2026, 3, 10, 9, 0));
+    expect(items).toHaveLength(0);
+  });
+
+  it("treats a timed scheduled item from yesterday as overdue today", () => {
+    const entries = [
+      entry({
+        title: "Late night",
+        todo: "TODO",
+        planning: [{
+          kind: "scheduled",
+          timestamp: { date: "2026-04-09", startTime: "23:00", endTime: null, repeater: null, raw: "" },
+        }],
+      }),
+    ];
+    const items = collectOverdueItems(entries, new Date(2026, 3, 10, 0, 5));
+    expect(items).toHaveLength(1);
+    expect(items[0].daysOverdue).toBe(1);
+  });
+
+  it("uses the latest past recurring occurrence", () => {
+    const entries = parseOrg("** TODO Water plants\nSCHEDULED: <2026-04-01 on. +1w>\n");
+    const items = collectOverdueItems(entries, new Date(2026, 3, 10, 12, 0));
+    expect(items).toHaveLength(1);
+    expect(items[0].dueDate.getFullYear()).toBe(2026);
+    expect(items[0].dueDate.getMonth()).toBe(3);
+    expect(items[0].dueDate.getDate()).toBe(8);
+    expect(items[0].daysOverdue).toBe(2);
+  });
+
+  it("ignores cancelled recurring occurrences when finding overdue items", () => {
+    const entries = parseOrg(
+      "** TODO Water plants\n" +
+      "SCHEDULED: <2026-04-01 on. +1w>\n" +
+      ":PROPERTIES:\n" +
+      ":EXCEPTION-2026-04-08: cancelled\n" +
+      ":END:\n",
+    );
+    const items = collectOverdueItems(entries, new Date(2026, 3, 10, 12, 0));
+    expect(items).toHaveLength(1);
+    expect(items[0].dueDate.getDate()).toBe(1);
+    expect(items[0].daysOverdue).toBe(9);
+  });
+});
+
+// ── Upcoming deadlines ──────────────────────────────────────────────
+
+describe("collectDeadlines", () => {
+  it("returns a deadline due later today as today", () => {
+    const entries = [
+      entry({
+        title: "Ship it",
+        planning: [{
+          kind: "deadline",
+          timestamp: { date: "2026-04-10", startTime: "19:00", endTime: null, repeater: null, raw: "" },
+        }],
+      }),
+    ];
+    const items = collectDeadlines(entries, new Date(2026, 3, 10, 9, 0));
+    expect(items).toHaveLength(1);
+    expect(items[0].daysUntil).toBe(0);
+  });
+
+  it("uses the next upcoming recurring deadline occurrence", () => {
+    const entries = parseOrg("** TODO Pay rent\nDEADLINE: <2026-04-01 on. +1w>\n");
+    const items = collectDeadlines(entries, new Date(2026, 3, 10, 9, 0));
+    expect(items).toHaveLength(1);
+    expect(items[0].dueDate.getFullYear()).toBe(2026);
+    expect(items[0].dueDate.getMonth()).toBe(3);
+    expect(items[0].dueDate.getDate()).toBe(15);
+    expect(items[0].daysUntil).toBe(5);
+  });
+
+  it("skips cancelled recurring deadline occurrences and finds the next one", () => {
+    const entries = parseOrg(
+      "** TODO Pay rent\n" +
+      "DEADLINE: <2026-04-01 on. +1w>\n" +
+      ":PROPERTIES:\n" +
+      ":EXCEPTION-2026-04-15: cancelled\n" +
+      ":END:\n",
+    );
+    const items = collectDeadlines(entries, new Date(2026, 3, 10, 9, 0));
+    expect(items).toHaveLength(1);
+    expect(items[0].dueDate.getDate()).toBe(22);
+    expect(items[0].daysUntil).toBe(12);
+  });
+
+  it("uses rescheduled recurring deadline dates", () => {
+    const entries = parseOrg(
+      "** TODO Pay rent\n" +
+      "DEADLINE: <2026-04-01 on. +1w>\n" +
+      ":PROPERTIES:\n" +
+      ":EXCEPTION-2026-04-15: reschedule 2026-04-18 09:30\n" +
+      ":END:\n",
+    );
+    const items = collectDeadlines(entries, new Date(2026, 3, 10, 9, 0));
+    expect(items).toHaveLength(1);
+    expect(items[0].dueDate.getDate()).toBe(18);
+    expect(items[0].dueDate.getHours()).toBe(9);
+    expect(items[0].dueDate.getMinutes()).toBe(30);
+    expect(items[0].daysUntil).toBe(8);
   });
 });
