@@ -26,12 +26,14 @@
 
   --time-col: 7rem;
   --bg-state: rgba(79, 125, 245, 0.12);
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --card-shadow: 0 12px 32px rgba(15, 23, 42, 0.06), 0 2px 8px rgba(15, 23, 42, 0.04);
 
   /* Category accents */
   --accent-deadline: #ef4444;
   --accent-scheduled: #6b7280;
   --now-line: #f97316;
+  --section-padding-x: 1.125rem;
+  --item-gap-y: 0.875rem;
 }
 
 [data-theme="dark"] {
@@ -47,7 +49,7 @@
   --border-light: #1e2024;
   --border-today: #5b8def;
   --bg-state: rgba(91, 141, 239, 0.12);
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --card-shadow: 0 16px 36px rgba(0, 0, 0, 0.28), 0 2px 10px rgba(0, 0, 0, 0.16);
 }
 
 body {
@@ -55,9 +57,9 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
-  max-width: 52rem;
+  max-width: 54rem;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.25rem 1rem 1.75rem;
 }
 
 /* ── Header / Navigation ──────────────────────────────────────────── */
@@ -66,8 +68,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 0;
-  margin-bottom: 1rem;
+  padding: 0.875rem 0 0.625rem;
+  margin-bottom: 1.25rem;
 }
 
 .agenda-nav {
@@ -137,18 +139,20 @@ body {
 
 .days-card {
   background: var(--bg-card);
-  border-radius: 0.5rem;
-  margin-bottom: 0.75rem;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
   overflow: hidden;
   box-shadow: var(--card-shadow);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
 }
 
 .day-block {
   display: block;
+  padding: 1.2rem 0 1.35rem;
 }
 
 .day-block + .day-block {
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid color-mix(in srgb, var(--border-light) 60%, transparent);
 }
 
 .day-block.is-today {
@@ -159,9 +163,11 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 0.625rem 1rem;
-  font-weight: 600;
-  font-size: 0.9375rem;
+  padding: 0 var(--section-padding-x);
+  margin-bottom: 0.9rem;
+  font-weight: 560;
+  font-size: 1rem;
+  letter-spacing: -0.018em;
 }
 
 .day-header .date-label {
@@ -177,25 +183,26 @@ body {
 }
 
 .day-empty {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem var(--section-padding-x) 0;
   color: var(--text-done);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
+  opacity: 0.55;
 }
 
 /* ── All-day section ──────────────────────────────────────────────── */
 
 .allday-section {
-  padding: 0.125rem 0;
+  padding: 0;
 }
 
 .allday-item {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  padding: 0.375rem 1rem;
+  padding: 0.18rem var(--section-padding-x);
   font-size: 0.875rem;
   border-left: 3px solid transparent;
-  gap: 0 0.5rem;
+  gap: 0 0.75rem;
 }
 
 .allday-item.has-state {
@@ -214,10 +221,11 @@ body {
 }
 
 .allday-item + .allday-item {
+  margin-top: 0.55rem;
 }
 
 .allday-item .item-title {
-  font-weight: 500;
+  font-weight: 530;
 }
 
 /* ── Timed items ──────────────────────────────────────────────────── */
@@ -226,10 +234,10 @@ body {
   display: grid;
   grid-template-columns: var(--time-col) 1fr auto;
   align-items: baseline;
-  padding: 0.5rem 1rem;
+  padding: 0.2rem var(--section-padding-x);
   font-size: 0.875rem;
   border-left: 3px solid transparent;
-  gap: 0 0.5rem;
+  gap: 0 0.8rem;
 }
 
 .timed-item.has-state {
@@ -240,17 +248,20 @@ body {
 .timed-item + .scheduled-item,
 .scheduled-item + .timed-item,
 .scheduled-item + .scheduled-item {
+  margin-top: var(--item-gap-y);
 }
 
 .timed-item .item-time {
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  font-size: 0.78rem;
   color: var(--text);
-  opacity: 0.7;
+  opacity: 0.54;
+  letter-spacing: -0.01em;
 }
 
 .timed-item .item-title {
   min-width: 0;
+  font-weight: 500;
 }
 
 
@@ -258,16 +269,17 @@ body {
 
 .overdue-section {
   background: var(--bg-card);
-  border-radius: 0.5rem;
-  margin-bottom: 0.75rem;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
   overflow: hidden;
   box-shadow: var(--card-shadow);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
 }
 
 .overdue-header {
-  padding: 0.625rem 1rem;
+  padding: 0.95rem var(--section-padding-x) 0.4rem;
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 0.95rem;
   color: var(--accent-deadline);
 }
 
@@ -275,10 +287,10 @@ body {
   display: grid;
   grid-template-columns: var(--time-col) auto 1fr auto;
   align-items: baseline;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem var(--section-padding-x);
   font-size: 0.875rem;
   border-left: 3px solid var(--accent-deadline);
-  gap: 0 0.375rem;
+  gap: 0 0.55rem;
 }
 
 .overdue-meta {
@@ -319,16 +331,17 @@ body {
 
 .deadlines-section {
   background: var(--bg-card);
-  border-radius: 0.5rem;
-  margin-bottom: 0.75rem;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
   overflow: hidden;
   box-shadow: var(--card-shadow);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
 }
 
 .deadlines-header {
-  padding: 0.625rem 1rem;
+  padding: 0.95rem var(--section-padding-x) 0.4rem;
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 0.95rem;
   color: var(--accent-deadline);
 }
 
@@ -338,10 +351,10 @@ body {
   display: grid;
   grid-template-columns: var(--time-col) auto 1fr auto;
   align-items: baseline;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem var(--section-padding-x);
   font-size: 0.875rem;
   border-left: 3px solid var(--accent-deadline);
-  gap: 0 0.375rem;
+  gap: 0 0.55rem;
 }
 
 .deadline-meta {
@@ -382,10 +395,10 @@ body {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: baseline;
-  padding: 0.5rem 1rem;
+  padding: 0.2rem var(--section-padding-x);
   font-size: 0.875rem;
   border-left: 3px solid transparent;
-  gap: 0 0.375rem;
+  gap: 0 0.8rem;
 }
 
 .scheduled-item.has-time {
@@ -394,9 +407,10 @@ body {
 
 .scheduled-item .item-time {
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  font-size: 0.78rem;
   color: var(--text);
-  opacity: 0.7;
+  opacity: 0.54;
+  letter-spacing: -0.01em;
 }
 
 .scheduled-item .item-state {
@@ -404,6 +418,7 @@ body {
 
 .scheduled-item .item-title {
   min-width: 0;
+  font-weight: 500;
 }
 
 /* ── Day deadline items (deadlines within day cards) ─────────────── */
@@ -412,10 +427,10 @@ body {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: baseline;
-  padding: 0.5rem 1rem;
+  padding: 0.2rem var(--section-padding-x);
   font-size: 0.875rem;
   border-left: 3px solid transparent;
-  gap: 0 0.375rem;
+  gap: 0 0.8rem;
 }
 
 .day-deadline-item.has-time {
@@ -424,9 +439,10 @@ body {
 
 .day-deadline-item .item-time {
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  font-size: 0.78rem;
   color: var(--text);
-  opacity: 0.7;
+  opacity: 0.54;
+  letter-spacing: -0.01em;
 }
 
 .day-deadline-item .item-kind {
@@ -440,22 +456,24 @@ body {
 
 .day-deadline-item .item-title {
   min-width: 0;
+  font-weight: 500;
 }
 
 /* ── Someday section (bottom of agenda) ──────────────────────────── */
 
 .someday-section {
   background: var(--bg-card);
-  border-radius: 0.5rem;
-  margin-top: 0.75rem;
+  border-radius: 1rem;
+  margin-top: 1rem;
   overflow: hidden;
   box-shadow: var(--card-shadow);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
 }
 
 .someday-header {
-  padding: 0.625rem 1rem;
+  padding: 0.95rem var(--section-padding-x) 0.4rem;
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 0.95rem;
   color: var(--text);
 }
 
@@ -463,12 +481,13 @@ body {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: baseline;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem var(--section-padding-x);
   font-size: 0.875rem;
-  gap: 0 0.375rem;
+  gap: 0 0.65rem;
 }
 
 .someday-item + .someday-item {
+  margin-top: 0.15rem;
 }
 
 .someday-item .item-state {
@@ -506,10 +525,10 @@ body {
 
 .item-priority {
   display: inline-block;
-  font-size: 0.6875rem;
+  font-size: 0.675rem;
   font-weight: 600;
-  border-radius: 0.25rem;
-  padding: 0 0.3125rem;
+  border-radius: 999px;
+  padding: 0.02rem 0.34rem;
   line-height: 1.4;
   vertical-align: baseline;
 }
@@ -534,27 +553,34 @@ body {
 
 .tag-badges {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.35rem;
   flex-shrink: 0;
   justify-self: end;
+  align-self: center;
+  flex-wrap: wrap;
+  max-width: 14rem;
+  justify-content: flex-end;
 }
 
 .tag {
-  font-size: 0.6875rem;
-  padding: 0.0625rem 0.375rem;
+  font-size: 0.655rem;
+  padding: 0.16rem 0.5rem;
   border-radius: 9999px;
-  font-weight: 500;
-  line-height: 1.3;
+  font-weight: 600;
+  line-height: 1.15;
   color: white;
   background: #9ca3af;
   white-space: nowrap;
   cursor: pointer;
   position: relative;
-  transition: filter 0.15s;
+  transition: filter 0.15s, transform 0.15s;
+  opacity: 0.82;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .tag:hover {
-  filter: brightness(1.15);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
 }
 
 .tag-color-picker {
@@ -575,27 +601,30 @@ body {
   display: grid;
   grid-template-columns: var(--time-col) auto 1fr;
   align-items: center;
-  padding: 0.25rem 1rem;
+  padding: 0.25rem var(--section-padding-x) 0.15rem;
   pointer-events: none;
   color: var(--now-line);
-  gap: 0 0.25rem;
+  gap: 0 0.45rem;
 }
 
 .now-time {
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  font-size: 0.8rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .now-label {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   white-space: nowrap;
+  opacity: 0.88;
 }
 
 .now-rule {
-  height: 2px;
-  background: var(--now-line);
+  height: 1px;
+  background: color-mix(in srgb, var(--now-line) 86%, transparent);
+  border-radius: 999px;
 }
 
 /* ── Progress badge ──────────────────────────────────────────────── */
@@ -622,10 +651,10 @@ body {
 /* ── Checkbox list ───────────────────────────────────────────────── */
 
 .checkbox-list {
-  padding: 0.25rem 1rem 0.5rem calc(var(--time-col) + 1.5rem);
+  padding: 0.42rem var(--section-padding-x) 0 calc(var(--time-col) + 1.65rem);
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: 0.25rem;
 }
 
 .checkbox-item {
@@ -669,7 +698,7 @@ body {
 }
 
 .item-instance-note {
-  padding: 0.125rem 1rem 0.375rem calc(var(--time-col) + 1.5rem);
+  padding: 0.38rem var(--section-padding-x) 0 calc(var(--time-col) + 1.65rem);
   font-size: 0.8125rem;
   font-style: italic;
   color: var(--text-dim);
@@ -679,7 +708,7 @@ body {
 
 .item-body {
   display: none;
-  padding: 0.25rem 1rem 0.5rem calc(var(--time-col) + 1.5rem);
+  padding: 0.42rem var(--section-padding-x) 0 calc(var(--time-col) + 1.65rem);
   font-size: 0.8125rem;
   color: var(--text-dim);
 }
@@ -1302,6 +1331,8 @@ body {
 
   :root {
     --time-col: 5.5rem;
+    --section-padding-x: 0.9rem;
+    --item-gap-y: 0.75rem;
   }
 
   .agenda-header {
@@ -1339,11 +1370,12 @@ body {
   .overdue-item,
   .scheduled-item,
   .allday-item {
-    padding: 0.625rem 0.75rem;
+    padding-left: var(--section-padding-x);
+    padding-right: var(--section-padding-x);
   }
 
   .allday-section {
-    padding: 0.125rem 0;
+    padding: 0;
   }
 }
 
@@ -1473,6 +1505,7 @@ body {
   .allday-item .tag-badges,
   .overdue-item .tag-badges {
     align-self: flex-start;
+    max-width: none;
   }
 
   .someday-item,
