@@ -67,9 +67,9 @@ npm start <file.org>  # build + start the local server against a file
 
 See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and unsupported syntax.
 
-**Supported:** headings, TODO/DONE, priority cookies (`[#A]`/`[#B]`/`[#C]`), tags, active timestamps, time ranges, repeaters (+Nd/w/m/y), SCHEDULED, DEADLINE, body text, checkbox lists (`- [ ]`/`- [X]`), progress cookies (`[2/3]`/`[66%]`).
+**Supported:** headings, TODO/DONE, priority cookies (`[#A]`/`[#B]`/`[#C]`), tags, active timestamps, time ranges, repeaters (+Nd/w/m/y), SCHEDULED, DEADLINE, body text, checkbox lists (`- [ ]`/`- [X]`), progress cookies (`[2/3]`/`[66%]`), per-occurrence recurrence exceptions (`:EXCEPTION-<date>:` / `:EXCEPTION-NOTE-<date>:` inside property drawers).
 
-**Gracefully ignored:** file keywords (#+), inactive timestamps, drawers, properties, comments, links, inline markup, plain lists, tables.
+**Gracefully ignored:** file keywords (#+), inactive timestamps, drawers (including property drawers — only `:EXCEPTION-…:` / `:EXCEPTION-NOTE-…:` keys are read), comments, links, inline markup, plain lists, tables.
 
 **Not supported:** .+/++ repeaters, diary sexp, custom TODO keywords, tag inheritance, habits, clocking.
 

@@ -147,6 +147,32 @@ Oppmøte Dragvoll.
 - Preserved as a string. Shown in the UI as expandable notes.
 - A blank line terminates body accumulation.
 
+### Recurrence exceptions
+
+Two property-drawer key families let an entry with a repeating timestamp deviate from the base series on a single occurrence. Both are keyed by the *unshifted* base occurrence date (`YYYY-MM-DD`) so the mapping stays stable even after a reschedule.
+
+```org
+** TODO Yoga :health:
+SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>
+:PROPERTIES:
+:EXCEPTION-2026-04-27: cancelled
+:EXCEPTION-2026-05-04: shift +45m
+:EXCEPTION-NOTE-2026-05-04: Bring mat and water
+:EXCEPTION-2026-05-11: reschedule 2026-05-12 18:00
+:EXCEPTION-NOTE-2026-05-18: Long session today
+:END:
+```
+
+- `:EXCEPTION-YYYY-MM-DD: <override>` — the behaviour override for a single occurrence. At most one per date. Override grammar (exact match; anything else is dropped silently):
+  - `cancelled` — occurrence is skipped entirely.
+  - `shift <[+-]N><m|h|d>` — shift the whole interval by a signed duration (`shift +45m`, `shift -1h`, `shift +1d`). If the shift crosses midnight, the occurrence's final calendar day moves with it; `:EXCEPTION-<date>:` still keys off the unshifted slot.
+  - `reschedule YYYY-MM-DD` — move to a new date, preserving base start/end.
+  - `reschedule YYYY-MM-DD HH:MM` — new date + new start; base duration preserved when base has an end time; otherwise no end time.
+  - `reschedule YYYY-MM-DD HH:MM-HH:MM` — new date + explicit range.
+- `:EXCEPTION-NOTE-YYYY-MM-DD: <text>` — a one-off note attached to the occurrence with the matching base date. Empty text is treated as no note. Independent of any override on the same date, so you can combine e.g. a shift with a note.
+- All other property keys inside the drawer are still **gracefully ignored** — only `EXCEPTION-…` and `EXCEPTION-NOTE-…` keys are read. Exception properties inside other drawers (e.g. LOGBOOK) are not parsed.
+- Exceptions on a non-repeating timestamp are parsed but **inert**: expansion never runs, so they never apply. Don't rely on this as a way to rewrite a one-off; edit the timestamp instead.
+
 ---
 
 ## Gracefully ignored
@@ -188,7 +214,7 @@ These constructs are recognized and silently skipped. They will not produce entr
 :END:
 ```
 
-- Everything between `:PROPERTIES:` and `:END:` is skipped.
+- Everything between `:PROPERTIES:` and `:END:` is skipped **except** `:EXCEPTION-…:` and `:EXCEPTION-NOTE-…:` keys, which are read as per-occurrence exceptions. See the Recurrence exceptions section above.
 
 ### Logbook drawers
 

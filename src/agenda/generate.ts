@@ -20,14 +20,14 @@
  * Range semantics: startDate 00:00:00 through startDate+6 23:59:59, local time.
  */
 
-import type { OrgEntry } from "../org/model.ts";
-import type { OrgTimestamp } from "../org/timestamp.ts";
+import type { OrgEntry, RecurrenceOverride } from "../org/model.ts";
+import type { OccurrenceInstance, OrgTimestamp } from "../org/timestamp.ts";
 import {
-  expandRecurrences,
+  expandOccurrences,
   isDateOnly,
   toDate,
 } from "../org/timestamp.ts";
-import type { AgendaItem, AgendaDay, AgendaWeek, DeadlineItem, OverdueItem, SomedayItem, RenderCategory } from "./model.ts";
+import type { AgendaItem, AgendaItemOverride, AgendaDay, AgendaWeek, DeadlineItem, OverdueItem, SomedayItem, RenderCategory } from "./model.ts";
 
 // ── Public API ───────────────────────────────────────────────────────
 
@@ -151,8 +151,13 @@ export function collectSomedayItems(entries: OrgEntry[]): SomedayItem[] {
 // ── Helpers ──────────────────────────────────────────────────────────
 
 /**
- * Expand a timestamp's recurrences into the date range, create
- * AgendaItems, and assign them to the correct day slots.
+ * Expand a timestamp's recurrences into the date range (applying any
+ * per-occurrence exceptions), create AgendaItems, and assign them to
+ * the correct day slots.
+ *
+ * Category is derived from the base timestamp and stays stable across
+ * occurrences — a rescheduled or shifted occurrence keeps the same
+ * render category as its base.
  */
 function collectOccurrences(
   entry: OrgEntry,
@@ -162,22 +167,53 @@ function collectOccurrences(
   rangeEnd: Date,
   days: AgendaDay[],
 ): void {
-  const occurrences = expandRecurrences(ts, rangeStart, rangeEnd);
-  for (const date of occurrences) {
-    const dayIndex = dayOffsetIndex(date, rangeStart);
+  const occurrences = expandOccurrences(ts, entry.exceptions, rangeStart, rangeEnd);
+  for (const occ of occurrences) {
+    const dayIndex = dayOffsetIndex(occ.date, rangeStart);
     if (dayIndex < 0 || dayIndex > 6) continue;
-
-    const item: AgendaItem = {
-      entry,
-      date,
-      startTime: ts.startTime,
-      endTime: ts.endTime,
-      category,
-      sourceTimestamp: ts,
-    };
-
-    (days[dayIndex].items as AgendaItem[]).push(item);
+    (days[dayIndex].items as AgendaItem[]).push(buildAgendaItem(entry, ts, category, occ));
   }
+}
+
+function buildAgendaItem(
+  entry: OrgEntry,
+  ts: OrgTimestamp,
+  category: RenderCategory,
+  occ: OccurrenceInstance,
+): AgendaItem {
+  const hasRepeater = ts.repeater !== null;
+  return {
+    entry,
+    date: occ.date,
+    startTime: occ.startTime,
+    endTime: occ.endTime,
+    category,
+    sourceTimestamp: ts,
+    baseDate: hasRepeater ? occ.baseDate : null,
+    baseStartMinutes: hasRepeater ? occ.baseStartMinutes : null,
+    instanceNote: occ.note,
+    override: summarizeOverride(occ.override, occ.baseDate),
+  };
+}
+
+function summarizeOverride(
+  override: RecurrenceOverride | null,
+  baseDate: string,
+): AgendaItemOverride | null {
+  if (override === null) return null;
+  if (override.kind === "cancelled") return null; // filtered during expansion, but guard anyway
+  if (override.kind === "shift") {
+    return { kind: "shift", detail: formatShiftDetail(override.offsetMinutes) };
+  }
+  return { kind: "reschedule", detail: `from ${baseDate}` };
+}
+
+function formatShiftDetail(offsetMinutes: number): string {
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const abs = Math.abs(offsetMinutes);
+  if (abs % 1440 === 0) return `${sign}${abs / 1440}d`;
+  if (abs % 60 === 0) return `${sign}${abs / 60}h`;
+  return `${sign}${abs}m`;
 }
 
 /**

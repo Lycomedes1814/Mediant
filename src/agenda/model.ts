@@ -8,8 +8,24 @@ import type { OrgTimestamp } from "../org/timestamp.ts";
 export type RenderCategory = "all-day" | "timed" | "deadline" | "scheduled";
 
 /**
+ * A summary of the per-occurrence override applied to this item.
+ * `cancelled` is filtered out during expansion and never appears here;
+ * `detail` is a short, renderer-ready string (e.g. `"+45m"`,
+ * `"from 2026-05-11"`) suitable for chip text / tooltips.
+ */
+export interface AgendaItemOverride {
+  readonly kind: "shift" | "reschedule";
+  readonly detail: string;
+}
+
+/**
  * A single item in the agenda view.
  * Links back to the full OrgEntry for access to title, tags, body, etc.
+ *
+ * `baseDate` / `baseStartMinutes` describe the unshifted slot and are
+ * only populated for occurrences expanded from a *repeating* timestamp
+ * (the only places where per-occurrence exceptions take effect). They
+ * are `null` for one-off timestamps.
  */
 export interface AgendaItem {
   readonly entry: OrgEntry;
@@ -18,6 +34,10 @@ export interface AgendaItem {
   readonly endTime: string | null;
   readonly category: RenderCategory;
   readonly sourceTimestamp: OrgTimestamp;
+  readonly baseDate: string | null;
+  readonly baseStartMinutes: number | null;
+  readonly instanceNote: string | null;
+  readonly override: AgendaItemOverride | null;
 }
 
 /**

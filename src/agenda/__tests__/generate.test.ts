@@ -148,6 +148,142 @@ describe("recurrence", () => {
   });
 });
 
+// ── Per-occurrence exceptions ───────────────────────────────────────
+
+describe("exceptions in agenda", () => {
+  const APRIL_27 = new Date(2026, 3, 27); // Monday — start of test week
+
+  it("cancelled occurrence is not in the agenda", () => {
+    const entries = parseOrg(
+      "** TODO Yoga :health:\n" +
+        "SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: cancelled\n" +
+        ":END:\n",
+    );
+    const week = generateWeek(entries, APRIL_27);
+    // week contains Apr 27 → May 3. The base occurrence on Apr 27 is cancelled;
+    // no further base occurrence falls inside this window.
+    for (const day of week) expect(day.items).toHaveLength(0);
+  });
+
+  it("shifted occurrence keeps the entry's identity and records override metadata", () => {
+    const entries = parseOrg(
+      "** TODO Yoga :health:\n" +
+        "SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: shift +45m\n" +
+        ":END:\n",
+    );
+    const week = generateWeek(entries, APRIL_27);
+    const items = week[0].items;
+    expect(items).toHaveLength(1);
+    expect(items[0].startTime).toBe("17:45");
+    expect(items[0].endTime).toBe("18:45");
+    expect(items[0].entry.title).toBe("Yoga");
+    expect(items[0].entry.todo).toBe("TODO");
+    expect(items[0].entry.tags).toEqual(["health"]);
+    expect(items[0].baseDate).toBe("2026-04-27");
+    expect(items[0].override).toEqual({ kind: "shift", detail: "+45m" });
+  });
+
+  it("rescheduled occurrence lands on the new day with 'from <baseDate>' detail", () => {
+    const entries = parseOrg(
+      "** TODO [#B] Yoga :health:\n" +
+        "SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: reschedule 2026-04-29 18:00\n" +
+        ":END:\n",
+    );
+    const week = generateWeek(entries, APRIL_27);
+    expect(week[0].items).toHaveLength(0); // original Monday is empty
+    const wed = week[2].items; // Wednesday Apr 29
+    expect(wed).toHaveLength(1);
+    expect(wed[0].startTime).toBe("18:00");
+    expect(wed[0].endTime).toBe("19:00"); // base 60-min duration preserved
+    expect(wed[0].entry.priority).toBe("B");
+    expect(wed[0].entry.tags).toEqual(["health"]);
+    expect(wed[0].baseDate).toBe("2026-04-27");
+    expect(wed[0].override).toEqual({ kind: "reschedule", detail: "from 2026-04-27" });
+  });
+
+  it("collision: a reschedule onto a day with a base occurrence renders both", () => {
+    // Start a week earlier so both 2026-04-27 base and 2026-05-04-reschedule-to-04-27 are visible.
+    const entries = parseOrg(
+      "** Yoga\n" +
+        "<2026-04-27 ma. 17:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-05-04: reschedule 2026-04-27\n" +
+        ":END:\n",
+    );
+    const week = generateWeek(entries, APRIL_27);
+    const onMonday = week[0].items;
+    expect(onMonday).toHaveLength(2);
+    const baseDates = onMonday.map((i) => i.baseDate).sort();
+    expect(baseDates).toEqual(["2026-04-27", "2026-05-04"]);
+  });
+
+  it("note attaches to the final occurrence", () => {
+    const entries = parseOrg(
+      "** Yoga\n" +
+        "<2026-04-27 ma. 17:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-NOTE-2026-04-27: Bring vannflaske\n" +
+        ":END:\n",
+    );
+    const week = generateWeek(entries, APRIL_27);
+    expect(week[0].items[0].instanceNote).toBe("Bring vannflaske");
+    expect(week[0].items[0].override).toBeNull();
+  });
+
+  it("shift across midnight lands on the next day's card", () => {
+    const entries = parseOrg(
+      "** Late session\n" +
+        "<2026-04-27 ma. 23:30-00:30 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: shift +45m\n" +
+        ":END:\n",
+    );
+    const week = generateWeek(entries, APRIL_27);
+    expect(week[0].items).toHaveLength(0); // Monday: shifted off
+    expect(week[1].items).toHaveLength(1); // Tuesday: new home
+    expect(week[1].items[0].startTime).toBe("00:15");
+    expect(week[1].items[0].baseDate).toBe("2026-04-27");
+  });
+
+  it("one-off (non-recurring) timestamp: exceptions are inert", () => {
+    const entries = parseOrg(
+      "** Once\n" +
+        "<2026-04-27 ma. 17:00>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: cancelled\n" +
+        ":END:\n",
+    );
+    const week = generateWeek(entries, APRIL_27);
+    expect(week[0].items).toHaveLength(1);
+    expect(week[0].items[0].startTime).toBe("17:00");
+    expect(week[0].items[0].override).toBeNull();
+    expect(week[0].items[0].baseDate).toBeNull(); // non-recurring → no base-slot identity
+  });
+
+  it("shift detail formats hours and days cleanly", () => {
+    const entries = parseOrg(
+      "** Yoga\n" +
+        "<2026-04-27 ma. 17:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: shift +1h\n" +
+        ":EXCEPTION-2026-05-04: shift +1d\n" +
+        ":END:\n",
+    );
+    const week = generateWeek(entries, APRIL_27);
+    expect(week[0].items[0].override).toEqual({ kind: "shift", detail: "+1h" });
+    // Second base is May 4 — outside the 7-day window. Expand to 14 days.
+    const week2 = generateWeek(entries, new Date(2026, 4, 4));
+    // shift +1d pulls it to May 5 (index 1).
+    expect(week2[1].items[0].override).toEqual({ kind: "shift", detail: "+1d" });
+  });
+});
+
 // ── Sorting ──────────────────────────────────────────────────────────
 
 describe("sorting", () => {
