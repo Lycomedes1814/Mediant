@@ -288,6 +288,11 @@ function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
         section.appendChild(renderTimedItem(item));
       }
 
+      // Instance note (per-occurrence)
+      if (item.instanceNote) {
+        section.appendChild(renderInstanceNote(item.instanceNote));
+      }
+
       // Body text
       if (item.entry.body) {
         const body = el("div", "item-body");
@@ -350,8 +355,29 @@ function renderItem(
     children.push(renderStateBadge(item.entry));
   }
 
-  children.push(renderTitle(item.entry), renderTags(item.entry.tags));
+  const title = renderTitle(item.entry);
+  if (item.override) {
+    title.appendChild(document.createTextNode(" "));
+    title.appendChild(renderOverrideChip(item.override));
+  }
+  children.push(title, renderTags(item.entry.tags));
   row.append(...children);
+  return row;
+}
+
+function renderOverrideChip(
+  override: { kind: "shift" | "reschedule"; detail: string },
+): HTMLElement {
+  const chip = el("span", `item-override-chip override-${override.kind}`);
+  chip.textContent = override.kind === "shift" ? "shifted" : "moved";
+  chip.title = override.detail;
+  chip.setAttribute("aria-label", `${chip.textContent} (${override.detail})`);
+  return chip;
+}
+
+function renderInstanceNote(note: string): HTMLElement {
+  const row = el("div", "item-instance-note");
+  row.textContent = note;
   return row;
 }
 
