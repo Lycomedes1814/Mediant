@@ -356,6 +356,7 @@ function renderItem(
   }
 
   const title = renderTitle(item.entry);
+  if (item.baseDate) title.dataset.baseDate = item.baseDate;
   if (item.override) {
     title.appendChild(document.createTextNode(" "));
     title.appendChild(renderOverrideChip(item.override));

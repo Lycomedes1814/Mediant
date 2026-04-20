@@ -1,4 +1,6 @@
 import { parseOrg } from "./org/parser.ts";
+import { upsertProperty, removeProperty } from "./org/drawer.ts";
+import type { OrgEntry, RecurrenceException, RecurrenceOverride } from "./org/model.ts";
 import { generateWeek, collectDeadlines, collectOverdueItems, collectSomedayItems } from "./agenda/generate.ts";
 import { renderAgenda, createThemeToggle } from "./ui/render.ts";
 import { getTagColor } from "./ui/tagColors.ts";
@@ -32,6 +34,7 @@ let addPanelEl: HTMLElement | null = null;
 let addOverlayEl: HTMLElement | null = null;
 let addPanelTitleEl: HTMLElement | null = null;
 let editingLine: number | null = null;
+let editingBaseDate: string | null = null;
 let editingLevel: number = 1;
 let editingPriority: "A" | "B" | "C" | null = null;
 let editingSchedRepeater: string | null = null;
@@ -56,6 +59,15 @@ interface AddPanelRefs {
   repeatSelect: HTMLSelectElement;
   checkboxSection: HTMLElement;
   syncVisibility: () => void;
+  seriesHeader: HTMLElement;
+  occurrenceSection: HTMLElement;
+  occurrenceMeta: HTMLElement;
+  occurrenceState: HTMLElement;
+  shiftInput: HTMLInputElement;
+  rescheduleInput: HTMLInputElement;
+  noteTextarea: HTMLTextAreaElement;
+  clearOverrideBtn: HTMLButtonElement;
+  clearNoteBtn: HTMLButtonElement;
 }
 let addPanelRefs: AddPanelRefs | null = null;
 
@@ -89,6 +101,12 @@ function buildAddPanel(): void {
   // Form
   const form = document.createElement("div");
   form.className = "add-form";
+
+  // Series section header (only shown in edit mode)
+  const seriesHeader = document.createElement("div");
+  seriesHeader.className = "occurrence-header series-header";
+  seriesHeader.textContent = "Series";
+  form.appendChild(seriesHeader);
 
   // Type toggle
   const typeGroup = makeRadioGroup("Type", "add-type", [
@@ -158,6 +176,107 @@ function buildAddPanel(): void {
   const checkboxSection = document.createElement("div");
   checkboxSection.className = "add-field edit-checkboxes";
   form.appendChild(checkboxSection);
+
+  // Occurrence section (per-occurrence exceptions on a repeating entry)
+  const occurrenceSection = document.createElement("div");
+  occurrenceSection.className = "occurrence-section";
+
+  const occHeader = document.createElement("div");
+  occHeader.className = "occurrence-header";
+  occHeader.textContent = "This occurrence";
+  occurrenceSection.appendChild(occHeader);
+
+  const occurrenceMeta = document.createElement("div");
+  occurrenceMeta.className = "occurrence-meta";
+  occurrenceSection.appendChild(occurrenceMeta);
+
+  const occurrenceState = document.createElement("div");
+  occurrenceState.className = "occurrence-state";
+  occurrenceSection.appendChild(occurrenceState);
+
+  const occActions = document.createElement("div");
+  occActions.className = "occurrence-actions";
+
+  const skipBtn = document.createElement("button");
+  skipBtn.type = "button";
+  skipBtn.className = "occurrence-btn";
+  skipBtn.textContent = "Skip";
+  skipBtn.addEventListener("click", () => applyOverride("cancelled"));
+
+  const shiftRow = document.createElement("div");
+  shiftRow.className = "occurrence-row";
+  const shiftInput = document.createElement("input");
+  shiftInput.type = "text";
+  shiftInput.className = "add-input occurrence-input";
+  shiftInput.placeholder = "+45m / -1h / +1d";
+  const shiftBtn = document.createElement("button");
+  shiftBtn.type = "button";
+  shiftBtn.className = "occurrence-btn";
+  shiftBtn.textContent = "Shift";
+  shiftBtn.addEventListener("click", () => {
+    const raw = shiftInput.value.trim();
+    if (!/^[+-]\d+[mhd]$/.test(raw)) { shiftInput.focus(); return; }
+    applyOverride(`shift ${raw}`);
+  });
+  shiftRow.append(shiftInput, shiftBtn);
+
+  const rescRow = document.createElement("div");
+  rescRow.className = "occurrence-row";
+  const rescheduleInput = document.createElement("input");
+  rescheduleInput.type = "text";
+  rescheduleInput.className = "add-input occurrence-input";
+  rescheduleInput.placeholder = "DD/MM/YYYY [HH:MM[-HH:MM]]";
+  const rescBtn = document.createElement("button");
+  rescBtn.type = "button";
+  rescBtn.className = "occurrence-btn";
+  rescBtn.textContent = "Move";
+  rescBtn.addEventListener("click", () => {
+    const parsed = parseDateTime(rescheduleInput.value);
+    if (!parsed || !parsed.date) { rescheduleInput.focus(); return; }
+    const timePart = parsed.time ? ` ${parsed.time}` : "";
+    applyOverride(`reschedule ${parsed.date}${timePart}`);
+  });
+  rescRow.append(rescheduleInput, rescBtn);
+
+  const clearOverrideBtn = document.createElement("button");
+  clearOverrideBtn.type = "button";
+  clearOverrideBtn.className = "occurrence-btn occurrence-btn-secondary";
+  clearOverrideBtn.textContent = "Clear override";
+  clearOverrideBtn.addEventListener("click", () => clearException("override"));
+
+  occActions.append(skipBtn, shiftRow, rescRow, clearOverrideBtn);
+  occurrenceSection.appendChild(occActions);
+
+  const noteLabel = document.createElement("label");
+  noteLabel.className = "add-label";
+  noteLabel.textContent = "Note for this occurrence";
+  occurrenceSection.appendChild(noteLabel);
+
+  const noteTextarea = document.createElement("textarea");
+  noteTextarea.className = "occurrence-note";
+  noteTextarea.rows = 2;
+  noteTextarea.placeholder = "One-off note";
+  occurrenceSection.appendChild(noteTextarea);
+
+  const noteRow = document.createElement("div");
+  noteRow.className = "occurrence-row occurrence-note-row";
+  const saveNoteBtn = document.createElement("button");
+  saveNoteBtn.type = "button";
+  saveNoteBtn.className = "occurrence-btn";
+  saveNoteBtn.textContent = "Save note";
+  saveNoteBtn.addEventListener("click", () => {
+    const text = noteTextarea.value.trim();
+    if (text) applyNote(text); else clearException("note");
+  });
+  const clearNoteBtn = document.createElement("button");
+  clearNoteBtn.type = "button";
+  clearNoteBtn.className = "occurrence-btn occurrence-btn-secondary";
+  clearNoteBtn.textContent = "Clear note";
+  clearNoteBtn.addEventListener("click", () => clearException("note"));
+  noteRow.append(saveNoteBtn, clearNoteBtn);
+  occurrenceSection.appendChild(noteRow);
+
+  form.appendChild(occurrenceSection);
 
   // Save button
   const saveBtn = document.createElement("button");
@@ -247,6 +366,15 @@ function buildAddPanel(): void {
     repeatSelect: repeatSelect.select,
     checkboxSection,
     syncVisibility,
+    seriesHeader,
+    occurrenceSection,
+    occurrenceMeta,
+    occurrenceState,
+    shiftInput,
+    rescheduleInput,
+    noteTextarea,
+    clearOverrideBtn,
+    clearNoteBtn,
   };
 }
 
@@ -776,6 +904,7 @@ function openAddPanel(): void {
   if (!addPanelEl || !addOverlayEl || !addPanelRefs) return;
 
   editingLine = null;
+  editingBaseDate = null;
   editingLevel = 1;
   editingPriority = null;
   editingSchedRepeater = null;
@@ -784,6 +913,7 @@ function openAddPanel(): void {
   editingCheckboxItems = [];
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Add item";
   addPanelEl.classList.remove("is-editing");
+  addPanelEl.classList.remove("has-occurrence");
 
   const refs = addPanelRefs;
   refs.titleInput.value = "";
@@ -815,18 +945,21 @@ function tsToDateTimeDisplay(ts: { date: string; startTime: string | null; endTi
   return t ? `${d} ${t}` : d;
 }
 
-function openEditPanel(sourceLine: number): void {
+function openEditPanel(sourceLine: number, baseDate: string | null = null): void {
   if (!addPanelEl || !addOverlayEl || !addPanelRefs) return;
 
   const entry = entries.find(e => e.sourceLineNumber === sourceLine);
   if (!entry) return;
 
   editingLine = sourceLine;
+  editingBaseDate = baseDate;
   editingLevel = entry.level;
   editingPriority = entry.priority;
   editingProgress = entry.progress;
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Edit item";
   addPanelEl.classList.add("is-editing");
+  addPanelEl.classList.toggle("has-occurrence", baseDate !== null && entryHasRepeater(entry));
+  refreshOccurrenceSection();
 
   const refs = addPanelRefs;
 
@@ -883,6 +1016,124 @@ function openEditPanel(sourceLine: number): void {
 function isoToDisplayDate(iso: string): string {
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
+}
+
+// ── Occurrence exceptions ───────────────────────────────────────────
+
+function entryHasRepeater(entry: OrgEntry): boolean {
+  for (const ts of entry.timestamps) if (ts.repeater) return true;
+  for (const plan of entry.planning) if (plan.timestamp.repeater) return true;
+  return false;
+}
+
+/**
+ * Pick the repeating base timestamp used to describe the clicked
+ * occurrence. SCHEDULED wins over DEADLINE wins over an active
+ * timestamp, matching the agenda's typical primary row for an entry.
+ */
+function pickBaseTimestamp(entry: OrgEntry): { date: string; startTime: string | null; endTime: string | null } | null {
+  const sched = entry.planning.find(p => p.kind === "scheduled" && p.timestamp.repeater);
+  if (sched) return sched.timestamp;
+  const dead = entry.planning.find(p => p.kind === "deadline" && p.timestamp.repeater);
+  if (dead) return dead.timestamp;
+  const active = entry.timestamps.find(ts => ts.repeater);
+  if (active) return active;
+  return null;
+}
+
+function formatOccurrenceHeader(baseDate: string, base: { startTime: string | null; endTime: string | null } | null): string {
+  const [y, m, d] = baseDate.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()];
+  const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dt.getMonth()];
+  let out = `${dayName} ${dt.getDate()} ${monthName} ${y}`;
+  if (base?.startTime) {
+    out += base.endTime ? `, ${base.startTime}–${base.endTime}` : `, ${base.startTime}`;
+  }
+  return out;
+}
+
+function describeOverride(override: RecurrenceOverride): string {
+  if (override.kind === "cancelled") return "Skipped";
+  if (override.kind === "shift") {
+    const m = override.offsetMinutes;
+    const sign = m >= 0 ? "+" : "-";
+    const abs = Math.abs(m);
+    if (abs % 1440 === 0) return `Shifted ${sign}${abs / 1440}d`;
+    if (abs % 60 === 0) return `Shifted ${sign}${abs / 60}h`;
+    return `Shifted ${sign}${abs}m`;
+  }
+  // reschedule
+  const [y, mo, d] = override.date.split("-").map(Number);
+  const dt = new Date(y, mo - 1, d);
+  const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()];
+  const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dt.getMonth()];
+  let out = `Moved to ${dayName} ${dt.getDate()} ${monthName}`;
+  if (override.startTime) {
+    out += override.endTime ? `, ${override.startTime}–${override.endTime}` : `, ${override.startTime}`;
+  }
+  return out;
+}
+
+function refreshOccurrenceSection(): void {
+  if (!addPanelRefs) return;
+  const refs = addPanelRefs;
+  if (editingLine === null || editingBaseDate === null) return;
+  const entry = entries.find(e => e.sourceLineNumber === editingLine);
+  if (!entry) return;
+
+  const base = pickBaseTimestamp(entry);
+  refs.occurrenceMeta.textContent = formatOccurrenceHeader(editingBaseDate, base);
+
+  const ex: RecurrenceException | undefined = entry.exceptions.get(editingBaseDate);
+  const override = ex?.override ?? null;
+  const note = ex?.note ?? null;
+
+  refs.occurrenceState.textContent = override
+    ? describeOverride(override)
+    : "On schedule";
+  refs.occurrenceState.classList.toggle("is-modified", override !== null);
+
+  refs.clearOverrideBtn.style.display = override ? "" : "none";
+  refs.clearNoteBtn.style.display = note ? "" : "none";
+
+  // Only rewrite textarea when it doesn't match the stored note, so
+  // in-progress typing doesn't get clobbered by refresh calls.
+  if (refs.noteTextarea.value !== (note ?? "")) {
+    refs.noteTextarea.value = note ?? "";
+  }
+  refs.shiftInput.value = "";
+  refs.rescheduleInput.value = "";
+}
+
+async function applyOverride(value: string): Promise<void> {
+  if (editingLine === null || editingBaseDate === null) return;
+  const entry = entries.find(e => e.sourceLineNumber === editingLine);
+  if (!entry) return;
+  const updated = upsertProperty(currentSource, entry, `EXCEPTION-${editingBaseDate}`, value);
+  const ok = await persistSource(updated);
+  if (ok) refreshOccurrenceSection();
+}
+
+async function applyNote(text: string): Promise<void> {
+  if (editingLine === null || editingBaseDate === null) return;
+  const entry = entries.find(e => e.sourceLineNumber === editingLine);
+  if (!entry) return;
+  const updated = upsertProperty(currentSource, entry, `EXCEPTION-NOTE-${editingBaseDate}`, text);
+  const ok = await persistSource(updated);
+  if (ok) refreshOccurrenceSection();
+}
+
+async function clearException(which: "override" | "note"): Promise<void> {
+  if (editingLine === null || editingBaseDate === null) return;
+  const entry = entries.find(e => e.sourceLineNumber === editingLine);
+  if (!entry) return;
+  const key = which === "override"
+    ? `EXCEPTION-${editingBaseDate}`
+    : `EXCEPTION-NOTE-${editingBaseDate}`;
+  const updated = removeProperty(currentSource, entry, key);
+  const ok = await persistSource(updated);
+  if (ok) refreshOccurrenceSection();
 }
 
 function closeAddPanel(): void {
@@ -1137,7 +1388,8 @@ function setupNavigation(): void {
       openAddPanel();
     } else if (action === "edit") {
       const line = Number(btn.dataset.line);
-      if (line) openEditPanel(line);
+      const baseDate = btn.dataset.baseDate ?? null;
+      if (line) openEditPanel(line, baseDate);
     } else if (action === "toggle-done") {
       e.stopPropagation();
       const line = Number(btn.dataset.line);

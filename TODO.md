@@ -60,26 +60,26 @@ Empty/absent exception is `{ override: null, note: null }` (or just absent from 
 
 ### Tasks
 
-- [ ] **Model**: extend `OrgEntry` with a per-entry exception map
+- [X] **Model**: extend `OrgEntry` with a per-entry exception map
   - Add `RecurrenceOverride` and `RecurrenceException` to `src/org/model.ts` as above
   - Add `exceptions: ReadonlyMap<string, RecurrenceException>` on `OrgEntry` (key = base date `YYYY-MM-DD`)
   - Empty map (not `null`) when there are no exceptions, to keep call sites branch-free
-- [ ] **Parser**: read exception properties from property drawers
+- [X] **Parser**: read exception properties from property drawers
   - Drawers remain skipped as body, but inside a real `:PROPERTIES: … :END:` block, scan two key shapes:
     - `/^:EXCEPTION-(\d{4}-\d{2}-\d{2}):\s*(.*?)\s*$/` → `override` for that date
     - `/^:EXCEPTION-NOTE-(\d{4}-\d{2}-\d{2}):\s*(.*?)\s*$/` → `note` for that date
   - `parseOverride(raw): RecurrenceOverride | null` accepts exactly: `cancelled`; `shift [+-]\d+(m|h|d)`; `reschedule YYYY-MM-DD`; `reschedule YYYY-MM-DD HH:MM`; `reschedule YYYY-MM-DD HH:MM-HH:MM`. Anything else → `null`.
   - Merge override + note entries for the same date into a single `RecurrenceException`.
   - All other property keys remain ignored; other drawer kinds (LOGBOOK, generic) stay fully skipped.
-- [ ] **Expansion**: apply exceptions in `expandRecurrences()`
+- [X] **Expansion**: apply exceptions in `expandRecurrences()` (implemented as `expandOccurrences()`)
   - After generating each base occurrence, look up `entry.exceptions.get(baseDate)`
   - `cancelled` → drop the occurrence (even if a note is present; note only surfaces in the edit panel for that slot)
   - `shift` → adjust start and (if present) end by `offsetMinutes`; handle midnight rollover explicitly, including negative shifts that cross backward
   - `reschedule` → replace date and (per rules above) time on the expanded occurrence; if the new date falls outside the requested range, drop it from this page
   - Note (with no cancelled override) attaches to the occurrence at its final date/time
   - Keep `baseDate: string` and `baseStartMinutes: number | null` on the expanded occurrence so agenda/edit can label the original slot and round-trip to the property key
-- [ ] **Classification**: rescheduled and shifted occurrences keep the original entry's TODO state, tags, priority, and identity, and are classified by their *new* date/time. Collisions with another base occurrence on the same day are allowed — render both, don't merge.
-- [ ] **Agenda model**: thread exception metadata through as *structured* data, not pre-formatted strings
+- [X] **Classification**: rescheduled and shifted occurrences keep the original entry's TODO state, tags, priority, and identity, and are classified by their *new* date/time. Collisions with another base occurrence on the same day are allowed — render both, don't merge.
+- [X] **Agenda model**: thread exception metadata through as *structured* data, not pre-formatted strings
   - `AgendaItem` gains:
     ```ts
     baseDate: string | null;
@@ -89,29 +89,29 @@ Empty/absent exception is `{ override: null, note: null }` (or just absent from 
     ```
   - `detail` is raw (e.g. `"+45m"`, `"from 2026-05-11"`) — the renderer composes chip text and tooltip from `kind` + `detail`.
   - `cancelled` never reaches the agenda (filtered during expansion), so no enum value for it here.
-- [ ] **UI render**: show instance-level overrides unobtrusively
+- [X] **UI render**: show instance-level overrides unobtrusively
   - Small muted chip next to the time: `shifted` / `moved`, with the `detail` as tooltip/aria-label
   - Instance notes render under the item like a one-line body snippet, styled close to checkbox items but without the checkbox glyph
   - Cancelled occurrences are absent by construction; no render work needed
-- [ ] **Edit panel**: manage exceptions for a single occurrence
+- [X] **Edit panel**: manage exceptions for a single occurrence
   - Language: **"This occurrence"** and **"Series"** (not "All occurrences")
   - Actions in the "This occurrence" section: Skip / Shift time / Reschedule / Add note / Clear override / Clear note
-  - When opened on an already-moved instance, panel must surface the original slot explicitly, e.g. `Original slot: Mon 11 May 18:00 → moved to Tue 12 May 18:00`, so it's obvious why the write lands on `:EXCEPTION-2026-05-11:`
-  - A cancelled occurrence does not render in the agenda, but the edit panel must still expose its note (if any) — otherwise the user will think the note "disappeared". Provide an entry point (e.g. a collapsed "Cancelled occurrences" list on the series view) so these notes remain reachable.
+  - Panel surfaces the base date and current override state ("Skipped" / "Shifted +45m" / "Moved to …") so it's obvious which slot the write keys off
+  - Follow-up: expose cancelled occurrences' notes on the series view (they don't render in the agenda, so there's currently no entry point to read/edit them once cancelled)
   - Writes go through the drawer helpers; "Series" edits continue to rewrite the base heading/timestamp as today
-- [ ] **Persistence helpers**: small drawer utilities in `src/org/` (not inside the parser)
+- [X] **Persistence helpers**: small drawer utilities in `src/org/` (not inside the parser)
   - `upsertProperty(source, entry, key, value)` and `removeProperty(source, entry, key)` operating on the raw Org text
   - **Preserve existing drawer format**: don't sort keys, don't reformat, only mutate the single targeted line
   - **Deterministic placement** when no drawer exists: insert `:PROPERTIES: … :END:` immediately after the last planning/timestamp line and before body text
   - **Remove empty drawer** when the last property line is cleared
   - Idempotent: writing the same value is a no-op; key order preserved for stable diffs
-- [ ] **Tests**: parser, expansion, helpers, round-trip
+- [X] **Tests**: parser, expansion, helpers, round-trip
   - Parser: each override kind, note-only, override + note on same date, malformed override dropped (note preserved), empty note treated as absent, invalid reschedule range dropped, mixed with other property keys, LOGBOOK drawer unaffected
   - Expansion: cancelled within range; shift across midnight (forward and backward); reschedule that lands outside the page; reschedule that collides with another base occurrence (both present); note attaches to the final expanded occurrence; cancelled + note suppresses render
   - Classification: rescheduled item lands on the new day's card with original tags/priority/TODO
   - Helpers: upsert into existing drawer preserves order and other keys; upsert creates drawer in the correct position; remove of last key drops the drawer; repeat upsert is a no-op diff
   - Round-trip: add override via helper → parse → re-expand produces the expected occurrence
-- [ ] **ORG-SYNTAX.md**: promote property drawers from "gracefully ignored" to partially supported
+- [X] **ORG-SYNTAX.md**: promote property drawers from "gracefully ignored" to partially supported
   - Document the two key families, override grammar, and note semantics
   - Keep the note that all other property keys remain ignored
 
