@@ -24,15 +24,16 @@ Three clearly separated stages — do not collapse them:
 
 | File | Responsibility |
 |---|---|
-| `src/org/timestamp.ts` | Timestamp parsing, Date conversion, recurrence expansion. **Only** module that does date arithmetic. |
-| `src/org/parser.ts` | Line-by-line Org parser → `OrgEntry[]`. Delegates all timestamp work to `timestamp.ts`. |
-| `src/org/model.ts` | Parser output types: `OrgEntry`, `OrgPlanning`, `TodoState`, `Priority`, `CheckboxItem`. |
-| `src/agenda/model.ts` | Agenda/render types: `AgendaItem`, `AgendaDay`, `AgendaWeek`, `DeadlineItem`, `OverdueItem`, `SomedayItem`, `RenderCategory`. |
-| `src/agenda/generate.ts` | 7-day generation from a start date, recurrence expansion (bounded to requested range), classification, sorting, overdue/someday collection. |
-| `src/ui/render.ts` | DOM rendering from `AgendaWeek` + `DeadlineItem[]` + `OverdueItem[]`. |
+| `src/org/timestamp.ts` | Timestamp parsing, Date conversion, recurrence expansion, per-occurrence exception application. **Only** module that does date arithmetic. Exports both `expandRecurrences()` (pure base series) and `expandOccurrences()` (base series with exceptions applied). |
+| `src/org/parser.ts` | Line-by-line Org parser → `OrgEntry[]`. Delegates all timestamp work to `timestamp.ts`. Reads `:EXCEPTION-<date>:` and `:EXCEPTION-NOTE-<date>:` keys inside `:PROPERTIES:` drawers; every other drawer and every other property key is skipped. |
+| `src/org/model.ts` | Parser output types: `OrgEntry`, `OrgPlanning`, `TodoState`, `Priority`, `CheckboxItem`, `RecurrenceOverride`, `RecurrenceException`. |
+| `src/org/drawer.ts` | Property-drawer text mutation helpers (`upsertProperty`, `removeProperty`). Operate on raw source strings; preserve key order and other drawer content; used by the edit panel to write exception properties. |
+| `src/agenda/model.ts` | Agenda/render types: `AgendaItem`, `AgendaDay`, `AgendaWeek`, `DeadlineItem`, `OverdueItem`, `SomedayItem`, `RenderCategory`, `AgendaItemOverride`. |
+| `src/agenda/generate.ts` | 7-day generation from a start date, recurrence expansion with exceptions (bounded to requested range), classification, sorting, overdue/someday collection. |
+| `src/ui/render.ts` | DOM rendering from `AgendaWeek` + `DeadlineItem[]` + `OverdueItem[]`. Renders the per-occurrence override chip and the instance note. |
 | `src/ui/tagColors.ts` | Dynamic tag color management. Auto-assigns from palette, persists in localStorage. |
 | `src/ui/style.css` | All styles. CSS grid layout with fixed time column. |
-| `src/main.ts` | Entry point. Probes `/api/source` on boot; if present, enters server mode (hydrates from the server, subscribes to `/api/events` for external file changes). Otherwise shows the textarea input screen backed by localStorage. Add-item & edit-item panels with tag picker. |
+| `src/main.ts` | Entry point. Probes `/api/source` on boot; if present, enters server mode (hydrates from the server, subscribes to `/api/events` for external file changes). Otherwise shows the textarea input screen backed by localStorage. Add-item & edit-item panels with tag picker, plus the "This occurrence" section that writes exception properties via the drawer helpers. |
 | `server/cli.mjs` | Node CLI + HTTP server. `mediant <file.org> [--port N] [--daemon]`. Serves `dist/` plus `GET/PUT /api/source` (with `If-Match` version checks) and `GET /api/events` SSE backed by `fs.watch`. Node built-ins only, no deps. |
 
 ## Commands
@@ -58,7 +59,10 @@ npm start <file.org>  # build + start the local server against a file
 
 - **Parser types stay close to Org semantics.** `OrgEntry` mirrors the source. No display logic leaks in.
 - **Timestamps store strings, not Dates.** `date` is `"2026-04-07"`, times are `"15:15"`. Conversion happens via helpers in `timestamp.ts`.
-- **Recurrence expansion is always bounded.** `expandRecurrences()` only generates occurrences within a given date range. Never expand globally.
+- **Recurrence expansion is always bounded.** `expandRecurrences()` and `expandOccurrences()` only generate occurrences within a given date range. Never expand globally.
+- **Exceptions are keyed by base date, not final date.** A rescheduled occurrence on Tue 12 May still lives under `:EXCEPTION-2026-05-11:` if the base series hit Mon 11 May. UI labels reflect final date/time; property writes round-trip through the unshifted base slot.
+- **Exceptions on non-repeating entries are parsed but inert.** `entry.exceptions` is populated regardless of whether the entry has a repeater; expansion simply never runs. Do not "fix" this by applying the map to the single timestamp.
+- **Override is behaviour, note is metadata.** A single occurrence can carry both (e.g. `shift +45m` + a note, or `cancelled` + a note). A cancelled+note pair is intentionally allowed.
 - **All dates use local time.** No timezone handling — Org files don't encode timezones.
 - **Only `TODO` and `DONE` states are recognized.** Other keywords (WAITING, NEXT, etc.) are treated as part of the heading title.
 - **Readonly data structures.** Types use `readonly` throughout — data flows between stages, never mutated in place.
@@ -89,22 +93,25 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Priority badges** — `[#A]`/`[#B]`/`[#C]` rendered as small colored badges (red/amber/blue) nested inside the item title so the row grid templates stay fixed
 - **Progress badges** — `[2/3]` rendered as a small badge next to the title (green when complete, gray otherwise)
 - **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under the agenda item; checked items dimmed with strikethrough
+- **Recurrence-exception chip** — shifted or rescheduled occurrences show a small muted chip (`shifted` / `moved`) nested in the title, with the detail (e.g. `+45m`, `from 2026-05-11`) as the tooltip. Cancelled occurrences never render, so there is no chip for them.
+- **Instance note** — `:EXCEPTION-NOTE-<date>:` renders as an italic one-liner directly under the occurrence, matching the checkbox-list indent.
 - **Now line** on today's card — orange line positioned proportionally within the timed section
 - **Navigation** — prev/next by 7-day increments, "Today" button returns to today as start date
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE), sorted alphabetically
 - **Add-item panel** — slide-in panel for creating TODO tasks and events. Generates Org text and appends to the active source (server file or localStorage).
-- **Edit-item panel** — same slide-in panel, opened from a per-item edit button. Rewrites the existing Org block in place, preserving body lines. Shows interactive checkbox toggles for entries with checkbox items.
+- **Edit-item panel** — same slide-in panel, opened from a per-item edit button. Rewrites the existing Org block in place, preserving body lines. Shows interactive checkbox toggles for entries with checkbox items. When the clicked item is an occurrence of a repeating series, a **"This occurrence"** block appears alongside the **"Series"** fields, exposing Skip / Shift / Move / Save note / Clear actions that write `:EXCEPTION-<base>:` / `:EXCEPTION-NOTE-<base>:` via `upsertProperty` and `removeProperty`. The base date passed through from the click (`data-base-date` on the clicked title) is always the **unshifted** slot, so writes stay stable even after a reschedule moves the occurrence to a different day.
 - **Org source persistence** — in static mode, the textarea content is saved to `localStorage` (`mediant-org-source`). In server mode, the source is the file passed to `mediant <file.org>` and localStorage is not used for it. All writes flow through `persistSource()` in `main.ts`, which dispatches to the active backend.
 
 ## Testing
 
-Tests across three suites:
+Tests across four suites:
 
-- `src/org/__tests__/timestamp.test.ts` — parsing, helpers, recurrence expansion edge cases (month boundaries, leap years)
-- `src/org/__tests__/parser.test.ts` — headings, states, tags, planning, timestamps, body text, drawers, checkbox items, progress cookies, full integration
-- `src/agenda/__tests__/generate.test.ts` — classification, recurrence, sorting, 7-day structure, full integration
+- `src/org/__tests__/timestamp.test.ts` — parsing, helpers, recurrence expansion edge cases (month boundaries, leap years), per-occurrence exception application (cancelled / shift / reschedule, including midnight rollover in both directions)
+- `src/org/__tests__/parser.test.ts` — headings, states, tags, planning, timestamps, body text, drawers, checkbox items, progress cookies, `parseOverride` grammar, exception-key scanning inside PROPERTIES drawers, full integration
+- `src/org/__tests__/drawer.test.ts` — `upsertProperty` / `removeProperty` round-trips (create drawer in correct position, append/update/remove keys, drop empty drawer, idempotent writes)
+- `src/agenda/__tests__/generate.test.ts` — classification, recurrence, sorting, 7-day structure, exception threading onto `AgendaItem`, full integration
 
-Always run tests after changes to parser, timestamp, or agenda logic.
+Always run tests after changes to parser, timestamp, drawer, or agenda logic.
 
 ## Conventions
 
@@ -115,13 +122,14 @@ Always run tests after changes to parser, timestamp, or agenda logic.
 - Timestamp-only body lines are captured as timestamps; mixed prose+timestamp lines are body text
 - Checkbox list items (`- [ ]`/`- [X]`) are captured into `checkboxItems`, not body text
 - `#+` keyword lines and `# ` comment lines inside entries are **skipped, not preserved as body**
-- Any `:UPPERCASENAME:...:END:` block is skipped (covers all drawers)
+- Any `:UPPERCASENAME:...:END:` block is skipped **except** `:PROPERTIES:` drawers, where `:EXCEPTION-<date>:` and `:EXCEPTION-NOTE-<date>:` keys are read; every other property key is still ignored
 
 ## Non-goals (v1)
 
 - Full Org-mode syntax
 - Heading hierarchy in the agenda
-- Properties, drawers, habits, clocking
+- Arbitrary property drawers beyond `:EXCEPTION-…:` / `:EXCEPTION-NOTE-…:`; habits, clocking, `:STYLE:`, `:CATEGORY:`, effort estimates
+- "This and future" split operations (tracked in TODO.md)
 - Timezone handling
 - Advanced state workflows / custom TODO sequences
 - Multi-file agenda

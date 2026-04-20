@@ -124,6 +124,44 @@ Empty/absent exception is `{ override: null, note: null }` (or just absent from 
 - Shift that crosses midnight: classification follows the new calendar day; the property key stays at the base date.
 - Entry with no repeater: exception properties are **parsed but inert** — `entry.exceptions` is still populated, but expansion never runs, so they never surface. Document this intent in a comment on the parser helper so a future reader doesn't mistake it for a bug and "fix" it by applying the map to the single timestamp.
 
+## "This and future" occurrence operations
+
+Goal: beyond per-occurrence exceptions ("just this one") and full-series edits ("all of them"), support the Google-Calendar–style third option: **apply a change (or delete) from this occurrence onward**, leaving past occurrences intact. Complements the exception system — overrides stay the surgical tool for one slot; this is the blunt tool for splitting or truncating a series.
+
+### The two operations
+
+- **Delete this and future** — stop the series at the selected occurrence. The last kept occurrence is the one before the split point.
+- **Change this and future** — apply a series-level edit (title, tags, time-of-day, repeater cadence, priority, SCHEDULED↔DEADLINE, etc.) to the selected occurrence and all subsequent ones; everything before the split point stays on the original timestamp.
+
+Both operations are keyed on the **unshifted base date** of the selected occurrence, matching the exception-key convention so UX language stays consistent ("this" always means the slot the user clicked).
+
+### Design questions to resolve before implementing
+
+- **Storage shape**: Org has no native "series until date" repeater, so we have two plausible encodings:
+  1. **Two headings** (split in source): the original heading keeps its repeater but ends at base-date−1 (requires a range-end encoding we don't have), OR we keep the original heading as-is and add a `:EXCEPTION-<base>: cancelled` for every would-be occurrence from base-date onward (unbounded — not viable). Cleanest version: duplicate the heading, advance the new one's SCHEDULED/timestamp to the split date with the edited fields, and add a **series-end property** like `:SERIES-UNTIL: YYYY-MM-DD` (exclusive) on the original so expansion can stop.
+  2. **Inline terminator on the existing timestamp** — some private Org-like syntax such as `<2026-04-27 ma. 17:00 +1w --2026-06-01>`. Rejected: non-standard, breaks other tools reading the file.
+- Decision leans toward **two headings + a terminator property** (`:SERIES-UNTIL:` on the original, no terminator on the new one). Keeps each heading a standalone Org entity, survives round-trip through Emacs.
+- **Exception inheritance across the split**: exceptions keyed before the split stay on the old heading; exceptions keyed on/after the split move (or are dropped) depending on whether the user kept the same cadence. Simplest rule for v1: **drop exceptions whose base-date ≥ split date from the original**, and **don't carry any exceptions over to the new heading** — a "this-and-future" operation is a hard reset.
+- **UI entry point**: same edit panel, new third button alongside "This occurrence" and "Series": **"This and all future"**. Both Delete and Change variants live under it (delete is just the degenerate change that produces no new heading).
+- **Interaction with non-repeating entries**: not applicable — the button is hidden unless the entry has a repeater.
+- **Deadline vs. scheduled vs. active timestamp**: the split applies uniformly to whichever timestamp carries the repeater. If an entry has both a repeating SCHEDULED and a repeating DEADLINE, both are split; the terminator property applies to the entry as a whole, not per-planning-line.
+
+### Tasks
+
+- [ ] **Decide storage**: confirm two-headings + `:SERIES-UNTIL:` (exclusive date) as the encoding; document in ORG-SYNTAX.md
+- [ ] **Parser**: read `:SERIES-UNTIL:` into a new `seriesUntil: string | null` on `OrgEntry`
+- [ ] **Expansion**: stop generating occurrences on/after `seriesUntil`
+- [ ] **Persistence helper**: `splitSeries(source, entry, baseDate, { mode: "truncate" | "fork"; patch? })` — for `truncate`, upserts `:SERIES-UNTIL: <baseDate>` on the original; for `fork`, also emits a new heading starting at baseDate with the edited fields
+- [ ] **Edit panel**: add "This and future" section with Delete + Change actions; Change reuses the existing series field editors but targets a forked heading instead of rewriting in place
+- [ ] **Tests**: truncation boundary (occurrence exactly at split date dropped; prior occurrence kept), exception inheritance rule, fork preserves title/tags/priority by default, round-trip through parser
+- [ ] **Edge cases**: splitting at the very first occurrence (truncate → entry becomes dormant but retained; fork → just rewrite the original timestamp as if it were a series-level edit)
+
+### Out of scope (v1 of this feature)
+
+- Arbitrary per-branch cadence changes beyond what the existing edit panel supports
+- Merging a split series back together
+- UI affordance for "future" operations from the agenda grid itself (right-click etc.) — entry point stays the edit panel
+
 ## Subtasks / checkbox lists
 - [X] **Parser**: recognize checkbox list items (`- [ ]` / `- [X]`) as structured data
   - Add `CheckboxItem` type to `model.ts`: `{ text: string; checked: boolean }`

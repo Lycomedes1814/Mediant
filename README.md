@@ -27,6 +27,7 @@ See [ORG-SYNTAX.md](ORG-SYNTAX.md) for the full breakdown of supported, graceful
 | DEADLINE | `DEADLINE: <2026-05-05 ti.>` |
 | Checkbox lists | `- [ ] Pending` / `- [X] Done` |
 | Progress cookies | `** TODO Task [2/3]` / `** TODO Task [66%]` |
+| Recurrence exceptions | `:EXCEPTION-2026-05-04: shift +45m` / `:EXCEPTION-NOTE-2026-05-04: Bring mat` |
 | Body text | Free text lines under a heading |
 
 Anything outside this subset is ignored gracefully — it will not cause errors.
@@ -93,10 +94,11 @@ Three clearly separated stages:
 ```
 src/
   org/
-    model.ts           — Parser output types (OrgEntry, OrgPlanning, TodoState, Priority, CheckboxItem)
-    timestamp.ts       — Timestamp parsing, Date conversion, recurrence expansion
-    parser.ts          — Line-by-line Org file parser
-    __tests__/         — Timestamp and parser tests
+    model.ts           — Parser output types (OrgEntry, OrgPlanning, TodoState, Priority, CheckboxItem, RecurrenceOverride, RecurrenceException)
+    timestamp.ts       — Timestamp parsing, Date conversion, recurrence expansion, per-occurrence exception application
+    parser.ts          — Line-by-line Org file parser (including exception properties inside PROPERTIES drawers)
+    drawer.ts          — Property-drawer mutation helpers (upsertProperty / removeProperty)
+    __tests__/         — Timestamp, parser, and drawer tests
   agenda/
     model.ts           — Render types (AgendaItem, AgendaDay, AgendaWeek, DeadlineItem, OverdueItem, SomedayItem)
     generate.ts        — Week generation, classification, sorting, deadline collection
@@ -122,6 +124,7 @@ index.html             — Minimal shell with #agenda container
 - **Priority badges** — A/B/C priority cookies rendered as small colored badges (red/amber/blue) before the item title
 - **Progress badges** — `[2/3]` shown as a small badge next to the title (green when complete, gray otherwise)
 - **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under agenda items; toggleable in the edit panel
+- **Recurrence exceptions** — per-occurrence deviations on a repeating entry (skip, shift by `±N(m|h|d)`, reschedule to another date/time, attach a one-off note). Shifted/moved occurrences show a muted chip with detail in the tooltip; notes render as an italic line under the item. Exceptions are stored in the entry's `:PROPERTIES:` drawer keyed by the unshifted base date (e.g. `:EXCEPTION-2026-05-04: shift +45m`), so they round-trip cleanly.
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE)
 - **DONE items** rendered at reduced opacity with line-through
 - **Today** indicated by blue card border and small dot marker
@@ -129,14 +132,14 @@ index.html             — Minimal shell with #agenda container
 - **Week navigation** with prev/next/today buttons
 - **Now line** on today's timed section
 - **Add-item panel** for creating TODO tasks and events from the UI
-- **Edit-item panel** for updating an existing entry in place (preserves body text)
+- **Edit-item panel** for updating an existing entry in place (preserves body text). Clicking a recurring occurrence reveals a "This occurrence" section alongside the series fields, with Skip / Shift / Move / Note / Clear actions that write exception properties keyed on the unshifted base date.
 - Responsive: sticky day headers and adjusted spacing on mobile
 
 ## Tech stack
 
 - **TypeScript** — parser, data model, agenda generation, rendering
 - **Vite** — dev server and bundling
-- **Vitest** — 149 tests across parser, timestamp, and agenda suites
+- **Vitest** — 210 tests across parser, timestamp, agenda, and drawer suites
 - **HTML/CSS** — responsive week view with CSS grid
 - **Node** (built-ins only) — optional local server
 - Zero runtime npm dependencies
@@ -145,7 +148,7 @@ index.html             — Minimal shell with #agenda container
 
 - Full Org-mode syntax
 - Heading hierarchy in the agenda
-- Properties, drawers, habits, clocking
+- Arbitrary property drawers (only `:EXCEPTION-…:` / `:EXCEPTION-NOTE-…:` keys are read; habits and clocking are ignored)
 - Timezone handling beyond local time
 - Advanced state workflows / custom TODO keywords
 - Multi-file agenda or export
