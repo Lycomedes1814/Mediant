@@ -88,10 +88,12 @@ export function renderAgenda(
     container.appendChild(renderDeadlines(deadlines));
   }
 
-  // Day cards
+  // Days card (all 7 days in one container, divided by thin rules)
+  const daysCard = el("section", "days-card");
   for (let i = 0; i < 7; i++) {
-    container.appendChild(renderDay(week[i], i, today));
+    daysCard.appendChild(renderDay(week[i], i, today));
   }
+  container.appendChild(daysCard);
 
   // Someday section
   if (someday.length > 0) {
@@ -225,7 +227,7 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
 // ── Day card ─────────────────────────────────────────────────────────
 
 function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
-  const card = el("article", "day-card");
+  const card = el("article", "day-block");
 
   const isToday = isSameDate(day.date, today);
   if (isToday) card.classList.add("is-today");
