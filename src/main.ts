@@ -113,6 +113,11 @@ function buildAddPanel(): void {
   const form = document.createElement("div");
   form.className = "add-form";
 
+  // Occurrence section (per-occurrence exceptions on a repeating entry)
+  const occurrenceSection = document.createElement("div");
+  occurrenceSection.className = "occurrence-section";
+  form.appendChild(occurrenceSection);
+
   // Type toggle
   const typeGroup = makeRadioGroup("Type", "add-type", [
     { value: "todo", label: "TODO", checked: true },
@@ -181,10 +186,6 @@ function buildAddPanel(): void {
   const checkboxSection = document.createElement("div");
   checkboxSection.className = "add-field edit-checkboxes";
   form.appendChild(checkboxSection);
-
-  // Occurrence section (per-occurrence exceptions on a repeating entry)
-  const occurrenceSection = document.createElement("div");
-  occurrenceSection.className = "occurrence-section";
 
   const occurrenceMeta = document.createElement("div");
   occurrenceMeta.className = "occurrence-meta";
@@ -291,8 +292,6 @@ function buildAddPanel(): void {
   clearNoteBtn.addEventListener("click", () => clearException("note"));
   noteRow.append(saveNoteBtn, clearNoteBtn);
   occurrenceSection.appendChild(noteRow);
-
-  form.appendChild(occurrenceSection);
 
   // Save button
   const saveBtn = document.createElement("button");
