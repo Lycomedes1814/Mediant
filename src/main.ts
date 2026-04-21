@@ -216,7 +216,7 @@ function buildAddPanel(): void {
   endSeriesCheckbox.className = "occurrence-toggle-checkbox";
   const endSeriesCheckboxText = document.createElement("span");
   endSeriesCheckboxText.className = "occurrence-toggle-label";
-  endSeriesCheckboxText.textContent = "This occurrence is the last";
+  endSeriesCheckboxText.textContent = "Stop repeating after this occurrence";
   endSeriesCheckbox.addEventListener("change", () => void toggleOccurrenceIsLast());
   endSeriesCheckboxRow.append(endSeriesCheckbox, endSeriesCheckboxText);
 

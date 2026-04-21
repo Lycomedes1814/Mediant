@@ -89,8 +89,11 @@ describe("main.ts integration", () => {
     const occurrenceToggles = document.querySelectorAll<HTMLInputElement>(".occurrence-toggle-checkbox");
     const skipCheckbox = occurrenceToggles[0];
     const endSeriesCheckbox = occurrenceToggles[1];
+    const occurrenceLabels = Array.from(document.querySelectorAll<HTMLElement>(".occurrence-toggle-label"))
+      .map(label => label.textContent);
     expect(skipCheckbox).not.toBeUndefined();
     expect(endSeriesCheckbox).not.toBeNull();
+    expect(occurrenceLabels).toContain("Stop repeating after this occurrence");
     expect(endSeriesCheckbox?.checked).toBe(false);
     endSeriesCheckbox!.checked = true;
     endSeriesCheckbox!.dispatchEvent(new Event("change", { bubbles: true }));
