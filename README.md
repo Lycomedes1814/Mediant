@@ -27,10 +27,26 @@ See [ORG-SYNTAX.md](ORG-SYNTAX.md) for the full breakdown of supported, graceful
 | DEADLINE | `DEADLINE: <2026-05-05 ti.>` |
 | Checkbox lists | `- [ ] Pending` / `- [X] Done` |
 | Progress cookies | `** TODO Task [2/3]` / `** TODO Task [66%]` |
-| Recurrence exceptions | `:EXCEPTION-2026-05-04: shift +45m` / `:EXCEPTION-NOTE-2026-05-04: Bring mat` |
 | Body text | Free text lines under a heading |
 
 Anything outside this subset is ignored gracefully — it will not cause errors.
+
+### Mediant-specific extensions
+
+Mediant layers one extension on top of standard Org: **recurrence exceptions**. Two property-drawer key families let a single occurrence of a repeating entry deviate from the base series (skip / shift / move / attach a note), keyed on the unshifted base date so they round-trip cleanly:
+
+```org
+** TODO Yoga :health:
+SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>
+:PROPERTIES:
+:EXCEPTION-2026-05-04: shift +45m
+:EXCEPTION-NOTE-2026-05-04: Bring mat and water
+:EXCEPTION-2026-05-11: reschedule 2026-05-12 18:00
+:EXCEPTION-2026-05-18: cancelled
+:END:
+```
+
+Because these ride on ordinary property-drawer syntax, files stay valid Org — Emacs opens and edits them without complaint, it just won't interpret the exceptions. See [ORG-SYNTAX.md](ORG-SYNTAX.md#mediant-specific-extensions) for the full grammar, edge cases, and interop notes.
 
 ## Getting started
 

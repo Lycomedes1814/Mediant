@@ -1,10 +1,11 @@
 # Org Syntax Reference
 
-Detailed account of how Mediant handles Org-mode syntax. Three categories:
+Detailed account of how Mediant handles Org-mode syntax. Four categories:
 
-1. **Supported** — parsed and used in the agenda
-2. **Gracefully ignored** — recognized but silently skipped, will not cause errors
-3. **Unsupported** — not recognized; may cause unexpected behavior if present
+1. **Supported** — standard Org syntax parsed and used in the agenda
+2. **Mediant-specific extensions** — syntax Mediant *adds on top of* Org. Emacs does not interpret these as anything special; files remain valid Org.
+3. **Gracefully ignored** — recognized but silently skipped, will not cause errors
+4. **Unsupported** — not recognized; may cause unexpected behavior if present
 
 ---
 
@@ -147,9 +148,19 @@ Oppmøte Dragvoll.
 - Preserved as a string. Shown in the UI as expandable notes.
 - A blank line terminates body accumulation.
 
+---
+
+## Mediant-specific extensions
+
+Syntax that Mediant layers on top of standard Org. These use ordinary Org constructs (property drawers) as a transport, so the file stays valid Org: Emacs opens, edits, and saves it without complaint. Emacs just won't *interpret* the extensions — it treats them as arbitrary properties.
+
+Currently there is one extension: **recurrence exceptions**.
+
 ### Recurrence exceptions
 
-Two property-drawer key families let an entry with a repeating timestamp deviate from the base series on a single occurrence. Both are keyed by the *unshifted* base occurrence date (`YYYY-MM-DD`) so the mapping stays stable even after a reschedule.
+Standard Org repeaters (`+1w`, `+1m`, etc.) produce an unbroken series — every occurrence is identical except for the date. Mediant adds two property-drawer key families that let an entry with a repeating timestamp deviate from the base series on a single occurrence (skip it, shift it, move it, or pin a one-off note to it) without giving up the repeater.
+
+Both key families are keyed by the *unshifted* base occurrence date (`YYYY-MM-DD`) so the mapping stays stable even after a reschedule moves the occurrence to a different day.
 
 ```org
 ** TODO Yoga :health:
@@ -163,15 +174,24 @@ SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>
 :END:
 ```
 
-- `:EXCEPTION-YYYY-MM-DD: <override>` — the behaviour override for a single occurrence. At most one per date. Override grammar (exact match; anything else is dropped silently):
-  - `cancelled` — occurrence is skipped entirely.
-  - `shift <[+-]N><m|h|d>` — shift the whole interval by a signed duration (`shift +45m`, `shift -1h`, `shift +1d`). If the shift crosses midnight, the occurrence's final calendar day moves with it; `:EXCEPTION-<date>:` still keys off the unshifted slot.
-  - `reschedule YYYY-MM-DD` — move to a new date, preserving base start/end.
-  - `reschedule YYYY-MM-DD HH:MM` — new date + new start; base duration preserved when base has an end time; otherwise no end time.
-  - `reschedule YYYY-MM-DD HH:MM-HH:MM` — new date + explicit range.
-- `:EXCEPTION-NOTE-YYYY-MM-DD: <text>` — a one-off note attached to the occurrence with the matching base date. Empty text is treated as no note. Independent of any override on the same date, so you can combine e.g. a shift with a note.
-- All other property keys inside the drawer are still **gracefully ignored** — only `EXCEPTION-…` and `EXCEPTION-NOTE-…` keys are read. Exception properties inside other drawers (e.g. LOGBOOK) are not parsed.
+**`:EXCEPTION-YYYY-MM-DD: <override>`** — the behaviour override for a single occurrence. At most one per date. Override grammar (exact match; anything else is dropped silently):
+
+- `cancelled` — occurrence is skipped entirely.
+- `shift <[+-]N><m|h|d>` — shift the whole interval by a signed duration (`shift +45m`, `shift -1h`, `shift +1d`). If the shift crosses midnight, the occurrence's final calendar day moves with it; `:EXCEPTION-<date>:` still keys off the unshifted slot.
+- `reschedule YYYY-MM-DD` — move to a new date, preserving base start/end.
+- `reschedule YYYY-MM-DD HH:MM` — new date + new start; base duration preserved when base has an end time; otherwise no end time.
+- `reschedule YYYY-MM-DD HH:MM-HH:MM` — new date + explicit range.
+
+**`:EXCEPTION-NOTE-YYYY-MM-DD: <text>`** — a one-off note attached to the occurrence with the matching base date. Empty text is treated as no note. Independent of any override on the same date, so you can combine e.g. a shift with a note, or cancel an occurrence while still leaving a note explaining why.
+
+**Rules and edge cases:**
+
+- All other property keys inside the drawer are still gracefully ignored — only `EXCEPTION-…` and `EXCEPTION-NOTE-…` keys are read. Exception properties inside other drawers (e.g. `:LOGBOOK:`) are not parsed.
 - Exceptions on a non-repeating timestamp are parsed but **inert**: expansion never runs, so they never apply. Don't rely on this as a way to rewrite a one-off; edit the timestamp instead.
+- Each `:EXCEPTION-<date>:` value is validated against the grammar above on parse. An unrecognized value is silently dropped (the occurrence renders as normal); a matching `:EXCEPTION-NOTE-<date>:` on the same date is still honoured.
+- The edit panel's "This occurrence" controls (Skip / Shift / Move / Save note / Clear) are the UI surface for these properties and always write the unshifted base date, so property values round-trip cleanly.
+
+**Interop with Emacs:** the file remains valid Org. Emacs will show `:EXCEPTION-2026-05-04:` as just another property and give the entry its normal repeating-timestamp agenda behaviour — the cancelled/shifted/rescheduled occurrence will appear at its original slot in Emacs's agenda. Edit the base timestamp in Emacs, not the exception properties, if you want Emacs's view to agree with Mediant's.
 
 ---
 
@@ -214,7 +234,7 @@ These constructs are recognized and silently skipped. They will not produce entr
 :END:
 ```
 
-- Everything between `:PROPERTIES:` and `:END:` is skipped **except** `:EXCEPTION-…:` and `:EXCEPTION-NOTE-…:` keys, which are read as per-occurrence exceptions. See the Recurrence exceptions section above.
+- Everything between `:PROPERTIES:` and `:END:` is skipped **except** `:EXCEPTION-…:` and `:EXCEPTION-NOTE-…:` keys, which are read as per-occurrence exceptions. See *Mediant-specific extensions → Recurrence exceptions* above.
 
 ### Logbook drawers
 
