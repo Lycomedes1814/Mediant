@@ -39,6 +39,7 @@ function collectAllTags(): string[] {
 let addPanelEl: HTMLElement | null = null;
 let addOverlayEl: HTMLElement | null = null;
 let addPanelTitleEl: HTMLElement | null = null;
+let addPanelSaveBtnEl: HTMLButtonElement | null = null;
 let editingLine: number | null = null;
 let editingBaseDate: string | null = null;
 let editingLevel: number = 1;
@@ -367,6 +368,7 @@ function buildAddPanel(): void {
   btnRow.className = "add-btn-row";
   btnRow.append(deleteBtn, saveBtn);
   form.appendChild(btnRow);
+  addPanelSaveBtnEl = saveBtn;
 
   addPanelEl.appendChild(form);
   document.body.append(addOverlayEl, addPanelEl);
@@ -400,7 +402,7 @@ function buildAddPanel(): void {
 /**
  * Rebuild the checkbox editor UI inside the given container from
  * editingCheckboxItems. Each item gets a checkbox, editable text, and
- * a remove button. An "Add item" button at the bottom appends new items.
+ * a remove button. An "Add subtask" button at the bottom appends new items.
  */
 function rebuildCheckboxUI(container: HTMLElement): void {
   container.innerHTML = "";
@@ -473,7 +475,7 @@ function rebuildCheckboxUI(container: HTMLElement): void {
   const addBtn = document.createElement("button");
   addBtn.type = "button";
   addBtn.className = "edit-checkbox-add";
-  addBtn.textContent = "+ Add item";
+  addBtn.textContent = "+ Add subtask";
   addBtn.addEventListener("click", () => {
     editingCheckboxItems.push({ text: "", checked: false });
     rebuildCheckboxUI(container);
@@ -885,6 +887,7 @@ function openAddPanel(): void {
   editingProgress = null;
   editingCheckboxItems = [];
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Add item";
+  if (addPanelSaveBtnEl) addPanelSaveBtnEl.textContent = "Save";
   addPanelEl.classList.remove("is-editing");
   addPanelEl.classList.remove("has-occurrence");
 
@@ -931,6 +934,7 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   editingTodoState = entry.todo === "DONE" ? "DONE" : "TODO";
   editingProgress = entry.progress;
   if (addPanelTitleEl) addPanelTitleEl.textContent = "Edit item";
+  if (addPanelSaveBtnEl) addPanelSaveBtnEl.textContent = "Save";
   addPanelEl.classList.add("is-editing");
   addPanelEl.classList.toggle("has-occurrence", baseDate !== null && entryHasRepeater(entry));
   refreshOccurrenceSection();

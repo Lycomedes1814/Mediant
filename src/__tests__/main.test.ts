@@ -66,12 +66,14 @@ describe("main.ts integration", () => {
 
     const titleInput = document.querySelector<HTMLInputElement>("#add-title");
     const schedInput = document.querySelector<HTMLInputElement>("#add-sched");
+    const saveButton = document.querySelector<HTMLButtonElement>(".add-save-btn");
     expect(titleInput?.value).toBe("Yoga");
     expect(schedInput?.value).toBe("20/04/2026 17:00");
+    expect(saveButton?.textContent).toBe("Save");
 
     titleInput!.value = "Yoga deluxe";
     schedInput!.value = "21/04/2026 18:30";
-    document.querySelector<HTMLButtonElement>(".add-save-btn")!.click();
+    saveButton!.click();
     await flush();
 
     const editedSource = localStorage.getItem("mediant-org-source") ?? "";
