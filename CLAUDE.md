@@ -62,7 +62,7 @@ npm start <file.org>  # build + start the local server against a file
 - **Recurrence expansion is always bounded.** `expandRecurrences()` and `expandOccurrences()` only generate occurrences within a given date range. Never expand globally.
 - **Exceptions are keyed by base date, not final date.** A rescheduled occurrence on Tue 12 May still lives under `:EXCEPTION-2026-05-11:` if the base series hit Mon 11 May. UI labels reflect final date/time; property writes round-trip through the unshifted base slot.
 - **Exceptions on non-repeating entries are parsed but inert.** `entry.exceptions` is populated regardless of whether the entry has a repeater; expansion simply never runs. Do not "fix" this by applying the map to the single timestamp.
-- **`:SERIES-UNTIL:` is exclusive.** An occurrence whose base date equals `seriesUntil` is not generated; the successor heading (if any) may start *on* that date without overlap. Also filters reschedules keyed at/after the end — the base slot no longer exists. Like exceptions, it is parsed-but-inert on non-repeating entries.
+- **`:SERIES-UNTIL:` is exclusive and base-slot-based.** An occurrence whose base date equals `seriesUntil` is not generated; the successor heading (if any) may start *on* that date without overlap. Reschedules keyed at/after the end are ignored because the base slot no longer exists, but a valid base slot before `seriesUntil` may still be moved past the cutoff. Like exceptions, it is parsed-but-inert on non-repeating entries.
 - **Override is behaviour, note is metadata.** A single occurrence can carry both (e.g. `shift +45m` + a note, or `cancelled` + a note). A cancelled+note pair is intentionally allowed.
 - **All dates use local time.** No timezone handling — Org files don't encode timezones.
 - **Only `TODO` and `DONE` states are recognized.** Other keywords (WAITING, NEXT, etc.) are treated as part of the heading title.
@@ -74,7 +74,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 
 **Supported (standard Org):** headings, TODO/DONE, priority cookies (`[#A]`/`[#B]`/`[#C]`), tags, active timestamps, time ranges, repeaters (+Nd/w/m/y), SCHEDULED, DEADLINE, body text, checkbox lists (`- [ ]`/`- [X]`), progress cookies (`[2/3]`/`[66%]`).
 
-**Mediant-specific extensions:** per-occurrence recurrence exceptions via `:EXCEPTION-<date>:` / `:EXCEPTION-NOTE-<date>:` (keyed on the *unshifted* base date), plus `:SERIES-UNTIL:` for an exclusive end date on a repeating series. Both ride on ordinary Org property-drawer syntax, so files remain valid Org (Emacs opens and edits them without complaint — it just treats the keys as arbitrary properties).
+**Mediant-specific extensions:** per-occurrence recurrence exceptions via `:EXCEPTION-<date>:` / `:EXCEPTION-NOTE-<date>:` (keyed on the *unshifted* base date), plus `:SERIES-UNTIL:` for an exclusive end date on a repeating series. `SERIES-UNTIL` is evaluated on the repeater's base slots, not the final moved-to date, which is what makes split-series handoff work cleanly. Both ride on ordinary Org property-drawer syntax, so files remain valid Org (Emacs opens and edits them without complaint — it just treats the keys as arbitrary properties).
 
 **Gracefully ignored:** file keywords (#+), inactive timestamps, drawers (including property drawers — only the `:EXCEPTION-…:`, `:EXCEPTION-NOTE-…:`, and `:SERIES-UNTIL:` extension keys are read), comments, links, inline markup, plain lists, tables.
 
@@ -96,8 +96,8 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Priority badges** — `[#A]`/`[#B]`/`[#C]` rendered as small colored badges (red/amber/blue) nested inside the item title so the row grid templates stay fixed
 - **Progress badges** — `[2/3]` rendered as a small badge next to the title (green when complete, gray otherwise)
 - **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under the agenda item; checked items dimmed with strikethrough
-- **Recurrence-exception chip** — shifted or rescheduled occurrences show a small muted chip (`shifted` / `moved`) nested in the title, with the detail (e.g. `+45m`, `from 2026-05-11`) as the tooltip. Cancelled occurrences never render, so there is no chip for them.
-- **Instance note** — `:EXCEPTION-NOTE-<date>:` renders as an italic one-liner directly under the occurrence, matching the checkbox-list indent.
+- **Recurrence-exception chip** — shifted, rescheduled, or cancelled occurrences show a small muted chip (`shifted` / `moved` / `skipped`) nested in the title, with detail such as `+45m`, `from 2026-05-11 17:00-18:00`, or `Skipped occurrence` in the tooltip.
+- **Instance note** — `:EXCEPTION-NOTE-<date>:` renders as an italic one-liner directly under the occurrence, aligned with the row's title column.
 - **Now line** on today's card — orange line positioned proportionally within the timed section
 - **Navigation** — prev/next by 7-day increments, "Today" button returns to today as start date
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE), sorted alphabetically

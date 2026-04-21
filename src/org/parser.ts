@@ -84,7 +84,12 @@ const EXCEPTION_KEY_RE = /^\s*:EXCEPTION-(\d{4}-\d{2}-\d{2}):\s*(.*?)\s*$/;
 /** Per-occurrence note property: `:EXCEPTION-NOTE-YYYY-MM-DD: <text>`. */
 const EXCEPTION_NOTE_KEY_RE = /^\s*:EXCEPTION-NOTE-(\d{4}-\d{2}-\d{2}):\s*(.*?)\s*$/;
 
-/** Series end property: `:SERIES-UNTIL: YYYY-MM-DD` (exclusive). */
+/**
+ * Series end property: `:SERIES-UNTIL: YYYY-MM-DD` (exclusive).
+ *
+ * The cutoff applies to the repeater's base slots, not the final date
+ * after a shift or reschedule.
+ */
 const SERIES_UNTIL_KEY_RE = /^\s*:SERIES-UNTIL:\s*(\d{4}-\d{2}-\d{2})\s*$/;
 
 /** Override grammars (matched against the trimmed value after the property key). */
@@ -335,7 +340,8 @@ function isTimestampOnlyLine(line: string): boolean {
  *     the entry's exception map. Malformed override values are silently
  *     dropped (note for the same date, if any, is preserved). Empty
  *     notes are treated as absent.
- *   - `:SERIES-UNTIL:` — stored as `seriesUntil` (exclusive end date).
+ *   - `:SERIES-UNTIL:` — stored as `seriesUntil` (exclusive end date on
+ *     the repeating series' base slots, not on moved-to dates).
  *     Malformed values are silently dropped.
  *
  * All other property keys are ignored, per the documented extension

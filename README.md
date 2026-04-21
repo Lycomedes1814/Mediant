@@ -33,7 +33,7 @@ Anything outside this subset is ignored gracefully — it will not cause errors.
 
 ### Mediant-specific extensions
 
-Mediant layers one extension on top of standard Org: **recurrence exceptions**. Two property-drawer key families let a single occurrence of a repeating entry deviate from the base series (skip / shift / move / attach a note), keyed on the unshifted base date so they round-trip cleanly:
+Mediant layers two small extensions on top of standard Org: **recurrence exceptions** and **series truncation**. Two property-drawer key families let a single occurrence of a repeating entry deviate from the base series (skip / shift / move / attach a note), keyed on the unshifted base date so they round-trip cleanly:
 
 ```org
 ** TODO Yoga :health:
@@ -43,10 +43,17 @@ SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>
 :EXCEPTION-NOTE-2026-05-04: Bring mat and water
 :EXCEPTION-2026-05-11: reschedule 2026-05-12 18:00
 :EXCEPTION-2026-05-18: cancelled
+:SERIES-UNTIL: 2026-06-01
 :END:
 ```
 
-Because these ride on ordinary property-drawer syntax, files stay valid Org — Emacs opens and edits them without complaint, it just won't interpret the exceptions. See [ORG-SYNTAX.md](ORG-SYNTAX.md#mediant-specific-extensions) for the full grammar, edge cases, and interop notes.
+`SERIES-UNTIL` is an **exclusive** end date for the repeating series, evaluated against the repeater's unshifted base slots rather than the final rendered date after a move:
+
+- A base occurrence dated exactly `2026-06-01` is excluded.
+- A reschedule keyed to `:EXCEPTION-2026-06-01:` or any later base slot is ignored, because that slot no longer exists in the series.
+- A reschedule keyed to an earlier valid slot may still land after `2026-06-01`, which is what makes split-series handoff work cleanly.
+
+Because these ride on ordinary property-drawer syntax, files stay valid Org — Emacs opens and edits them without complaint, it just won't interpret the extensions. See [ORG-SYNTAX.md](ORG-SYNTAX.md#mediant-specific-extensions) for the full grammar, edge cases, and interop notes.
 
 ## Getting started
 
@@ -140,7 +147,8 @@ index.html             — Minimal shell with #agenda container
 - **Priority badges** — A/B/C priority cookies rendered as small colored badges (red/amber/blue) before the item title
 - **Progress badges** — `[2/3]` shown as a small badge next to the title (green when complete, gray otherwise)
 - **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under agenda items; toggleable in the edit panel
-- **Recurrence exceptions** — per-occurrence deviations on a repeating entry (skip, shift by `±N(m|h|d)`, reschedule to another date/time, attach a one-off note). Shifted/moved occurrences show a muted chip with detail in the tooltip; notes render as an italic line under the item. Exceptions are stored in the entry's `:PROPERTIES:` drawer keyed by the unshifted base date (e.g. `:EXCEPTION-2026-05-04: shift +45m`), so they round-trip cleanly.
+- **Recurrence exceptions** — per-occurrence deviations on a repeating entry (skip, shift by `±N(m|h|d)`, reschedule to another date/time, attach a one-off note). Shifted/moved/skipped occurrences show a muted chip with detail in the tooltip; notes render as an italic line under the item. Exceptions are stored in the entry's `:PROPERTIES:` drawer keyed by the unshifted base date (e.g. `:EXCEPTION-2026-05-04: shift +45m`), so they round-trip cleanly.
+- **Series truncation** — `:SERIES-UNTIL: YYYY-MM-DD` stops a repeating series at an exclusive end date, evaluated on the unshifted base slots. This lets one heading end on a handoff date while a successor heading starts on that same date without overlap, and still allows older valid slots to be moved past the cutoff.
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE)
 - **DONE items** rendered at reduced opacity with line-through
 - **Today** indicated by blue card border and small dot marker
@@ -164,7 +172,7 @@ index.html             — Minimal shell with #agenda container
 
 - Full Org-mode syntax
 - Heading hierarchy in the agenda
-- Arbitrary property drawers (only `:EXCEPTION-…:` / `:EXCEPTION-NOTE-…:` keys are read; habits and clocking are ignored)
+- Arbitrary property drawers (only `:EXCEPTION-…:` / `:EXCEPTION-NOTE-…:` / `:SERIES-UNTIL:` are read; habits and clocking are ignored)
 - Timezone handling beyond local time
 - Advanced state workflows / custom TODO keywords
 - Multi-file agenda or export

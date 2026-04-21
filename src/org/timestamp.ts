@@ -176,9 +176,16 @@ export function isTimed(ts: OrgTimestamp): boolean {
  * Returned dates are local-time Date objects matching the timestamp's
  * time (or midnight for date-only timestamps).
  *
- * `seriesUntil` (exclusive `YYYY-MM-DD`) truncates repeating series:
- * an occurrence whose base date falls on or after this date is not
- * generated. Non-repeating timestamps ignore `seriesUntil` (inert).
+ * `seriesUntil` (exclusive `YYYY-MM-DD`) truncates repeating series by
+ * **base occurrence date**, not by the final rendered date after an
+ * override. That means:
+ *   - a base occurrence on `seriesUntil` itself is excluded
+ *   - a reschedule keyed to a base slot at/after `seriesUntil` is
+ *     ignored, because there is no longer a slot to move
+ *   - a valid base slot before `seriesUntil` may still be rescheduled to
+ *     a later calendar day and remain visible
+ *
+ * Non-repeating timestamps ignore `seriesUntil` (inert).
  */
 export function expandRecurrences(
   ts: OrgTimestamp,
@@ -305,9 +312,11 @@ const SHIFT_BUFFER_DAYS = 7;
  *   - notes attach to the final occurrence
  *   - reschedules that pull an occurrence from outside the page into the
  *     range are surfaced by iterating the exception map directly
- *   - `seriesUntil` (exclusive) truncates the series — any occurrence
- *     whose base slot is at or after that date is dropped, including
- *     reschedules surfaced by the Step 2 pass
+ *   - `seriesUntil` (exclusive) truncates the series by base slot —
+ *     any occurrence whose base slot is at or after that date is
+ *     dropped, including reschedules surfaced by the Step 2 pass
+ *   - conversely, a base slot before `seriesUntil` may still produce a
+ *     final occurrence after the cutoff if it was rescheduled there
  */
 export function expandOccurrences(
   ts: OrgTimestamp,
@@ -344,8 +353,8 @@ export function expandOccurrences(
   // the exception's base key to identify a real slot in the series; if
   // the user wrote a key that doesn't line up with the repeater, we
   // still emit (harmless and cheap). Base slots at or after
-  // `seriesUntil` are filtered — the series has ended there, so a
-  // reschedule keyed to that slot has nothing to move.
+  // `seriesUntil` are filtered because the cutoff is defined on the
+  // original series slot, not on the moved-to date.
   for (const [baseKey, exception] of exceptions) {
     if (seenBaseKeys.has(baseKey)) continue;
     if (exception.override?.kind !== "reschedule") continue;

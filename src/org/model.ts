@@ -98,9 +98,19 @@ export interface OrgEntry {
    * if the series has no end. Populated from a `:SERIES-UNTIL:` property
    * in the heading's `:PROPERTIES:` drawer.
    *
-   * Exclusive: an occurrence whose base date is exactly `seriesUntil` is
-   * not generated. This matches the "split into two headings" model —
-   * the successor heading may start *on* `seriesUntil` without overlap.
+   * This cutoff is evaluated against the occurrence's **base slot**
+   * (the unshifted date implied by the repeater), not the final rendered
+   * date after a shift or reschedule. In practice:
+   *   - a base occurrence dated exactly `seriesUntil` is excluded
+   *   - a reschedule keyed to a base date at/after `seriesUntil` is
+   *     ignored, because that slot no longer exists in the series
+   *   - a reschedule keyed to a base date before `seriesUntil` may still
+   *     land after the end date, because the original slot was valid
+   *
+   * This matches the "split into two headings" model: the successor
+   * heading may start *on* `seriesUntil` without overlap, while moved
+   * occurrences from the earlier heading can still appear after the
+   * handoff when they originate from an earlier base slot.
    *
    * Like `exceptions`, this is parsed regardless of whether the entry
    * has a repeater. On non-recurring entries it is **parsed but inert**
