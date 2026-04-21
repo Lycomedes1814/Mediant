@@ -7,7 +7,7 @@
 - [ ] Toggle hiding empty days (useful with filters)
 
 ## Follow-ups
-- [ ] Expose cancelled occurrences' notes somewhere in the series/edit view
+- [x] Expose cancelled occurrences' notes somewhere in the series/edit view
 
 ## This and future operations
 
