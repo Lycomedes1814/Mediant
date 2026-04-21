@@ -712,10 +712,38 @@ body {
 }
 
 .item-instance-note {
-  padding: 0.38rem var(--section-padding-x) 0 calc(var(--time-col) + 1.65rem);
+  display: grid;
+  padding: 0.38rem var(--section-padding-x) 0;
   font-size: 0.8125rem;
   font-style: italic;
   color: var(--text-dim);
+}
+
+.note-layout-timed {
+  grid-template-columns: var(--time-col) auto 1fr auto;
+  column-gap: 0.8rem;
+}
+
+.note-layout-with-time {
+  grid-template-columns: var(--time-col) auto 1fr auto;
+  column-gap: 0.8rem;
+}
+
+.note-layout-compact {
+  grid-template-columns: auto 1fr auto;
+  column-gap: 0.8rem;
+}
+
+.note-title-col-2 .item-instance-note-text {
+  grid-column: 2;
+}
+
+.note-title-col-3 .item-instance-note-text {
+  grid-column: 3;
+}
+
+.item-instance-note-text {
+  min-width: 0;
 }
 
 /* ── Item body / expand ───────────────────────────────────────────── */
@@ -1524,6 +1552,11 @@ body {
   .overdue-item .tag-badges {
     align-self: flex-start;
     max-width: none;
+  }
+
+  .item-instance-note {
+    display: block;
+    padding: 0.2rem var(--section-padding-x) 0;
   }
 
   .someday-item,

@@ -290,7 +290,7 @@ function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
 
       // Instance note (per-occurrence)
       if (item.instanceNote) {
-        section.appendChild(renderInstanceNote(item.instanceNote));
+        section.appendChild(renderInstanceNote(item));
       }
 
       // Body text
@@ -382,10 +382,33 @@ function renderOverrideChip(
   return chip;
 }
 
-function renderInstanceNote(note: string): HTMLElement {
-  const row = el("div", "item-instance-note");
-  row.textContent = note;
+function renderInstanceNote(item: AgendaItem): HTMLElement {
+  const row = el("div", buildInstanceNoteClassName(item));
+  const text = el("div", "item-instance-note-text");
+  text.textContent = item.instanceNote ?? "";
+  row.appendChild(text);
   return row;
+}
+
+function buildInstanceNoteClassName(item: AgendaItem): string {
+  const classes = ["item-instance-note"];
+  if (item.category === "timed") {
+    classes.push("note-layout-timed");
+    classes.push(item.entry.todo ? "note-title-col-3" : "note-title-col-2");
+    return classes.join(" ");
+  }
+  if (item.category === "scheduled") {
+    classes.push(item.startTime ? "note-layout-with-time" : "note-layout-compact");
+    classes.push(item.startTime ? "note-title-col-3" : "note-title-col-2");
+    return classes.join(" ");
+  }
+  if (item.category === "deadline") {
+    classes.push(item.startTime ? "note-layout-with-time" : "note-layout-compact");
+    classes.push(item.startTime ? "note-title-col-3" : "note-title-col-2");
+    return classes.join(" ");
+  }
+  classes.push("note-layout-compact", "note-title-col-2");
+  return classes.join(" ");
 }
 
 function renderAllDayItem(item: AgendaItem): HTMLElement {

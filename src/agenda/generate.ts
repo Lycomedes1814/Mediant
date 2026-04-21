@@ -277,7 +277,7 @@ function buildAgendaItem(
     baseDate: hasRepeater ? occ.baseDate : null,
     baseStartMinutes: hasRepeater ? occ.baseStartMinutes : null,
     instanceNote: occ.note,
-    override: summarizeOverride(occ.override, occ.baseDate),
+    override: summarizeOverride(occ.override, occ.baseDate, ts),
     skipped: occ.override?.kind === "cancelled",
   };
 }
@@ -285,6 +285,7 @@ function buildAgendaItem(
 function summarizeOverride(
   override: RecurrenceOverride | null,
   baseDate: string,
+  ts: OrgTimestamp,
 ): AgendaItemOverride | null {
   if (override === null) return null;
   if (override.kind === "cancelled") {
@@ -293,7 +294,7 @@ function summarizeOverride(
   if (override.kind === "shift") {
     return { kind: "shift", detail: formatShiftDetail(override.offsetMinutes) };
   }
-  return { kind: "reschedule", detail: `from ${baseDate}` };
+  return { kind: "reschedule", detail: formatRescheduleDetail(baseDate, ts, override) };
 }
 
 function formatShiftDetail(offsetMinutes: number): string {
@@ -302,6 +303,22 @@ function formatShiftDetail(offsetMinutes: number): string {
   if (abs % 1440 === 0) return `${sign}${abs / 1440}d`;
   if (abs % 60 === 0) return `${sign}${abs / 60}h`;
   return `${sign}${abs}m`;
+}
+
+function formatRescheduleDetail(
+  baseDate: string,
+  ts: OrgTimestamp,
+  override: Extract<RecurrenceOverride, { kind: "reschedule" }>,
+): string {
+  const baseTime = formatBaseTimeRange(ts.startTime, ts.endTime);
+  if (!baseTime) return `from ${baseDate}`;
+  if (override.date === baseDate) return `from ${baseTime}`;
+  return `from ${baseDate} ${baseTime}`;
+}
+
+function formatBaseTimeRange(start: string | null, end: string | null): string {
+  if (!start) return "";
+  return end ? `${start}-${end}` : start;
 }
 
 /**

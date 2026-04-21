@@ -131,7 +131,7 @@ describe("renderAgenda", () => {
           endTime: "19:00",
           tags: ["music"],
           baseDate: "2026-04-19",
-          override: { kind: "reschedule", detail: "from 2026-04-19" },
+          override: { kind: "reschedule", detail: "from 2026-04-19 17:00-18:00" },
           instanceNote: "Bring water",
           progress: { done: 2, total: 3 },
           checkboxItems: [
@@ -160,8 +160,11 @@ describe("renderAgenda", () => {
 
     const chip = container.querySelector(".item-override-chip") as HTMLElement | null;
     expect(chip?.textContent).toBe("moved");
-    expect(chip?.title).toBe("from 2026-04-19");
-    expect(container.querySelector(".item-instance-note")?.textContent).toBe("Bring water");
+    expect(chip?.title).toBe("from 2026-04-19 17:00-18:00");
+    const note = container.querySelector(".item-instance-note") as HTMLElement | null;
+    expect(note?.textContent).toBe("Bring water");
+    expect(note?.classList.contains("note-layout-timed")).toBe(true);
+    expect(note?.classList.contains("note-title-col-2")).toBe(true);
 
     const checkboxes = Array.from(container.querySelectorAll(".checkbox-item"));
     expect(checkboxes).toHaveLength(2);

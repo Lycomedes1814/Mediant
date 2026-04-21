@@ -10,7 +10,8 @@ export type RenderCategory = "all-day" | "timed" | "deadline" | "scheduled";
 /**
  * A summary of the per-occurrence override applied to this item.
  * `detail` is a short, renderer-ready string (e.g. `"+45m"`,
- * `"from 2026-05-11"`) suitable for chip text / tooltips.
+ * `"from 2026-05-11 17:00-18:00"` or `"from 17:00-18:00"`) suitable
+ * for chip text / tooltips.
  */
 export interface AgendaItemOverride {
   readonly kind: "cancelled" | "shift" | "reschedule";

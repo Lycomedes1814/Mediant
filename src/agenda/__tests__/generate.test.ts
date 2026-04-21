@@ -195,7 +195,7 @@ describe("exceptions in agenda", () => {
     expect(items[0].override).toEqual({ kind: "shift", detail: "+45m" });
   });
 
-  it("rescheduled occurrence lands on the new day with 'from <baseDate>' detail", () => {
+  it("rescheduled occurrence lands on the new day with original date and time detail", () => {
     const entries = parseOrg(
       "** TODO [#B] Yoga :health:\n" +
         "SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>\n" +
@@ -212,7 +212,23 @@ describe("exceptions in agenda", () => {
     expect(wed[0].entry.priority).toBe("B");
     expect(wed[0].entry.tags).toEqual(["health"]);
     expect(wed[0].baseDate).toBe("2026-04-27");
-    expect(wed[0].override).toEqual({ kind: "reschedule", detail: "from 2026-04-27" });
+    expect(wed[0].override).toEqual({ kind: "reschedule", detail: "from 2026-04-27 17:00-18:00" });
+  });
+
+  it("same-day reschedule detail omits the repeated date and keeps the original time", () => {
+    const entries = parseOrg(
+      "** TODO Yoga\n" +
+        "SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: reschedule 2026-04-27 18:30\n" +
+        ":END:\n",
+    );
+    const week = generateWeek(entries, APRIL_27);
+    const items = week[0].items;
+    expect(items).toHaveLength(1);
+    expect(items[0].startTime).toBe("18:30");
+    expect(items[0].endTime).toBe("19:30");
+    expect(items[0].override).toEqual({ kind: "reschedule", detail: "from 17:00-18:00" });
   });
 
   it("collision: a reschedule onto a day with a base occurrence renders both", () => {
