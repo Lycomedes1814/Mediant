@@ -1198,9 +1198,9 @@ body {
 .add-delete-btn {
   display: none;
   padding: 0.5rem 1rem;
-  background: #dc3545;
-  color: #fff;
-  border: none;
+  background: transparent;
+  color: color-mix(in srgb, #dc3545 60%, var(--text-dim));
+  border: 1px solid color-mix(in srgb, #dc3545 22%, var(--border));
   border-radius: 0.375rem;
   font-size: 0.875rem;
   font-weight: 600;
@@ -1208,7 +1208,9 @@ body {
 }
 
 .add-delete-btn:hover {
-  filter: brightness(1.1);
+  background: color-mix(in srgb, #dc3545 10%, transparent);
+  color: color-mix(in srgb, #dc3545 85%, var(--text));
+  border-color: color-mix(in srgb, #dc3545 40%, var(--border));
 }
 
 .add-panel.is-editing .add-delete-btn {
@@ -1231,7 +1233,7 @@ body {
   display: none;
 }
 
-.add-panel.is-editing .series-header {
+.add-panel.is-editing.has-occurrence .series-header {
   display: block;
 }
 
@@ -1279,6 +1281,7 @@ body {
 
 .occurrence-input {
   flex: 1;
+  min-width: 0;
 }
 
 .occurrence-btn {
