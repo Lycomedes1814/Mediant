@@ -74,8 +74,7 @@ interface AddPanelRefs {
   skipCheckbox: HTMLInputElement;
   endSeriesCheckboxRow: HTMLElement;
   endSeriesCheckbox: HTMLInputElement;
-  shiftInput: HTMLInputElement;
-  rescheduleInput: HTMLInputElement;
+  occurrenceInput: HTMLInputElement;
   noteTextarea: HTMLTextAreaElement;
   clearOverrideBtn: HTMLButtonElement;
   clearNoteBtn: HTMLButtonElement;
@@ -220,40 +219,22 @@ function buildAddPanel(): void {
   endSeriesCheckbox.addEventListener("change", () => void toggleOccurrenceIsLast());
   endSeriesCheckboxRow.append(endSeriesCheckbox, endSeriesCheckboxText);
 
-  const shiftRow = document.createElement("div");
-  shiftRow.className = "occurrence-row";
-  const shiftInput = document.createElement("input");
-  shiftInput.type = "text";
-  shiftInput.className = "add-input occurrence-input";
-  shiftInput.placeholder = "+45m / -1h / +1d";
-  const shiftBtn = document.createElement("button");
-  shiftBtn.type = "button";
-  shiftBtn.className = "occurrence-btn";
-  shiftBtn.textContent = "Shift";
-  shiftBtn.addEventListener("click", () => {
-    const raw = shiftInput.value.trim();
-    if (!/^[+-]\d+[mhd]$/.test(raw)) { shiftInput.focus(); return; }
-    applyOverride(`shift ${raw}`);
+  const overrideRow = document.createElement("div");
+  overrideRow.className = "occurrence-row";
+  const occurrenceInput = document.createElement("input");
+  occurrenceInput.type = "text";
+  occurrenceInput.className = "add-input occurrence-input";
+  occurrenceInput.placeholder = "+45m / -1h / +1d / DD/MM/YYYY [HH:MM[-HH:MM]]";
+  const overrideBtn = document.createElement("button");
+  overrideBtn.type = "button";
+  overrideBtn.className = "occurrence-btn";
+  overrideBtn.textContent = "Apply";
+  overrideBtn.addEventListener("click", () => {
+    const value = parseOccurrenceOverrideInput(occurrenceInput.value);
+    if (!value) { occurrenceInput.focus(); return; }
+    applyOverride(value);
   });
-  shiftRow.append(shiftInput, shiftBtn);
-
-  const rescRow = document.createElement("div");
-  rescRow.className = "occurrence-row";
-  const rescheduleInput = document.createElement("input");
-  rescheduleInput.type = "text";
-  rescheduleInput.className = "add-input occurrence-input";
-  rescheduleInput.placeholder = "DD/MM/YYYY | +N | mon-sun [HH:MM[-HH:MM]]";
-  const rescBtn = document.createElement("button");
-  rescBtn.type = "button";
-  rescBtn.className = "occurrence-btn";
-  rescBtn.textContent = "Move";
-  rescBtn.addEventListener("click", () => {
-    const parsed = parseDateTime(rescheduleInput.value);
-    if (!parsed || !parsed.date) { rescheduleInput.focus(); return; }
-    const timePart = parsed.time ? ` ${parsed.time}` : "";
-    applyOverride(`reschedule ${parsed.date}${timePart}`);
-  });
-  rescRow.append(rescheduleInput, rescBtn);
+  overrideRow.append(occurrenceInput, overrideBtn);
 
   const clearOverrideBtn = document.createElement("button");
   clearOverrideBtn.type = "button";
@@ -261,7 +242,7 @@ function buildAddPanel(): void {
   clearOverrideBtn.textContent = "Clear override";
   clearOverrideBtn.addEventListener("click", () => clearException("override"));
 
-  occActions.append(skipCheckboxRow, endSeriesCheckboxRow, shiftRow, rescRow, clearOverrideBtn);
+  occActions.append(skipCheckboxRow, endSeriesCheckboxRow, overrideRow, clearOverrideBtn);
   occurrenceSection.appendChild(occActions);
 
   const noteLabel = document.createElement("label");
@@ -390,8 +371,7 @@ function buildAddPanel(): void {
     skipCheckbox,
     endSeriesCheckboxRow,
     endSeriesCheckbox,
-    shiftInput,
-    rescheduleInput,
+    occurrenceInput,
     noteTextarea,
     clearOverrideBtn,
     clearNoteBtn,
@@ -793,6 +773,15 @@ function parseDateTime(raw: string): { date: string; time: string } | null {
   return { date, time };
 }
 
+function parseOccurrenceOverrideInput(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (/^[+-]\d+[mhd]$/.test(trimmed)) return `shift ${trimmed}`;
+  const parsed = parseDateTime(trimmed);
+  if (!parsed || !parsed.date) return null;
+  const timePart = parsed.time ? ` ${parsed.time}` : "";
+  return `reschedule ${parsed.date}${timePart}`;
+}
+
 interface BuildOrgOpts {
   type: "todo" | "event";
   level: number;
@@ -1115,8 +1104,7 @@ function refreshOccurrenceSection(): void {
   if (refs.noteTextarea.value !== (note ?? "")) {
     refs.noteTextarea.value = note ?? "";
   }
-  refs.shiftInput.value = "";
-  refs.rescheduleInput.value = "";
+  refs.occurrenceInput.value = "";
 }
 
 async function toggleOccurrenceSkipped(): Promise<void> {

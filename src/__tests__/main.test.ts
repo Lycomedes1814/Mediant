@@ -91,10 +91,44 @@ describe("main.ts integration", () => {
     const endSeriesCheckbox = occurrenceToggles[1];
     const occurrenceLabels = Array.from(document.querySelectorAll<HTMLElement>(".occurrence-toggle-label"))
       .map(label => label.textContent);
+    const occurrenceInput = document.querySelector<HTMLInputElement>(".occurrence-input");
+    const occurrenceButtons = Array.from(document.querySelectorAll<HTMLButtonElement>(".occurrence-btn"));
+    const applyOverrideButton = occurrenceButtons.find(button => button.textContent === "Apply");
+    const clearOverrideButton = occurrenceButtons.find(button => button.textContent === "Clear override");
     expect(skipCheckbox).not.toBeUndefined();
     expect(endSeriesCheckbox).not.toBeNull();
+    expect(occurrenceInput).not.toBeNull();
+    expect(applyOverrideButton).not.toBeUndefined();
+    expect(clearOverrideButton).not.toBeUndefined();
     expect(occurrenceLabels).toContain("Stop repeating after this occurrence");
     expect(endSeriesCheckbox?.checked).toBe(false);
+
+    occurrenceInput!.value = "+45m";
+    applyOverrideButton!.click();
+    await flush();
+
+    let sourceWithShift = localStorage.getItem("mediant-org-source") ?? "";
+    expect(sourceWithShift).toContain(":EXCEPTION-2026-04-21: shift +45m");
+
+    clearOverrideButton!.click();
+    await flush();
+
+    sourceWithShift = localStorage.getItem("mediant-org-source") ?? "";
+    expect(sourceWithShift).not.toContain(":EXCEPTION-2026-04-21: shift +45m");
+
+    occurrenceInput!.value = "29/04/2026 18:00";
+    applyOverrideButton!.click();
+    await flush();
+
+    let sourceWithMove = localStorage.getItem("mediant-org-source") ?? "";
+    expect(sourceWithMove).toContain(":EXCEPTION-2026-04-21: reschedule 2026-04-29 18:00");
+
+    clearOverrideButton!.click();
+    await flush();
+
+    sourceWithMove = localStorage.getItem("mediant-org-source") ?? "";
+    expect(sourceWithMove).not.toContain(":EXCEPTION-2026-04-21: reschedule 2026-04-29 18:00");
+
     endSeriesCheckbox!.checked = true;
     endSeriesCheckbox!.dispatchEvent(new Event("change", { bubbles: true }));
     await flush();
