@@ -100,14 +100,14 @@ describe("priority", () => {
 
 describe("tags", () => {
   it("parses a single tag", () => {
-    const entries = parseOrg("** Heading :studie:\n");
-    expect(entries[0].tags).toEqual(["studie"]);
+    const entries = parseOrg("** Heading :study:\n");
+    expect(entries[0].tags).toEqual(["study"]);
     expect(entries[0].title).toBe("Heading");
   });
 
   it("parses multiple tags", () => {
-    const entries = parseOrg("** Heading :dans:bursdag:\n");
-    expect(entries[0].tags).toEqual(["dans", "bursdag"]);
+    const entries = parseOrg("** Heading :dance:birthday:\n");
+    expect(entries[0].tags).toEqual(["dance", "birthday"]);
   });
 
   it("heading with no tags has empty array", () => {
@@ -116,21 +116,21 @@ describe("tags", () => {
   });
 
   it("tags are removed from title", () => {
-    const entries = parseOrg("** Lindy Hop beginner :dans:\n");
-    expect(entries[0].title).toBe("Lindy Hop beginner");
+    const entries = parseOrg("** Exercise class A :dance:\n");
+    expect(entries[0].title).toBe("Exercise class A");
   });
 
   it("handles TODO + tags together", () => {
-    const entries = parseOrg("** TODO Levér semesteroppgave :studie:\n");
+    const entries = parseOrg("** TODO Finish project draft :study:\n");
     expect(entries[0].todo).toBe("TODO");
-    expect(entries[0].title).toBe("Levér semesteroppgave");
-    expect(entries[0].tags).toEqual(["studie"]);
+    expect(entries[0].title).toBe("Finish project draft");
+    expect(entries[0].tags).toEqual(["study"]);
   });
 
   it("parses Unicode tags", () => {
-    const entries = parseOrg("** TODO Åpent møte :résumé:økonomi:\n");
-    expect(entries[0].title).toBe("Åpent møte");
-    expect(entries[0].tags).toEqual(["résumé", "økonomi"]);
+    const entries = parseOrg("** TODO Open meeting :résumé:economics:\n");
+    expect(entries[0].title).toBe("Open meeting");
+    expect(entries[0].tags).toEqual(["résumé", "economics"]);
   });
 });
 
@@ -139,7 +139,7 @@ describe("tags", () => {
 describe("planning", () => {
   it("parses DEADLINE", () => {
     const entries = parseOrg(
-      "** TODO Levér semesteroppgave i satstek :studie:\nDEADLINE: <2026-05-05 ti.>\n",
+      "** TODO Finish project draft :study:\nDEADLINE: <2026-05-05 ti.>\n",
     );
     expect(entries[0].planning).toHaveLength(1);
     expect(entries[0].planning[0].kind).toBe("deadline");
@@ -275,9 +275,9 @@ describe("skipped constructs", () => {
 describe("body text", () => {
   it("preserves body text as notes", () => {
     const entries = parseOrg(
-      "** Tur til månen :friluft:\n<2026-04-12 Sun 14:00>\nOppmøte Dragvoll.\n",
+      "** Outdoor activity :outdoors:\n<2026-04-12 Sun 14:00>\nMeet at the main entrance.\n",
     );
-    expect(entries[0].body).toBe("Oppmøte Dragvoll.");
+    expect(entries[0].body).toBe("Meet at the main entrance.");
   });
 
   it("multiline body text preserves newlines", () => {
@@ -732,48 +732,48 @@ describe("inbox.org integration", () => {
 #+startup: show2levels
 
 * Tasks
-** TODO Levér semesteroppgave i satstek :studie:
+** TODO Finish project draft :study:
 DEADLINE: <2026-05-05 ti.>
-** TODO Levér semesteroppgave i arrkomp :studie:
+** TODO Review course notes :study:
 DEADLINE: <2026-05-09 lø.>
 ** TODO Install Syncthing on VPS :tech:
 ** TODO Show HN: playlist-to-audiobook :tech:
-** TODO Ta med fulladet laptop på skriving
+** TODO Bring a charged laptop to the work session
 SCHEDULED: <2026-04-14 ti. 12:00>
 * Events
-** Første påskedag :helligdag:
+** Easter Sunday :holiday:
 <2026-04-05 sø.>
-** Andre påskedag :helligdag:
+** Easter Monday :holiday:
 <2026-04-06 ma.>
-** Boogie Woogie beginner :dans:
+** Dance class A :dance:
 <2026-04-06 ma. 20:00-21:30 +1w>
-** Analyse :studie:
+** Study session :study:
 <2026-04-07 ti. 15:15-16:00>
-** Satstek skriving :studie:
+** Workshop :study:
 <2026-04-07 ti. 13:15-14:00 +1w>
-** Folkeswing videregående :dans:
+** Dance class B :dance:
 <2026-04-05 sø. 18:00-21:00 +1w>
-** Folkeswing øvet :dans:
+** Dance practice :dance:
 <2026-04-08 on. 18:00-21:00 +1w>
-** Folkedans :dans:
+** Group activity :dance:
 <2026-04-05 sø. 14:30-16:00 +1w>
-** Lindy Hop beginner :dans:
+** Exercise class A :dance:
 <2026-04-07 ti. 17:00-18:30 +1w>
-** Lindy Hop intermediate :dans:
+** Exercise class B :dance:
 <2026-04-07 ti. 18:30-20:00 +1w>
-** Balboa beginner :dans:
+** Exercise class C :dance:
 <2026-04-07 ti. 20:00-21:30 +1w>
-** Mamma har bursdag :bursdag:
+** Annual reminder A :birthday:
 <2026-04-06 ma. +1y>
-** Pappa har bursdag :bursdag:
+** Annual reminder B :birthday:
 <2026-04-09 to. +1y>
-** Jeg har bursdag :bursdag:
+** Annual reminder C :birthday:
 <2026-04-23 ti. +1y>
-** Helgekurs for videregående :dans:
+** Weekend workshop :dance:
 <2026-04-11 Sat 12:00>
-** Tur til månen :friluft:
+** Outdoor activity :outdoors:
 <2026-04-12 Sun 14:00>
-Oppmøte Dragvoll.
+Meet at the main entrance.
 `;
 
   it("parses correct number of entries", () => {
@@ -784,11 +784,11 @@ Oppmøte Dragvoll.
 
   it("parses first task correctly", () => {
     const entries = parseOrg(INBOX);
-    const task = entries[1]; // ** TODO Levér semesteroppgave i satstek
+    const task = entries[1]; // ** TODO Finish project draft
     expect(task.level).toBe(2);
     expect(task.todo).toBe("TODO");
-    expect(task.title).toBe("Levér semesteroppgave i satstek");
-    expect(task.tags).toEqual(["studie"]);
+    expect(task.title).toBe("Finish project draft");
+    expect(task.tags).toEqual(["study"]);
     expect(task.planning).toHaveLength(1);
     expect(task.planning[0].kind).toBe("deadline");
     expect(task.planning[0].timestamp.date).toBe("2026-05-05");
@@ -798,9 +798,9 @@ Oppmøte Dragvoll.
 
   it("parses scheduled task correctly", () => {
     const entries = parseOrg(INBOX);
-    const task = entries[5]; // ** TODO Ta med fulladet laptop
+    const task = entries[5]; // ** TODO Bring a charged laptop
     expect(task.todo).toBe("TODO");
-    expect(task.title).toBe("Ta med fulladet laptop på skriving");
+    expect(task.title).toBe("Bring a charged laptop to the work session");
     expect(task.tags).toEqual([]);
     expect(task.planning).toHaveLength(1);
     expect(task.planning[0].kind).toBe("scheduled");
@@ -809,9 +809,9 @@ Oppmøte Dragvoll.
 
   it("parses date-only event (holiday)", () => {
     const entries = parseOrg(INBOX);
-    const event = entries[7]; // Første påskedag
-    expect(event.title).toBe("Første påskedag");
-    expect(event.tags).toEqual(["helligdag"]);
+    const event = entries[7]; // Easter Sunday
+    expect(event.title).toBe("Easter Sunday");
+    expect(event.tags).toEqual(["holiday"]);
     expect(event.timestamps).toHaveLength(1);
     expect(event.timestamps[0].date).toBe("2026-04-05");
     expect(event.timestamps[0].startTime).toBeNull();
@@ -820,9 +820,9 @@ Oppmøte Dragvoll.
 
   it("parses timed event with repeater", () => {
     const entries = parseOrg(INBOX);
-    const event = entries[9]; // Boogie Woogie beginner
-    expect(event.title).toBe("Boogie Woogie beginner");
-    expect(event.tags).toEqual(["dans"]);
+    const event = entries[9]; // Dance class A
+    expect(event.title).toBe("Dance class A");
+    expect(event.tags).toEqual(["dance"]);
     expect(event.timestamps[0].startTime).toBe("20:00");
     expect(event.timestamps[0].endTime).toBe("21:30");
     expect(event.timestamps[0].repeater).toEqual({ value: 1, unit: "w" });
@@ -830,18 +830,18 @@ Oppmøte Dragvoll.
 
   it("parses yearly repeater (birthday)", () => {
     const entries = parseOrg(INBOX);
-    const event = entries[18]; // Mamma har bursdag
-    expect(event.title).toBe("Mamma har bursdag");
-    expect(event.tags).toEqual(["bursdag"]);
+    const event = entries[18]; // Annual reminder A
+    expect(event.title).toBe("Annual reminder A");
+    expect(event.tags).toEqual(["birthday"]);
     expect(event.timestamps[0].repeater).toEqual({ value: 1, unit: "y" });
   });
 
-  it("preserves body text on Tur til månen", () => {
+  it("preserves body text on Outdoor activity", () => {
     const entries = parseOrg(INBOX);
-    const event = entries[22]; // Tur til månen
-    expect(event.title).toBe("Tur til månen");
-    expect(event.tags).toEqual(["friluft"]);
-    expect(event.body).toBe("Oppmøte Dragvoll.");
+    const event = entries[22]; // Outdoor activity
+    expect(event.title).toBe("Outdoor activity");
+    expect(event.tags).toEqual(["outdoors"]);
+    expect(event.body).toBe("Meet at the main entrance.");
     expect(event.timestamps).toHaveLength(1);
     expect(event.timestamps[0].startTime).toBe("14:00");
   });
@@ -856,10 +856,10 @@ Oppmøte Dragvoll.
     expect(task.timestamps).toHaveLength(0);
   });
 
-  it("handles Norwegian ø in event names", () => {
+  it("keeps Unicode tags intact", () => {
     const entries = parseOrg(INBOX);
-    const event = entries.find((e) => e.title === "Folkeswing øvet");
+    const event = entries.find((e) => e.title === "Dance practice");
     expect(event).toBeDefined();
-    expect(event!.tags).toEqual(["dans"]);
+    expect(event!.tags).toEqual(["dance"]);
   });
 });

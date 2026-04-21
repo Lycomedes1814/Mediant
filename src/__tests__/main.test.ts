@@ -48,6 +48,7 @@ describe("main.ts integration", () => {
     await import("../main.ts");
     await flush();
 
+    await waitFor(() => document.querySelector(".input-load-btn") !== null);
     const loadButton = document.querySelector<HTMLButtonElement>(".input-load-btn");
     expect(loadButton).not.toBeNull();
     loadButton!.click();

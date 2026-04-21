@@ -157,10 +157,8 @@ export function isTimed(ts: OrgTimestamp): boolean {
  *   +Nd  — every N days from the base date
  *   +Nw  — every N*7 days from the base date
  *   +Nm  — same day-of-month, every N months from the base date.
- *          If the target month has fewer days, JS Date rolls forward
- *          (e.g., Jan 31 + 1m → Mar 3 in non-leap years). This matches
- *          JavaScript's Date.setMonth behavior. We accept this for v1;
- *          a clamping strategy could be added later if needed.
+ *          If the target month has fewer days, clamp to that month's
+ *          last valid day (e.g., Jan 31 + 1m → Feb 28 in non-leap years).
  *   +Ny  — same month-and-day, every N years from the base date.
  *          Leap day (Feb 29) + 1y in a non-leap year → Mar 1.
  *
@@ -221,7 +219,17 @@ export function expandRecurrences(
   return results;
 }
 
-function stepDate(
+function addMonthsClamped(date: Date, months: number): Date {
+  const result = new Date(date);
+  const originalDay = result.getDate();
+  result.setDate(1);
+  result.setMonth(result.getMonth() + months);
+  const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(originalDay, lastDay));
+  return result;
+}
+
+export function stepDate(
   date: Date,
   step: number,
   unit: OrgRepeater["unit"],
@@ -235,8 +243,7 @@ function stepDate(
       result.setDate(result.getDate() + step * 7);
       break;
     case "m":
-      result.setMonth(result.getMonth() + step);
-      break;
+      return addMonthsClamped(result, step);
     case "y":
       result.setFullYear(result.getFullYear() + step);
       break;

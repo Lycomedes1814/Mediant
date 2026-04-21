@@ -63,7 +63,7 @@ describe("7-day structure", () => {
 
 describe("classification", () => {
   it("date-only active timestamp → all-day", () => {
-    const entries = parseOrg("** Holiday :helligdag:\n<2026-04-06 ma.>\n");
+    const entries = parseOrg("** Holiday :holiday:\n<2026-04-06 ma.>\n");
     const week = generateWeek(entries, APRIL_6);
     // April 6 = index 0
     expect(week[0].items).toHaveLength(1);
@@ -229,11 +229,11 @@ describe("exceptions in agenda", () => {
       "** Yoga\n" +
         "<2026-04-27 ma. 17:00 +1w>\n" +
         ":PROPERTIES:\n" +
-        ":EXCEPTION-NOTE-2026-04-27: Bring vannflaske\n" +
+        ":EXCEPTION-NOTE-2026-04-27: Bring water bottle\n" +
         ":END:\n",
     );
     const week = generateWeek(entries, APRIL_27);
-    expect(week[0].items[0].instanceNote).toBe("Bring vannflaske");
+    expect(week[0].items[0].instanceNote).toBe("Bring water bottle");
     expect(week[0].items[0].override).toBeNull();
   });
 
@@ -480,13 +480,13 @@ describe("sorting", () => {
 describe("entry data", () => {
   it("links back to full OrgEntry", () => {
     const entries = parseOrg(
-      "** TODO Task :studie:\nDEADLINE: <2026-04-09 to.>\n",
+      "** TODO Task :study:\nDEADLINE: <2026-04-09 to.>\n",
     );
     const week = generateWeek(entries, APRIL_6);
     const item = week[3].items[0];
     expect(item.entry.title).toBe("Task");
     expect(item.entry.todo).toBe("TODO");
-    expect(item.entry.tags).toEqual(["studie"]);
+    expect(item.entry.tags).toEqual(["study"]);
   });
 
   it("preserves sourceTimestamp for debugging", () => {
@@ -531,53 +531,53 @@ describe("inbox.org 7 days starting April 6", () => {
 #+startup: show2levels
 
 * Tasks
-** TODO Levér semesteroppgave i satstek :studie:
+** TODO Finish project draft :study:
 DEADLINE: <2026-05-05 ti.>
-** TODO Levér semesteroppgave i arrkomp :studie:
+** TODO Review course notes :study:
 DEADLINE: <2026-05-09 lø.>
 ** TODO Install Syncthing on VPS :tech:
 ** TODO Show HN: playlist-to-audiobook :tech:
-** TODO Ta med fulladet laptop på skriving
+** TODO Bring a charged laptop to the work session
 SCHEDULED: <2026-04-14 ti. 12:00>
 * Events
-** Første påskedag :helligdag:
+** Easter Sunday :holiday:
 <2026-04-05 sø.>
-** Andre påskedag :helligdag:
+** Easter Monday :holiday:
 <2026-04-06 ma.>
-** Boogie Woogie beginner :dans:
+** Dance class A :dance:
 <2026-04-06 ma. 20:00-21:30 +1w>
-** Analyse :studie:
+** Study session :study:
 <2026-04-07 ti. 15:15-16:00>
-** Satstek skriving :studie:
+** Workshop :study:
 <2026-04-07 ti. 13:15-14:00 +1w>
-** Folkeswing videregående :dans:
+** Dance class B :dance:
 <2026-04-05 sø. 18:00-21:00 +1w>
-** Folkeswing øvet :dans:
+** Dance practice :dance:
 <2026-04-08 on. 18:00-21:00 +1w>
-** Folkedans :dans:
+** Group activity :dance:
 <2026-04-05 sø. 14:30-16:00 +1w>
-** Lindy Hop beginner :dans:
+** Exercise class A :dance:
 <2026-04-07 ti. 17:00-18:30 +1w>
-** Lindy Hop intermediate :dans:
+** Exercise class B :dance:
 <2026-04-07 ti. 18:30-20:00 +1w>
-** Balboa beginner :dans:
+** Exercise class C :dance:
 <2026-04-07 ti. 20:00-21:30 +1w>
-** Mamma har bursdag :bursdag:
+** Annual reminder A :birthday:
 <2026-04-06 ma. +1y>
-** Pappa har bursdag :bursdag:
+** Annual reminder B :birthday:
 <2026-04-09 to. +1y>
-** Jeg har bursdag :bursdag:
+** Annual reminder C :birthday:
 <2026-04-23 ti. +1y>
-** Helgekurs for videregående :dans:
+** Weekend workshop :dance:
 <2026-04-11 Sat 12:00>
-** Tur til månen :friluft:
+** Outdoor activity :outdoors:
 <2026-04-12 Sun 14:00>
-Oppmøte Dragvoll.
+Meet at the main entrance.
 `;
 
   const entries = parseOrg(INBOX);
 
-  it("Monday April 6 (index 0): holiday + birthday + dance", () => {
+  it("Monday April 6 (index 0): holiday + reminder + class", () => {
     const week = generateWeek(entries, APRIL_6);
     const mon = week[0];
     expect(mon.date.getDate()).toBe(6);
@@ -585,11 +585,11 @@ Oppmøte Dragvoll.
     const categories = mon.items.map((i) => i.category);
     const titles = mon.items.map((i) => i.entry.title);
 
-    // All-day items first (Andre påskedag, Mamma har bursdag), then timed (Boogie Woogie)
+    // All-day items first (Easter Monday, Annual reminder A), then timed (Dance class A)
     expect(categories).toEqual(["all-day", "all-day", "timed"]);
-    expect(titles).toContain("Andre påskedag");
-    expect(titles).toContain("Mamma har bursdag");
-    expect(titles).toContain("Boogie Woogie beginner");
+    expect(titles).toContain("Easter Monday");
+    expect(titles).toContain("Annual reminder A");
+    expect(titles).toContain("Dance class A");
   });
 
   it("Tuesday April 7 (index 1): dense dance/study schedule", () => {
@@ -597,30 +597,30 @@ Oppmøte Dragvoll.
     const tue = week[1];
 
     const titles = tue.items.map((i) => i.entry.title);
-    expect(titles).toContain("Satstek skriving");
-    expect(titles).toContain("Analyse");
-    expect(titles).toContain("Lindy Hop beginner");
-    expect(titles).toContain("Lindy Hop intermediate");
-    expect(titles).toContain("Balboa beginner");
+    expect(titles).toContain("Workshop");
+    expect(titles).toContain("Study session");
+    expect(titles).toContain("Exercise class A");
+    expect(titles).toContain("Exercise class B");
+    expect(titles).toContain("Exercise class C");
 
     // Check time ordering
     const times = tue.items.map((i) => i.startTime);
     expect(times).toEqual(["13:15", "15:15", "17:00", "18:30", "20:00"]);
   });
 
-  it("Wednesday April 8 (index 2): Folkeswing øvet", () => {
+  it("Wednesday April 8 (index 2): Dance practice", () => {
     const week = generateWeek(entries, APRIL_6);
     const wed = week[2];
     expect(wed.items).toHaveLength(1);
-    expect(wed.items[0].entry.title).toBe("Folkeswing øvet");
+    expect(wed.items[0].entry.title).toBe("Dance practice");
     expect(wed.items[0].startTime).toBe("18:00");
   });
 
-  it("Thursday April 9 (index 3): Pappa har bursdag", () => {
+  it("Thursday April 9 (index 3): Annual reminder B", () => {
     const week = generateWeek(entries, APRIL_6);
     const thu = week[3];
     expect(thu.items).toHaveLength(1);
-    expect(thu.items[0].entry.title).toBe("Pappa har bursdag");
+    expect(thu.items[0].entry.title).toBe("Annual reminder B");
     expect(thu.items[0].category).toBe("all-day");
   });
 
@@ -629,22 +629,22 @@ Oppmøte Dragvoll.
     expect(week[4].items).toHaveLength(0);
   });
 
-  it("Saturday April 11 (index 5): Helgekurs", () => {
+  it("Saturday April 11 (index 5): Weekend workshop", () => {
     const week = generateWeek(entries, APRIL_6);
     const sat = week[5];
     expect(sat.items).toHaveLength(1);
-    expect(sat.items[0].entry.title).toBe("Helgekurs for videregående");
+    expect(sat.items[0].entry.title).toBe("Weekend workshop");
     expect(sat.items[0].startTime).toBe("12:00");
   });
 
-  it("Sunday April 12 (index 6): Folkedans + Folkeswing + Tur til månen", () => {
+  it("Sunday April 12 (index 6): Group activity + class + outdoor activity", () => {
     const week = generateWeek(entries, APRIL_6);
     const sun = week[6];
 
     const titles = sun.items.map((i) => i.entry.title);
-    expect(titles).toContain("Folkedans");
-    expect(titles).toContain("Folkeswing videregående");
-    expect(titles).toContain("Tur til månen");
+    expect(titles).toContain("Group activity");
+    expect(titles).toContain("Dance class B");
+    expect(titles).toContain("Outdoor activity");
 
     // Check time ordering
     const times = sun.items.map((i) => i.startTime);
@@ -658,16 +658,16 @@ Oppmøte Dragvoll.
     expect(deadlines).toHaveLength(0);
   });
 
-  it("Jeg har bursdag (April 23) not in this range", () => {
+  it("Annual reminder C (April 23) not in this range", () => {
     const week = generateWeek(entries, APRIL_6);
     const allItems = week.flatMap((d) => d.items);
-    expect(allItems.find((i) => i.entry.title === "Jeg har bursdag")).toBeUndefined();
+    expect(allItems.find((i) => i.entry.title === "Annual reminder C")).toBeUndefined();
   });
 
-  it("Første påskedag (April 5) not in this range", () => {
+  it("Easter Sunday (April 5) not in this range", () => {
     const week = generateWeek(entries, APRIL_6);
     const allItems = week.flatMap((d) => d.items);
-    expect(allItems.find((i) => i.entry.title === "Første påskedag")).toBeUndefined();
+    expect(allItems.find((i) => i.entry.title === "Easter Sunday")).toBeUndefined();
   });
 });
 

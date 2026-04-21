@@ -5,6 +5,7 @@ import {
   toEndDate,
   isDateOnly,
   isTimed,
+  stepDate,
   expandRecurrences,
   expandOccurrences,
 } from "../timestamp.ts";
@@ -284,26 +285,26 @@ describe("expandRecurrences", () => {
   // ── Date arithmetic edge cases ───────────────────────────────────
 
   describe("month boundary edge cases", () => {
-    it("Jan 31 + 1m rolls to March 3 (JS Date behavior)", () => {
-      // Jan 31 + 1 month → setMonth(1) on day 31 → March 3 (Feb has 28 days in 2026).
-      // Then March 3 + 1 month → April 3 (not March 31).
-      // So only one occurrence lands in March.
+    it("Jan 31 + 1m clamps to Feb 28 and keeps the clamped day thereafter", () => {
       const ts = parseTimestamps("<2026-01-31 lø. +1m>")[0];
-      const marchStart = new Date(2026, 2, 1, 0, 0, 0);
-      const marchEnd = new Date(2026, 2, 31, 23, 59, 59);
-      const dates = expandRecurrences(ts, marchStart, marchEnd);
-      expect(dates).toHaveLength(1);
-      expect(dates[0].getDate()).toBe(3);
-      expect(dates[0].getMonth()).toBe(2); // March
+      const febStart = new Date(2026, 1, 1, 0, 0, 0);
+      const marEnd = new Date(2026, 2, 31, 23, 59, 59);
+      const dates = expandRecurrences(ts, febStart, marEnd);
+      expect(dates).toHaveLength(2);
+      expect(dates[0].getMonth()).toBe(1); // February
+      expect(dates[0].getDate()).toBe(28);
+      expect(dates[1].getMonth()).toBe(2); // March
+      expect(dates[1].getDate()).toBe(28);
     });
 
-    it("March 31 + 1m rolls to May 1 (April has 30 days)", () => {
+    it("March 31 + 1m clamps to April 30", () => {
       const ts = parseTimestamps("<2026-03-31 ti. +1m>")[0];
       const aprilStart = new Date(2026, 3, 1, 0, 0, 0);
       const aprilEnd = new Date(2026, 3, 30, 23, 59, 59);
       const dates = expandRecurrences(ts, aprilStart, aprilEnd);
-      // March 31 + 1m → April 31 → rolls to May 1, outside April
-      expect(dates).toHaveLength(0);
+      expect(dates).toHaveLength(1);
+      expect(dates[0].getMonth()).toBe(3); // April
+      expect(dates[0].getDate()).toBe(30);
     });
   });
 
@@ -345,6 +346,25 @@ describe("expandRecurrences", () => {
       const dates = expandRecurrences(ts, weekStart, weekEnd);
       expect(dates).toHaveLength(1);
     });
+  });
+});
+
+describe("stepDate", () => {
+  it("clamps monthly steps to the target month's last day", () => {
+    const result = stepDate(new Date(2026, 0, 31, 9, 15, 0), 1, "m");
+    expect(result.getFullYear()).toBe(2026);
+    expect(result.getMonth()).toBe(1); // February
+    expect(result.getDate()).toBe(28);
+    expect(result.getHours()).toBe(9);
+    expect(result.getMinutes()).toBe(15);
+  });
+
+  it("preserves the clamped day on subsequent monthly steps", () => {
+    const first = stepDate(new Date(2026, 0, 31, 9, 15, 0), 1, "m");
+    const second = stepDate(first, 1, "m");
+    expect(second.getFullYear()).toBe(2026);
+    expect(second.getMonth()).toBe(2); // March
+    expect(second.getDate()).toBe(28);
   });
 });
 
@@ -559,10 +579,10 @@ describe("expandOccurrences", () => {
   it("attaches a note to a base occurrence with no override", () => {
     const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
     const exceptions = new Map<string, RecurrenceException>([
-      ["2026-05-04", ex({ note: "Bring vannflaske" })],
+      ["2026-05-04", ex({ note: "Bring water bottle" })],
     ]);
     const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
-    expect(occ.note).toBe("Bring vannflaske");
+    expect(occ.note).toBe("Bring water bottle");
     expect(occ.override).toBeNull();
   });
 
@@ -573,13 +593,13 @@ describe("expandOccurrences", () => {
         "2026-05-04",
         ex({
           override: { kind: "shift", offsetMinutes: 60 },
-          note: "Lengre økt i dag",
+          note: "Longer session today",
         }),
       ],
     ]);
     const [occ] = expandOccurrences(ts, exceptions, may4, may10End);
     expect(occ.startTime).toBe("18:00");
-    expect(occ.note).toBe("Lengre økt i dag");
+    expect(occ.note).toBe("Longer session today");
     expect(occ.override).toEqual({ kind: "shift", offsetMinutes: 60 });
   });
 

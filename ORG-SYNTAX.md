@@ -139,9 +139,9 @@ DEADLINE: <2026-05-05 ti.>
 ### Body text
 
 ```org
-** Tur til månen :friluft:
+** Outdoor activity :outdoors:
 <2026-04-12 Sun 14:00>
-Oppmøte Dragvoll.
+Meet at the main entrance.
 ```
 
 - Any non-blank lines under a heading that aren't planning lines or standalone timestamps.

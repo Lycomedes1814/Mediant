@@ -7,6 +7,7 @@ import {
   replaceOrgBlockInSource,
   toggleDoneInSource,
 } from "./org/sourceEdit.ts";
+import { stepDate } from "./org/timestamp.ts";
 import { generateWeek, collectDeadlines, collectOverdueItems, collectSomedayItems } from "./agenda/generate.ts";
 import { renderAgenda, createThemeToggle } from "./ui/render.ts";
 import { getTagColor } from "./ui/tagColors.ts";
@@ -1012,21 +1013,7 @@ function nextOccurrenceBoundary(
 ): string | null {
   if (!ts?.repeater) return null;
   const [year, month, day] = baseDate.split("-").map(Number);
-  const next = new Date(year, month - 1, day, 0, 0, 0, 0);
-  switch (ts.repeater.unit) {
-    case "d":
-      next.setDate(next.getDate() + ts.repeater.value);
-      break;
-    case "w":
-      next.setDate(next.getDate() + ts.repeater.value * 7);
-      break;
-    case "m":
-      next.setMonth(next.getMonth() + ts.repeater.value);
-      break;
-    case "y":
-      next.setFullYear(next.getFullYear() + ts.repeater.value);
-      break;
-  }
+  const next = stepDate(new Date(year, month - 1, day, 0, 0, 0, 0), ts.repeater.value, ts.repeater.unit);
   return formatDateKey(next);
 }
 
