@@ -232,7 +232,7 @@ function buildAddPanel(): void {
   const rescheduleInput = document.createElement("input");
   rescheduleInput.type = "text";
   rescheduleInput.className = "add-input occurrence-input";
-  rescheduleInput.placeholder = "DD/MM/YYYY [HH:MM[-HH:MM]]";
+  rescheduleInput.placeholder = "DD/MM/YYYY | +N | mon-sun [HH:MM[-HH:MM]]";
   const rescBtn = document.createElement("button");
   rescBtn.type = "button";
   rescBtn.className = "occurrence-btn";
@@ -692,16 +692,41 @@ function makeTextInput(label: string, id: string): { container: HTMLElement; inp
   return { container, input };
 }
 
-/** Expand shorthand date input to YYYY-MM-DD. Accepts DD, DD/MM, or DD/MM/YYYY. */
+/**
+ * Expand shorthand date input to YYYY-MM-DD. Accepts:
+ *   DD, DD/MM, DD/MM/YYYY — numeric forms (month/year default to today's)
+ *   +N                    — N days from today (N >= 0)
+ *   mon..sun              — next occurrence of that weekday, strictly forward
+ */
 function expandDate(raw: string): string {
   if (!raw) return "";
   const now = new Date();
+  const fmt = (d: Date): string =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
   const full = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (full) return `${full[3]}-${full[2].padStart(2, "0")}-${full[1].padStart(2, "0")}`;
   const dm = raw.match(/^(\d{1,2})\/(\d{1,2})$/);
   if (dm) return `${now.getFullYear()}-${dm[2].padStart(2, "0")}-${dm[1].padStart(2, "0")}`;
   const d = raw.match(/^(\d{1,2})$/);
   if (d) return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${d[1].padStart(2, "0")}`;
+
+  const plus = raw.match(/^\+(\d+)$/);
+  if (plus) {
+    const target = new Date(now);
+    target.setDate(target.getDate() + Number(plus[1]));
+    return fmt(target);
+  }
+
+  const weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  const idx = weekdays.indexOf(raw.toLowerCase());
+  if (idx >= 0) {
+    const delta = ((idx - now.getDay() + 7) % 7) || 7;
+    const target = new Date(now);
+    target.setDate(target.getDate() + delta);
+    return fmt(target);
+  }
+
   return "";
 }
 
@@ -718,7 +743,7 @@ function makeDateTimeInput(label: string, id: string): { container: HTMLElement;
   input.type = "text";
   input.id = id;
   input.className = "add-input";
-  input.placeholder = "DD[/MM[/YYYY]] [HH:MM[-HH:MM]] | HH:MM";
+  input.placeholder = "DD[/MM[/YYYY]] | +N | mon-sun [HH:MM[-HH:MM]]";
 
   container.append(lbl, input);
   return { container, input };
