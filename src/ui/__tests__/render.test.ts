@@ -250,11 +250,21 @@ describe("UI toggles", () => {
 
 function makeWeek(days: AgendaItem[][]): AgendaWeek {
   const start = new Date(2026, 3, 20);
-  return Array.from({ length: 7 }, (_, index) => {
+  const makeDay = (index: number) => {
     const date = new Date(start);
     date.setDate(start.getDate() + index);
     return { date, items: days[index] ?? [] };
-  }) as AgendaWeek;
+  };
+
+  return [
+    makeDay(0),
+    makeDay(1),
+    makeDay(2),
+    makeDay(3),
+    makeDay(4),
+    makeDay(5),
+    makeDay(6),
+  ];
 }
 
 function makeItem(overrides: Partial<AgendaItem> & {
@@ -289,21 +299,32 @@ function makeItem(overrides: Partial<AgendaItem> & {
 }
 
 function makeEntry(overrides: Partial<AgendaItem["entry"]> & { title: string }) {
+  const {
+    title,
+    tags,
+    checkboxItems,
+    progress,
+    body,
+    sourceLineNumber,
+    seriesUntil,
+    ...rest
+  } = overrides;
+
   return {
     level: 2,
     todo: null,
     priority: null,
-    title: overrides.title,
-    tags: overrides.tags ?? [],
+    title,
+    tags: tags ?? [],
     planning: [],
     timestamps: [],
-    checkboxItems: overrides.checkboxItems ?? [],
-    progress: overrides.progress ?? null,
-    body: overrides.body ?? "",
-    sourceLineNumber: overrides.sourceLineNumber ?? 1,
+    checkboxItems: checkboxItems ?? [],
+    progress: progress ?? null,
+    body: body ?? "",
+    sourceLineNumber: sourceLineNumber ?? 1,
     exceptions: new Map(),
-    seriesUntil: overrides.seriesUntil ?? null,
-    ...overrides,
+    seriesUntil: seriesUntil ?? null,
+    ...rest,
   };
 }
 
