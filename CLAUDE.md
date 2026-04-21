@@ -25,8 +25,8 @@ Three clearly separated stages — do not collapse them:
 | File | Responsibility |
 |---|---|
 | `src/org/timestamp.ts` | Timestamp parsing, Date conversion, recurrence expansion, per-occurrence exception application. **Only** module that does date arithmetic. Exports both `expandRecurrences()` (pure base series) and `expandOccurrences()` (base series with exceptions applied). |
-| `src/org/parser.ts` | Line-by-line Org parser → `OrgEntry[]`. Delegates all timestamp work to `timestamp.ts`. Reads `:EXCEPTION-<date>:` and `:EXCEPTION-NOTE-<date>:` keys inside `:PROPERTIES:` drawers; every other drawer and every other property key is skipped. |
-| `src/org/model.ts` | Parser output types: `OrgEntry`, `OrgPlanning`, `TodoState`, `Priority`, `CheckboxItem`, `RecurrenceOverride`, `RecurrenceException`. |
+| `src/org/parser.ts` | Line-by-line Org parser → `OrgEntry[]`. Delegates all timestamp work to `timestamp.ts`. Reads `:EXCEPTION-<date>:`, `:EXCEPTION-NOTE-<date>:`, and `:SERIES-UNTIL:` keys inside `:PROPERTIES:` drawers; every other drawer and every other property key is skipped. |
+| `src/org/model.ts` | Parser output types: `OrgEntry` (including `seriesUntil`), `OrgPlanning`, `TodoState`, `Priority`, `CheckboxItem`, `RecurrenceOverride`, `RecurrenceException`. |
 | `src/org/drawer.ts` | Property-drawer text mutation helpers (`upsertProperty`, `removeProperty`). Operate on raw source strings; preserve key order and other drawer content; used by the edit panel to write exception properties. |
 | `src/agenda/model.ts` | Agenda/render types: `AgendaItem`, `AgendaDay`, `AgendaWeek`, `DeadlineItem`, `OverdueItem`, `SomedayItem`, `RenderCategory`, `AgendaItemOverride`. |
 | `src/agenda/generate.ts` | 7-day generation from a start date, recurrence expansion with exceptions (bounded to requested range), classification, sorting, overdue/someday collection. |
@@ -62,6 +62,7 @@ npm start <file.org>  # build + start the local server against a file
 - **Recurrence expansion is always bounded.** `expandRecurrences()` and `expandOccurrences()` only generate occurrences within a given date range. Never expand globally.
 - **Exceptions are keyed by base date, not final date.** A rescheduled occurrence on Tue 12 May still lives under `:EXCEPTION-2026-05-11:` if the base series hit Mon 11 May. UI labels reflect final date/time; property writes round-trip through the unshifted base slot.
 - **Exceptions on non-repeating entries are parsed but inert.** `entry.exceptions` is populated regardless of whether the entry has a repeater; expansion simply never runs. Do not "fix" this by applying the map to the single timestamp.
+- **`:SERIES-UNTIL:` is exclusive.** An occurrence whose base date equals `seriesUntil` is not generated; the successor heading (if any) may start *on* that date without overlap. Also filters reschedules keyed at/after the end — the base slot no longer exists. Like exceptions, it is parsed-but-inert on non-repeating entries.
 - **Override is behaviour, note is metadata.** A single occurrence can carry both (e.g. `shift +45m` + a note, or `cancelled` + a note). A cancelled+note pair is intentionally allowed.
 - **All dates use local time.** No timezone handling — Org files don't encode timezones.
 - **Only `TODO` and `DONE` states are recognized.** Other keywords (WAITING, NEXT, etc.) are treated as part of the heading title.
@@ -73,9 +74,9 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 
 **Supported (standard Org):** headings, TODO/DONE, priority cookies (`[#A]`/`[#B]`/`[#C]`), tags, active timestamps, time ranges, repeaters (+Nd/w/m/y), SCHEDULED, DEADLINE, body text, checkbox lists (`- [ ]`/`- [X]`), progress cookies (`[2/3]`/`[66%]`).
 
-**Mediant-specific extensions:** per-occurrence recurrence exceptions via `:EXCEPTION-<date>:` / `:EXCEPTION-NOTE-<date>:` keys inside property drawers, keyed on the *unshifted* base date. These ride on ordinary Org property-drawer syntax, so files remain valid Org (Emacs opens and edits them without complaint — it just treats the keys as arbitrary properties).
+**Mediant-specific extensions:** per-occurrence recurrence exceptions via `:EXCEPTION-<date>:` / `:EXCEPTION-NOTE-<date>:` (keyed on the *unshifted* base date), plus `:SERIES-UNTIL:` for an exclusive end date on a repeating series. Both ride on ordinary Org property-drawer syntax, so files remain valid Org (Emacs opens and edits them without complaint — it just treats the keys as arbitrary properties).
 
-**Gracefully ignored:** file keywords (#+), inactive timestamps, drawers (including property drawers — only the `:EXCEPTION-…:` / `:EXCEPTION-NOTE-…:` extension keys are read), comments, links, inline markup, plain lists, tables.
+**Gracefully ignored:** file keywords (#+), inactive timestamps, drawers (including property drawers — only the `:EXCEPTION-…:`, `:EXCEPTION-NOTE-…:`, and `:SERIES-UNTIL:` extension keys are read), comments, links, inline markup, plain lists, tables.
 
 **Not supported:** .+/++ repeaters, diary sexp, custom TODO keywords, tag inheritance, habits, clocking.
 
@@ -124,13 +125,13 @@ Always run tests after changes to parser, timestamp, drawer, or agenda logic.
 - Timestamp-only body lines are captured as timestamps; mixed prose+timestamp lines are body text
 - Checkbox list items (`- [ ]`/`- [X]`) are captured into `checkboxItems`, not body text
 - `#+` keyword lines and `# ` comment lines inside entries are **skipped, not preserved as body**
-- Any `:UPPERCASENAME:...:END:` block is skipped **except** `:PROPERTIES:` drawers, where `:EXCEPTION-<date>:` and `:EXCEPTION-NOTE-<date>:` keys are read; every other property key is still ignored
+- Any `:UPPERCASENAME:...:END:` block is skipped **except** `:PROPERTIES:` drawers, where `:EXCEPTION-<date>:`, `:EXCEPTION-NOTE-<date>:`, and `:SERIES-UNTIL:` keys are read; every other property key is still ignored
 
 ## Non-goals (v1)
 
 - Full Org-mode syntax
 - Heading hierarchy in the agenda
-- Arbitrary property drawers beyond `:EXCEPTION-…:` / `:EXCEPTION-NOTE-…:`; habits, clocking, `:STYLE:`, `:CATEGORY:`, effort estimates
+- Arbitrary property drawers beyond `:EXCEPTION-…:` / `:EXCEPTION-NOTE-…:` / `:SERIES-UNTIL:`; habits, clocking, `:STYLE:`, `:CATEGORY:`, effort estimates
 - "This and future" split operations (tracked in TODO.md)
 - Timezone handling
 - Advanced state workflows / custom TODO sequences

@@ -93,4 +93,18 @@ export interface OrgEntry {
    * timestamp.
    */
   readonly exceptions: ReadonlyMap<string, RecurrenceException>;
+  /**
+   * Exclusive end date of the recurring series (`YYYY-MM-DD`), or `null`
+   * if the series has no end. Populated from a `:SERIES-UNTIL:` property
+   * in the heading's `:PROPERTIES:` drawer.
+   *
+   * Exclusive: an occurrence whose base date is exactly `seriesUntil` is
+   * not generated. This matches the "split into two headings" model —
+   * the successor heading may start *on* `seriesUntil` without overlap.
+   *
+   * Like `exceptions`, this is parsed regardless of whether the entry
+   * has a repeater. On non-recurring entries it is **parsed but inert**
+   * (expansion never runs).
+   */
+  readonly seriesUntil: string | null;
 }

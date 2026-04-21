@@ -84,6 +84,9 @@ const EXCEPTION_KEY_RE = /^\s*:EXCEPTION-(\d{4}-\d{2}-\d{2}):\s*(.*?)\s*$/;
 /** Per-occurrence note property: `:EXCEPTION-NOTE-YYYY-MM-DD: <text>`. */
 const EXCEPTION_NOTE_KEY_RE = /^\s*:EXCEPTION-NOTE-(\d{4}-\d{2}-\d{2}):\s*(.*?)\s*$/;
 
+/** Series end property: `:SERIES-UNTIL: YYYY-MM-DD` (exclusive). */
+const SERIES_UNTIL_KEY_RE = /^\s*:SERIES-UNTIL:\s*(\d{4}-\d{2}-\d{2})\s*$/;
+
 /** Override grammars (matched against the trimmed value after the property key). */
 const OVERRIDE_CANCELLED_RE = /^cancelled$/;
 const OVERRIDE_SHIFT_RE = /^shift\s+([+-]\d+)([mhd])$/;
@@ -133,7 +136,7 @@ export function parseOrg(source: string): OrgEntry[] {
         continue;
       }
       if (drawerKind === "PROPERTIES" && current) {
-        absorbExceptionProperty(line, current);
+        absorbPropertyLine(line, current);
       }
       continue;
     }
@@ -242,6 +245,7 @@ interface MutableEntry {
   body: string;
   sourceLineNumber: number;
   exceptions: Map<string, MutableException>;
+  seriesUntil: string | null;
 }
 
 /** Mutable exception accumulator — override and note may arrive in either order. */
@@ -310,6 +314,7 @@ function parseHeading(match: RegExpMatchArray, lineNumber: number): MutableEntry
     body: "",
     sourceLineNumber: lineNumber,
     exceptions: new Map(),
+    seriesUntil: null,
   };
 }
 
@@ -323,16 +328,23 @@ function isTimestampOnlyLine(line: string): boolean {
 }
 
 /**
- * If `line` is an `:EXCEPTION-…:` or `:EXCEPTION-NOTE-…:` property,
- * merge it into the entry's exception map. Malformed override values
- * are silently dropped (note for the same date, if any, is preserved).
- * Empty notes are treated as absent.
+ * Pluck the Mediant-specific property keys out of a PROPERTIES drawer
+ * line:
  *
- * Note: this also runs on entries that have no repeating timestamp.
- * The map is populated but never applied — see the comment on
- * `OrgEntry.exceptions` for the rationale.
+ *   - `:EXCEPTION-<date>:` / `:EXCEPTION-NOTE-<date>:` — merged into
+ *     the entry's exception map. Malformed override values are silently
+ *     dropped (note for the same date, if any, is preserved). Empty
+ *     notes are treated as absent.
+ *   - `:SERIES-UNTIL:` — stored as `seriesUntil` (exclusive end date).
+ *     Malformed values are silently dropped.
+ *
+ * All other property keys are ignored, per the documented extension
+ * contract. Also runs on entries that have no repeating timestamp —
+ * both fields are parsed but never applied in that case, matching the
+ * "parsed but inert" invariant documented on `OrgEntry.exceptions` and
+ * `OrgEntry.seriesUntil`.
  */
-function absorbExceptionProperty(line: string, current: MutableEntry): void {
+function absorbPropertyLine(line: string, current: MutableEntry): void {
   const noteMatch = line.match(EXCEPTION_NOTE_KEY_RE);
   if (noteMatch) {
     const date = noteMatch[1];
@@ -352,6 +364,12 @@ function absorbExceptionProperty(line: string, current: MutableEntry): void {
     const ex = current.exceptions.get(date) ?? { override: null, note: null };
     ex.override = override;
     current.exceptions.set(date, ex);
+    return;
+  }
+
+  const seriesUntilMatch = line.match(SERIES_UNTIL_KEY_RE);
+  if (seriesUntilMatch) {
+    current.seriesUntil = seriesUntilMatch[1];
   }
 }
 
@@ -417,5 +435,6 @@ function finalizeEntry(entry: MutableEntry): OrgEntry {
     body: entry.body,
     sourceLineNumber: entry.sourceLineNumber,
     exceptions,
+    seriesUntil: entry.seriesUntil,
   };
 }

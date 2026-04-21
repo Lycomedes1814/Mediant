@@ -302,6 +302,7 @@ function makeEntry(overrides: Partial<AgendaItem["entry"]> & { title: string }) 
     body: overrides.body ?? "",
     sourceLineNumber: overrides.sourceLineNumber ?? 1,
     exceptions: new Map(),
+    seriesUntil: overrides.seriesUntil ?? null,
     ...overrides,
   };
 }

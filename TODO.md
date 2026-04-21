@@ -15,13 +15,13 @@ Goal: support the Google Calendar-style third option for repeating items: apply 
 
 ### Decisions still open
 
-- [ ] Confirm the storage model: split into two headings and store an exclusive `:SERIES-UNTIL:` date on the original heading
-- [ ] Document the final encoding in `ORG-SYNTAX.md`
+- [x] Confirm the storage model: split into two headings and store an exclusive `:SERIES-UNTIL:` date on the original heading
+- [x] Document the final encoding in `ORG-SYNTAX.md`
 
 ### Implementation
 
-- [ ] Parser: read `:SERIES-UNTIL:` into `seriesUntil: string | null` on `OrgEntry`
-- [ ] Expansion: stop generating occurrences on/after `seriesUntil`
+- [x] Parser: read `:SERIES-UNTIL:` into `seriesUntil: string | null` on `OrgEntry`
+- [x] Expansion: stop generating occurrences on/after `seriesUntil`
 - [ ] Persistence helper: add `splitSeries(source, entry, baseDate, { mode: "truncate" | "fork"; patch? })`
 - [ ] Edit panel: add a "This and future" section with Delete + Change actions
 - [ ] Tests: truncation boundary, fork behavior, exception handling after split, parser round-trip

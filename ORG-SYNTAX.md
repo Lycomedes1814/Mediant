@@ -154,7 +154,7 @@ Oppmøte Dragvoll.
 
 Syntax that Mediant layers on top of standard Org. These use ordinary Org constructs (property drawers) as a transport, so the file stays valid Org: Emacs opens, edits, and saves it without complaint. Emacs just won't *interpret* the extensions — it treats them as arbitrary properties.
 
-Currently there is one extension: **recurrence exceptions**.
+Currently there are two extensions: **recurrence exceptions** and **series end dates**.
 
 ### Recurrence exceptions
 
@@ -192,6 +192,30 @@ SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>
 - The edit panel's "This occurrence" controls (Skip / Shift / Move / Save note / Clear) are the UI surface for these properties and always write the unshifted base date, so property values round-trip cleanly.
 
 **Interop with Emacs:** the file remains valid Org. Emacs will show `:EXCEPTION-2026-05-04:` as just another property and give the entry its normal repeating-timestamp agenda behaviour — the cancelled/shifted/rescheduled occurrence will appear at its original slot in Emacs's agenda. Edit the base timestamp in Emacs, not the exception properties, if you want Emacs's view to agree with Mediant's.
+
+### Series end date
+
+A repeating timestamp in standard Org runs forever. Mediant adds a `:SERIES-UNTIL:` property that lets a heading declare an explicit, exclusive end date for the series.
+
+```org
+** Yoga :health:
+SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>
+:PROPERTIES:
+:SERIES-UNTIL: 2026-07-01
+:END:
+```
+
+**`:SERIES-UNTIL: YYYY-MM-DD`** — exclusive end of the series. Occurrences whose base date is at or after this date are not generated; upcoming-deadline and overdue searches likewise stop there.
+
+**Rules and edge cases:**
+
+- Exclusive by design. An occurrence keyed exactly to `:SERIES-UNTIL:` is *not* rendered. This matches the "split into two headings" model (see TODO.md): a successor heading may start *on* the same date without overlap.
+- A reschedule keyed to a base date at or after `:SERIES-UNTIL:` is filtered out — the base slot doesn't exist, so there is nothing to move. Reschedules keyed *before* the end still apply, even if they push the occurrence to a date after `:SERIES-UNTIL:`.
+- On a heading with no repeater, `:SERIES-UNTIL:` is **parsed but inert**, mirroring the exceptions invariant.
+- A malformed value (anything other than `YYYY-MM-DD`) is silently dropped.
+- Only one `:SERIES-UNTIL:` per heading. Multiple active timestamps on the same heading share the single end date — one heading is one series.
+
+**Interop with Emacs:** Emacs ignores `:SERIES-UNTIL:` and will keep generating occurrences past the date in its own agenda. To bring Emacs's view in line, trim the base timestamp or split the heading there.
 
 ---
 
@@ -234,7 +258,7 @@ These constructs are recognized and silently skipped. They will not produce entr
 :END:
 ```
 
-- Everything between `:PROPERTIES:` and `:END:` is skipped **except** `:EXCEPTION-…:` and `:EXCEPTION-NOTE-…:` keys, which are read as per-occurrence exceptions. See *Mediant-specific extensions → Recurrence exceptions* above.
+- Everything between `:PROPERTIES:` and `:END:` is skipped **except** `:EXCEPTION-…:`, `:EXCEPTION-NOTE-…:`, and `:SERIES-UNTIL:` keys. See *Mediant-specific extensions* above.
 
 ### Logbook drawers
 

@@ -20,6 +20,7 @@ function entry(overrides: Partial<OrgEntry> & { title: string }): OrgEntry {
     progress: null,
     sourceLineNumber: 1,
     exceptions: new Map(),
+    seriesUntil: null,
     ...overrides,
   };
 }
@@ -281,6 +282,89 @@ describe("exceptions in agenda", () => {
     const week2 = generateWeek(entries, new Date(2026, 4, 4));
     // shift +1d pulls it to May 5 (index 1).
     expect(week2[1].items[0].override).toEqual({ kind: "shift", detail: "+1d" });
+  });
+});
+
+// ── :SERIES-UNTIL: in agenda ────────────────────────────────────────
+
+describe(":SERIES-UNTIL: truncation in agenda", () => {
+  const APRIL_27 = new Date(2026, 3, 27); // Monday
+
+  it("stops rendering occurrences at or after the exclusive end date", () => {
+    // Base Mon Apr 27, +1w → Apr 27, May 4, May 11 would appear without truncation.
+    // seriesUntil = 2026-05-04 (exclusive) → only Apr 27 shows.
+    const entries = parseOrg(
+      "** Yoga\n" +
+        "<2026-04-27 ma. 17:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: 2026-05-04\n" +
+        ":END:\n",
+    );
+    const week1 = generateWeek(entries, APRIL_27);
+    expect(week1[0].items).toHaveLength(1);
+    expect(week1[0].items[0].startTime).toBe("17:00");
+    // Next week: May 4 would be the base occurrence, but it sits at seriesUntil → excluded.
+    const week2 = generateWeek(entries, new Date(2026, 4, 4));
+    for (const day of week2) expect(day.items).toHaveLength(0);
+  });
+
+  it("filters reschedules keyed at/after seriesUntil", () => {
+    // seriesUntil excludes May 4; a reschedule keyed at May 4 must not materialize,
+    // even though its target (Apr 29) is inside the page.
+    const entries = parseOrg(
+      "** Yoga\n" +
+        "<2026-04-27 ma. 17:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: 2026-05-04\n" +
+        ":EXCEPTION-2026-05-04: reschedule 2026-04-29 18:00\n" +
+        ":END:\n",
+    );
+    const week = generateWeek(entries, APRIL_27);
+    // Only the Apr 27 base should be present — the May 4 base is past seriesUntil.
+    const items = week.flatMap((d) => d.items);
+    expect(items).toHaveLength(1);
+    expect(items[0].baseDate).toBe("2026-04-27");
+  });
+
+  it("inert on non-recurring entries", () => {
+    const entries = parseOrg(
+      "** Once\n" +
+        "<2026-04-27 ma. 17:00>\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: 2026-04-20\n" +
+        ":END:\n",
+    );
+    const week = generateWeek(entries, APRIL_27);
+    expect(week[0].items).toHaveLength(1);
+  });
+
+  it("collectDeadlines skips past seriesUntil", () => {
+    // Weekly DEADLINE that would otherwise fire on 2026-04-15 — seriesUntil cuts
+    // it off before that, so no upcoming deadline is found.
+    const entries = parseOrg(
+      "** TODO Pay rent\n" +
+        "DEADLINE: <2026-04-01 on. +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: 2026-04-08\n" +
+        ":END:\n",
+    );
+    const items = collectDeadlines(entries, new Date(2026, 3, 10, 9, 0));
+    expect(items).toHaveLength(0);
+  });
+
+  it("collectOverdueItems ignores occurrences past seriesUntil", () => {
+    // Weekly SCHEDULED would produce an overdue on 2026-04-08; seriesUntil cuts
+    // the series after Apr 01, so only Apr 01 is a valid past occurrence.
+    const entries = parseOrg(
+      "** TODO Water plants\n" +
+        "SCHEDULED: <2026-04-01 on. +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: 2026-04-08\n" +
+        ":END:\n",
+    );
+    const items = collectOverdueItems(entries, new Date(2026, 3, 10, 12, 0));
+    expect(items).toHaveLength(1);
+    expect(items[0].dueDate.getDate()).toBe(1);
   });
 });
 

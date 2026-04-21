@@ -177,11 +177,16 @@ export function isTimed(ts: OrgTimestamp): boolean {
  *
  * Returned dates are local-time Date objects matching the timestamp's
  * time (or midnight for date-only timestamps).
+ *
+ * `seriesUntil` (exclusive `YYYY-MM-DD`) truncates repeating series:
+ * an occurrence whose base date falls on or after this date is not
+ * generated. Non-repeating timestamps ignore `seriesUntil` (inert).
  */
 export function expandRecurrences(
   ts: OrgTimestamp,
   rangeStart: Date,
   rangeEnd: Date,
+  seriesUntil: string | null = null,
 ): Date[] {
   const baseDate = toDate(ts);
 
@@ -194,6 +199,7 @@ export function expandRecurrences(
 
   const results: Date[] = [];
   const { value, unit } = ts.repeater;
+  const untilDate = seriesUntil !== null ? parseYMDWithTime(seriesUntil, null) : null;
 
   // Repeaters generate occurrences forward from the base date only.
   // Walk forward from base, skip until rangeStart, stop after rangeEnd.
@@ -201,11 +207,13 @@ export function expandRecurrences(
 
   // Fast-forward: skip occurrences before rangeStart
   while (candidate < rangeStart) {
+    if (untilDate !== null && candidate >= untilDate) return results;
     candidate = stepDate(candidate, value, unit);
   }
 
   // Collect occurrences within the range
   while (candidate <= rangeEnd) {
+    if (untilDate !== null && candidate >= untilDate) break;
     results.push(new Date(candidate));
     candidate = stepDate(candidate, value, unit);
   }
@@ -276,9 +284,10 @@ const SHIFT_BUFFER_DAYS = 7;
  * Expand a timestamp's occurrences into a date range, applying any
  * per-occurrence exceptions on the way.
  *
- * For non-recurring timestamps, the exception map is **inert** by design
- * (mirrors the `OrgEntry.exceptions` invariant): the base timestamp is
- * emitted as-is and the map is ignored.
+ * For non-recurring timestamps, the exception map and `seriesUntil` are
+ * both **inert** by design (mirrors the `OrgEntry.exceptions` and
+ * `OrgEntry.seriesUntil` invariants): the base timestamp is emitted
+ * as-is and both extras are ignored.
  *
  * For recurring timestamps:
  *   - cancelled occurrences are dropped
@@ -290,12 +299,16 @@ const SHIFT_BUFFER_DAYS = 7;
  *   - notes attach to the final occurrence
  *   - reschedules that pull an occurrence from outside the page into the
  *     range are surfaced by iterating the exception map directly
+ *   - `seriesUntil` (exclusive) truncates the series — any occurrence
+ *     whose base slot is at or after that date is dropped, including
+ *     reschedules surfaced by the Step 2 pass
  */
 export function expandOccurrences(
   ts: OrgTimestamp,
   exceptions: ReadonlyMap<string, RecurrenceException>,
   rangeStart: Date,
   rangeEnd: Date,
+  seriesUntil: string | null = null,
 ): OccurrenceInstance[] {
   // Non-recurring: inert. Emit the single base occurrence (if any), no overrides.
   if (!ts.repeater) {
@@ -311,7 +324,7 @@ export function expandOccurrences(
   // that tip across the range edge are still considered.
   const wideStart = addDays(rangeStart, -SHIFT_BUFFER_DAYS);
   const wideEnd = addDays(rangeEnd, SHIFT_BUFFER_DAYS);
-  for (const baseDate of expandRecurrences(ts, wideStart, wideEnd)) {
+  for (const baseDate of expandRecurrences(ts, wideStart, wideEnd, seriesUntil)) {
     const baseKey = formatYMD(baseDate);
     seenBaseKeys.add(baseKey);
     const exception = exceptions.get(baseKey) ?? null;
@@ -325,10 +338,13 @@ export function expandOccurrences(
   // window but whose target lands inside the requested range. We trust
   // the exception's base key to identify a real slot in the series; if
   // the user wrote a key that doesn't line up with the repeater, we
-  // still emit (harmless and cheap).
+  // still emit (harmless and cheap). Base slots at or after
+  // `seriesUntil` are filtered — the series has ended there, so a
+  // reschedule keyed to that slot has nothing to move.
   for (const [baseKey, exception] of exceptions) {
     if (seenBaseKeys.has(baseKey)) continue;
     if (exception.override?.kind !== "reschedule") continue;
+    if (seriesUntil !== null && baseKey >= seriesUntil) continue;
     const baseDate = parseYMDWithTime(baseKey, ts.startTime);
     const occ = applyException(ts, baseDate, baseKey, exception);
     if (occ === null) continue;

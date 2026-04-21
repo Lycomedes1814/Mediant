@@ -169,7 +169,13 @@ function collectOccurrences(
   rangeEnd: Date,
   days: AgendaDay[],
 ): void {
-  const occurrences = expandOccurrences(ts, entry.exceptions, rangeStart, rangeEnd);
+  const occurrences = expandOccurrences(
+    ts,
+    entry.exceptions,
+    rangeStart,
+    rangeEnd,
+    entry.seriesUntil,
+  );
   for (const occ of occurrences) {
     const dayIndex = dayOffsetIndex(occ.date, rangeStart);
     if (dayIndex < 0 || dayIndex > 6) continue;
@@ -193,7 +199,13 @@ function findNextPlanningOccurrence(
   let windowDays = PLANNING_SEARCH_INITIAL_DAYS;
   while (windowDays <= PLANNING_SEARCH_MAX_DAYS) {
     const rangeEnd = endOfDay(addDays(today, windowDays - 1));
-    const occurrences = expandOccurrences(ts, entry.exceptions, today, rangeEnd);
+    const occurrences = expandOccurrences(
+      ts,
+      entry.exceptions,
+      today,
+      rangeEnd,
+      entry.seriesUntil,
+    );
     if (occurrences.length > 0) return earliestOccurrence(occurrences).date;
     windowDays *= 2;
   }
@@ -216,7 +228,13 @@ function findLatestPastPlanningOccurrence(
   let windowDays = PLANNING_SEARCH_INITIAL_DAYS;
   while (windowDays <= PLANNING_SEARCH_MAX_DAYS) {
     const rangeStart = addDays(today, -windowDays);
-    const occurrences = expandOccurrences(ts, entry.exceptions, rangeStart, yesterdayEnd);
+    const occurrences = expandOccurrences(
+      ts,
+      entry.exceptions,
+      rangeStart,
+      yesterdayEnd,
+      entry.seriesUntil,
+    );
     if (occurrences.length > 0) return latestOccurrence(occurrences).date;
     windowDays *= 2;
   }

@@ -552,6 +552,68 @@ describe("exception properties in PROPERTIES drawer", () => {
   });
 });
 
+// ── :SERIES-UNTIL: property ──────────────────────────────────────────
+
+describe(":SERIES-UNTIL: property", () => {
+  it("parses a valid date into seriesUntil", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: 2026-06-01\n" +
+        ":END:\n",
+    );
+    expect(entries[0].seriesUntil).toBe("2026-06-01");
+  });
+
+  it("leaves seriesUntil null when the property is absent", () => {
+    const entries = parseOrg("** Entry\nBody.\n");
+    expect(entries[0].seriesUntil).toBeNull();
+  });
+
+  it("drops a malformed value", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: not-a-date\n" +
+        ":END:\n",
+    );
+    expect(entries[0].seriesUntil).toBeNull();
+  });
+
+  it("coexists with exception properties in the same drawer", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: 2026-06-01\n" +
+        ":EXCEPTION-2026-05-04: cancelled\n" +
+        ":END:\n",
+    );
+    expect(entries[0].seriesUntil).toBe("2026-06-01");
+    expect(entries[0].exceptions.get("2026-05-04")?.override?.kind).toBe("cancelled");
+  });
+
+  it("does not read :SERIES-UNTIL: from non-PROPERTIES drawers", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":LOGBOOK:\n" +
+        ":SERIES-UNTIL: 2026-06-01\n" +
+        ":END:\n",
+    );
+    expect(entries[0].seriesUntil).toBeNull();
+  });
+
+  it("parses seriesUntil on non-recurring entries (inert by design)", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        "<2026-04-27 ma. 12:00>\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: 2026-06-01\n" +
+        ":END:\n",
+    );
+    expect(entries[0].seriesUntil).toBe("2026-06-01");
+  });
+});
+
 // ── Multiple entries ─────────────────────────────────────────────────
 
 describe("multiple entries", () => {

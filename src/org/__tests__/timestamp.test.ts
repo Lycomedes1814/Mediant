@@ -626,3 +626,85 @@ describe("expandOccurrences", () => {
     expect(occ.endTime).toBeNull();
   });
 });
+
+// ── seriesUntil (exclusive end date) ────────────────────────────────
+
+describe("seriesUntil truncation", () => {
+  // Base series: Mon 2026-05-04, 17:00-18:00, +1w → 04, 11, 18, 25, …
+  const may1 = new Date(2026, 4, 1, 0, 0, 0);
+  const may31 = new Date(2026, 4, 31, 23, 59, 59, 999);
+
+  function emptyMap(): ReadonlyMap<string, import("../model.ts").RecurrenceException> {
+    return new Map();
+  }
+
+  it("expandRecurrences: occurrence exactly on seriesUntil is excluded", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    // Without truncation: 04, 11, 18, 25 land in May.
+    const untruncated = expandRecurrences(ts, may1, may31);
+    expect(untruncated.map((d) => d.getDate())).toEqual([4, 11, 18, 25]);
+    // seriesUntil = 2026-05-18 is exclusive → 18 and 25 dropped.
+    const truncated = expandRecurrences(ts, may1, may31, "2026-05-18");
+    expect(truncated.map((d) => d.getDate())).toEqual([4, 11]);
+  });
+
+  it("expandRecurrences: null seriesUntil is a no-op", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    const a = expandRecurrences(ts, may1, may31);
+    const b = expandRecurrences(ts, may1, may31, null);
+    expect(a.map((d) => d.getTime())).toEqual(b.map((d) => d.getTime()));
+  });
+
+  it("expandRecurrences: non-repeating ignores seriesUntil (inert)", () => {
+    // Base is inside the range but before seriesUntil — behaves as usual.
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00>")[0];
+    expect(expandRecurrences(ts, may1, may31, "2026-05-01")).toHaveLength(1);
+  });
+
+  it("expandRecurrences: seriesUntil before base returns empty for repeating", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    expect(expandRecurrences(ts, may1, may31, "2026-05-04")).toHaveLength(0);
+  });
+
+  it("expandOccurrences: threads seriesUntil to drop post-end occurrences", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    const occs = expandOccurrences(ts, emptyMap(), may1, may31, "2026-05-18");
+    expect(occs.map((o) => o.baseDate)).toEqual(["2026-05-04", "2026-05-11"]);
+  });
+
+  it("expandOccurrences: reschedule keyed at/after seriesUntil is filtered", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    // Base 2026-06-01 is past the end; its reschedule should NOT materialize
+    // even though the target date (05-07) lands inside the range.
+    const exceptions = new Map<string, import("../model.ts").RecurrenceException>([
+      [
+        "2026-06-01",
+        {
+          override: { kind: "reschedule", date: "2026-05-07", startTime: null, endTime: null },
+          note: null,
+        },
+      ],
+    ]);
+    const occs = expandOccurrences(ts, exceptions, may1, may31, "2026-05-18");
+    expect(occs.map((o) => o.baseDate)).toEqual(["2026-05-04", "2026-05-11"]);
+  });
+
+  it("expandOccurrences: reschedule keyed before seriesUntil still materializes", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    // Base 2026-05-11 is inside the series; a reschedule moving it to 05-14 still applies.
+    const exceptions = new Map<string, import("../model.ts").RecurrenceException>([
+      [
+        "2026-05-11",
+        {
+          override: { kind: "reschedule", date: "2026-05-14", startTime: null, endTime: null },
+          note: null,
+        },
+      ],
+    ]);
+    const occs = expandOccurrences(ts, exceptions, may1, may31, "2026-05-18");
+    // 04 base, 11 rescheduled to 14. 18 excluded.
+    expect(occs.map((o) => o.baseDate).sort()).toEqual(["2026-05-04", "2026-05-11"]);
+    const moved = occs.find((o) => o.baseDate === "2026-05-11");
+    expect(moved!.date.getDate()).toBe(14);
+  });
+});
