@@ -253,7 +253,6 @@ function buildAddPanel(): void {
   const noteTextarea = document.createElement("textarea");
   noteTextarea.className = "occurrence-note";
   noteTextarea.rows = 2;
-  noteTextarea.placeholder = "One-off note";
   occurrenceSection.appendChild(noteTextarea);
 
   const noteRow = document.createElement("div");
