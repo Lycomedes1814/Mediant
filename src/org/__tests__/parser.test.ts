@@ -580,6 +580,16 @@ describe(":SERIES-UNTIL: property", () => {
     expect(entries[0].seriesUntil).toBeNull();
   });
 
+  it("drops impossible calendar dates", () => {
+    const entries = parseOrg(
+      "** Entry\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: 2026-02-31\n" +
+        ":END:\n",
+    );
+    expect(entries[0].seriesUntil).toBeNull();
+  });
+
   it("coexists with exception properties in the same drawer", () => {
     const entries = parseOrg(
       "** Entry\n" +

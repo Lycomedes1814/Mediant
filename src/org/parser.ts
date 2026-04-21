@@ -368,7 +368,7 @@ function absorbPropertyLine(line: string, current: MutableEntry): void {
   }
 
   const seriesUntilMatch = line.match(SERIES_UNTIL_KEY_RE);
-  if (seriesUntilMatch) {
+  if (seriesUntilMatch && isValidYMD(seriesUntilMatch[1])) {
     current.seriesUntil = seriesUntilMatch[1];
   }
 }
@@ -414,6 +414,20 @@ export function parseOverride(raw: string): RecurrenceOverride | null {
   }
 
   return null;
+}
+
+function isValidYMD(raw: string): boolean {
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+
+  return date.getFullYear() === year
+    && date.getMonth() === month - 1
+    && date.getDate() === day;
 }
 
 function finalizeEntry(entry: MutableEntry): OrgEntry {

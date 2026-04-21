@@ -638,6 +638,13 @@ describe("seriesUntil truncation", () => {
     return new Map();
   }
 
+  function formatLocalYMD(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   it("expandRecurrences: occurrence exactly on seriesUntil is excluded", () => {
     const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
     // Without truncation: 04, 11, 18, 25 land in May.
@@ -670,6 +677,28 @@ describe("seriesUntil truncation", () => {
     const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
     const occs = expandOccurrences(ts, emptyMap(), may1, may31, "2026-05-18");
     expect(occs.map((o) => o.baseDate)).toEqual(["2026-05-04", "2026-05-11"]);
+  });
+
+  it("expandRecurrences: monthly repeaters respect the exclusive end date", () => {
+    const ts = parseTimestamps("<2026-01-15 to. 17:00 +1m>")[0];
+    const jan1 = new Date(2026, 0, 1, 0, 0, 0);
+    const apr30 = new Date(2026, 3, 30, 23, 59, 59, 999);
+    const truncated = expandRecurrences(ts, jan1, apr30, "2026-03-15");
+    expect(truncated.map(formatLocalYMD)).toEqual([
+      "2026-01-15",
+      "2026-02-15",
+    ]);
+  });
+
+  it("expandRecurrences: yearly repeaters respect the exclusive end date", () => {
+    const ts = parseTimestamps("<2024-04-06 lø. 09:00 +1y>")[0];
+    const jan1 = new Date(2024, 0, 1, 0, 0, 0);
+    const dec31 = new Date(2027, 11, 31, 23, 59, 59, 999);
+    const truncated = expandRecurrences(ts, jan1, dec31, "2026-04-06");
+    expect(truncated.map(formatLocalYMD)).toEqual([
+      "2024-04-06",
+      "2025-04-06",
+    ]);
   });
 
   it("expandOccurrences: reschedule keyed at/after seriesUntil is filtered", () => {
@@ -706,5 +735,25 @@ describe("seriesUntil truncation", () => {
     expect(occs.map((o) => o.baseDate).sort()).toEqual(["2026-05-04", "2026-05-11"]);
     const moved = occs.find((o) => o.baseDate === "2026-05-11");
     expect(moved!.date.getDate()).toBe(14);
+  });
+
+  it("expandOccurrences: base slots before seriesUntil can move after the end date", () => {
+    const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
+    const exceptions = new Map<string, import("../model.ts").RecurrenceException>([
+      [
+        "2026-05-11",
+        {
+          override: { kind: "reschedule", date: "2026-05-20", startTime: "18:30", endTime: null },
+          note: null,
+        },
+      ],
+    ]);
+    const may18 = new Date(2026, 4, 18, 0, 0, 0);
+    const may24 = new Date(2026, 4, 24, 23, 59, 59, 999);
+    const occs = expandOccurrences(ts, exceptions, may18, may24, "2026-05-18");
+    expect(occs).toHaveLength(1);
+    expect(occs[0].baseDate).toBe("2026-05-11");
+    expect(formatLocalYMD(occs[0].date)).toBe("2026-05-20");
+    expect(occs[0].startTime).toBe("18:30");
   });
 });

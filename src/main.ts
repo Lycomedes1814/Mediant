@@ -66,10 +66,13 @@ interface AddPanelRefs {
   repeatSelect: HTMLSelectElement;
   checkboxSection: HTMLElement;
   syncVisibility: () => void;
-  seriesHeader: HTMLElement;
   occurrenceSection: HTMLElement;
   occurrenceMeta: HTMLElement;
   occurrenceState: HTMLElement;
+  skipCheckboxRow: HTMLElement;
+  skipCheckbox: HTMLInputElement;
+  endSeriesCheckboxRow: HTMLElement;
+  endSeriesCheckbox: HTMLInputElement;
   shiftInput: HTMLInputElement;
   rescheduleInput: HTMLInputElement;
   noteTextarea: HTMLTextAreaElement;
@@ -108,12 +111,6 @@ function buildAddPanel(): void {
   // Form
   const form = document.createElement("div");
   form.className = "add-form";
-
-  // Series section header (only shown in edit mode)
-  const seriesHeader = document.createElement("div");
-  seriesHeader.className = "occurrence-header series-header";
-  seriesHeader.textContent = "Series";
-  form.appendChild(seriesHeader);
 
   // Type toggle
   const typeGroup = makeRadioGroup("Type", "add-type", [
@@ -188,11 +185,6 @@ function buildAddPanel(): void {
   const occurrenceSection = document.createElement("div");
   occurrenceSection.className = "occurrence-section";
 
-  const occHeader = document.createElement("div");
-  occHeader.className = "occurrence-header";
-  occHeader.textContent = "This occurrence";
-  occurrenceSection.appendChild(occHeader);
-
   const occurrenceMeta = document.createElement("div");
   occurrenceMeta.className = "occurrence-meta";
   occurrenceSection.appendChild(occurrenceMeta);
@@ -204,11 +196,27 @@ function buildAddPanel(): void {
   const occActions = document.createElement("div");
   occActions.className = "occurrence-actions";
 
-  const skipBtn = document.createElement("button");
-  skipBtn.type = "button";
-  skipBtn.className = "occurrence-btn";
-  skipBtn.textContent = "Skip";
-  skipBtn.addEventListener("click", () => applyOverride("cancelled"));
+  const skipCheckboxRow = document.createElement("label");
+  skipCheckboxRow.className = "occurrence-toggle-row";
+  const skipCheckbox = document.createElement("input");
+  skipCheckbox.type = "checkbox";
+  skipCheckbox.className = "occurrence-toggle-checkbox";
+  const skipCheckboxText = document.createElement("span");
+  skipCheckboxText.className = "occurrence-toggle-label";
+  skipCheckboxText.textContent = "Skip this occurrence";
+  skipCheckbox.addEventListener("change", () => void toggleOccurrenceSkipped());
+  skipCheckboxRow.append(skipCheckbox, skipCheckboxText);
+
+  const endSeriesCheckboxRow = document.createElement("label");
+  endSeriesCheckboxRow.className = "occurrence-toggle-row";
+  const endSeriesCheckbox = document.createElement("input");
+  endSeriesCheckbox.type = "checkbox";
+  endSeriesCheckbox.className = "occurrence-toggle-checkbox";
+  const endSeriesCheckboxText = document.createElement("span");
+  endSeriesCheckboxText.className = "occurrence-toggle-label";
+  endSeriesCheckboxText.textContent = "This occurrence is the last";
+  endSeriesCheckbox.addEventListener("change", () => void toggleOccurrenceIsLast());
+  endSeriesCheckboxRow.append(endSeriesCheckbox, endSeriesCheckboxText);
 
   const shiftRow = document.createElement("div");
   shiftRow.className = "occurrence-row";
@@ -251,7 +259,7 @@ function buildAddPanel(): void {
   clearOverrideBtn.textContent = "Clear override";
   clearOverrideBtn.addEventListener("click", () => clearException("override"));
 
-  occActions.append(skipBtn, shiftRow, rescRow, clearOverrideBtn);
+  occActions.append(skipCheckboxRow, endSeriesCheckboxRow, shiftRow, rescRow, clearOverrideBtn);
   occurrenceSection.appendChild(occActions);
 
   const noteLabel = document.createElement("label");
@@ -374,10 +382,13 @@ function buildAddPanel(): void {
     repeatSelect: repeatSelect.select,
     checkboxSection,
     syncVisibility,
-    seriesHeader,
     occurrenceSection,
     occurrenceMeta,
     occurrenceState,
+    skipCheckboxRow,
+    skipCheckbox,
+    endSeriesCheckboxRow,
+    endSeriesCheckbox,
     shiftInput,
     rescheduleInput,
     noteTextarea,
@@ -994,7 +1005,7 @@ function entryHasRepeater(entry: OrgEntry): boolean {
  * occurrence. SCHEDULED wins over DEADLINE wins over an active
  * timestamp, matching the agenda's typical primary row for an entry.
  */
-function pickBaseTimestamp(entry: OrgEntry): { date: string; startTime: string | null; endTime: string | null } | null {
+function pickBaseTimestamp(entry: OrgEntry): OrgEntry["timestamps"][number] | OrgEntry["planning"][number]["timestamp"] | null {
   const sched = entry.planning.find(p => p.kind === "scheduled" && p.timestamp.repeater);
   if (sched) return sched.timestamp;
   const dead = entry.planning.find(p => p.kind === "deadline" && p.timestamp.repeater);
@@ -1002,6 +1013,34 @@ function pickBaseTimestamp(entry: OrgEntry): { date: string; startTime: string |
   const active = entry.timestamps.find(ts => ts.repeater);
   if (active) return active;
   return null;
+}
+
+function nextOccurrenceBoundary(
+  ts: OrgEntry["timestamps"][number] | OrgEntry["planning"][number]["timestamp"] | null,
+  baseDate: string,
+): string | null {
+  if (!ts?.repeater) return null;
+  const [year, month, day] = baseDate.split("-").map(Number);
+  const next = new Date(year, month - 1, day, 0, 0, 0, 0);
+  switch (ts.repeater.unit) {
+    case "d":
+      next.setDate(next.getDate() + ts.repeater.value);
+      break;
+    case "w":
+      next.setDate(next.getDate() + ts.repeater.value * 7);
+      break;
+    case "m":
+      next.setMonth(next.getMonth() + ts.repeater.value);
+      break;
+    case "y":
+      next.setFullYear(next.getFullYear() + ts.repeater.value);
+      break;
+  }
+  return formatDateKey(next);
+}
+
+function formatDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function formatOccurrenceHeader(baseDate: string, base: { startTime: string | null; endTime: string | null } | null): string {
@@ -1051,12 +1090,20 @@ function refreshOccurrenceSection(): void {
   const ex: RecurrenceException | undefined = entry.exceptions.get(editingBaseDate);
   const override = ex?.override ?? null;
   const note = ex?.note ?? null;
+  const isSkipped = override?.kind === "cancelled";
 
   refs.occurrenceState.textContent = override
     ? describeOverride(override)
     : "On schedule";
   refs.occurrenceState.classList.toggle("is-modified", override !== null);
 
+  refs.skipCheckboxRow.style.display = "";
+  refs.skipCheckbox.checked = isSkipped;
+  const nextBaseKey = nextOccurrenceBoundary(base, editingBaseDate);
+  const isSeriesLast = nextBaseKey !== null && entry.seriesUntil === nextBaseKey;
+  refs.endSeriesCheckboxRow.style.display = nextBaseKey === null ? "none" : "";
+  refs.endSeriesCheckbox.checked = isSeriesLast;
+  refs.endSeriesCheckbox.disabled = nextBaseKey === null;
   refs.clearOverrideBtn.style.display = override ? "" : "none";
   refs.clearNoteBtn.style.display = note ? "" : "none";
 
@@ -1067,6 +1114,36 @@ function refreshOccurrenceSection(): void {
   }
   refs.shiftInput.value = "";
   refs.rescheduleInput.value = "";
+}
+
+async function toggleOccurrenceSkipped(): Promise<void> {
+  if (editingLine === null || editingBaseDate === null || !addPanelRefs) return;
+  const entry = entries.find(e => e.sourceLineNumber === editingLine);
+  if (!entry) return;
+  const updated = addPanelRefs.skipCheckbox.checked
+    ? upsertProperty(currentSource, entry, `EXCEPTION-${editingBaseDate}`, "cancelled")
+    : entry.exceptions.get(editingBaseDate)?.override?.kind === "cancelled"
+      ? removeProperty(currentSource, entry, `EXCEPTION-${editingBaseDate}`)
+      : currentSource;
+  const ok = await persistSource(updated);
+  if (ok) refreshOccurrenceSection();
+  else refreshOccurrenceSection();
+}
+
+async function toggleOccurrenceIsLast(): Promise<void> {
+  if (editingLine === null || editingBaseDate === null) return;
+  const entry = entries.find(e => e.sourceLineNumber === editingLine);
+  if (!entry) return;
+  const nextBaseKey = nextOccurrenceBoundary(pickBaseTimestamp(entry), editingBaseDate);
+  if (nextBaseKey === null) return;
+  const updated = addPanelRefs?.endSeriesCheckbox.checked
+    ? upsertProperty(currentSource, entry, "SERIES-UNTIL", nextBaseKey)
+    : entry.seriesUntil === nextBaseKey
+      ? removeProperty(currentSource, entry, "SERIES-UNTIL")
+      : currentSource;
+  const ok = await persistSource(updated);
+  if (ok) refreshOccurrenceSection();
+  else if (addPanelRefs) refreshOccurrenceSection();
 }
 
 async function applyOverride(value: string): Promise<void> {

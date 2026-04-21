@@ -1217,25 +1217,7 @@ body {
   display: inline-block;
 }
 
-/* ── Series / Occurrence sections ───────────────────────────────── */
-
-.occurrence-header {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding-bottom: 0.25rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.series-header {
-  display: none;
-}
-
-.add-panel.is-editing.has-occurrence .series-header {
-  display: block;
-}
+/* ── Occurrence section ─────────────────────────────────────────── */
 
 .occurrence-section {
   display: none;
@@ -1277,6 +1259,24 @@ body {
 .occurrence-row {
   display: flex;
   gap: 0.375rem;
+}
+
+.occurrence-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.occurrence-toggle-checkbox {
+  margin: 0;
+  cursor: pointer;
+}
+
+.occurrence-toggle-label {
+  user-select: none;
 }
 
 .occurrence-input {

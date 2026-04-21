@@ -366,6 +366,43 @@ describe(":SERIES-UNTIL: truncation in agenda", () => {
     expect(items).toHaveLength(1);
     expect(items[0].dueDate.getDate()).toBe(1);
   });
+
+  it("supports split-series handoff without overlapping base occurrences", () => {
+    const entries = parseOrg(
+      "** Yoga old\n" +
+        "<2026-04-27 ma. 17:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: 2026-05-18\n" +
+        ":END:\n" +
+        "** Yoga new\n" +
+        "<2026-05-18 ma. 17:00 +1w>\n",
+    );
+    const week = generateWeek(entries, new Date(2026, 4, 18));
+    const mondayItems = week[0].items;
+    expect(mondayItems).toHaveLength(1);
+    expect(mondayItems[0].entry.title).toBe("Yoga new");
+    expect(mondayItems[0].baseDate).toBe("2026-05-18");
+  });
+
+  it("keeps moved old occurrences after the split while the successor series starts at seriesUntil", () => {
+    const entries = parseOrg(
+      "** Yoga old\n" +
+        "<2026-04-27 ma. 17:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":SERIES-UNTIL: 2026-05-18\n" +
+        ":EXCEPTION-2026-05-11: reschedule 2026-05-20 18:30\n" +
+        ":END:\n" +
+        "** Yoga new\n" +
+        "<2026-05-18 ma. 17:00 +1w>\n",
+    );
+    const week = generateWeek(entries, new Date(2026, 4, 18));
+    const items = week.flatMap((day) => day.items);
+    expect(items).toHaveLength(2);
+    expect(items.map((item) => item.entry.title)).toEqual(["Yoga new", "Yoga old"]);
+    const moved = items.find((item) => item.entry.title === "Yoga old");
+    expect(moved?.baseDate).toBe("2026-05-11");
+    expect(moved?.startTime).toBe("18:30");
+  });
 });
 
 // ── Sorting ──────────────────────────────────────────────────────────

@@ -84,10 +84,43 @@ describe("main.ts integration", () => {
     updatedTitle!.click();
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
 
-    const skipButton = Array.from(document.querySelectorAll<HTMLButtonElement>(".occurrence-section .occurrence-btn"))
-      .find((button) => button.textContent === "Skip");
-    expect(skipButton).not.toBeUndefined();
-    skipButton!.click();
+    const occurrenceToggles = document.querySelectorAll<HTMLInputElement>(".occurrence-toggle-checkbox");
+    const skipCheckbox = occurrenceToggles[0];
+    const endSeriesCheckbox = occurrenceToggles[1];
+    expect(skipCheckbox).not.toBeUndefined();
+    expect(endSeriesCheckbox).not.toBeNull();
+    expect(endSeriesCheckbox?.checked).toBe(false);
+    endSeriesCheckbox!.checked = true;
+    endSeriesCheckbox!.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+
+    let sourceWithSeriesEnd = localStorage.getItem("mediant-org-source") ?? "";
+    expect(sourceWithSeriesEnd).toContain(":SERIES-UNTIL: 2026-04-28");
+
+    endSeriesCheckbox!.checked = false;
+    endSeriesCheckbox!.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+
+    sourceWithSeriesEnd = localStorage.getItem("mediant-org-source") ?? "";
+    expect(sourceWithSeriesEnd).not.toContain(":SERIES-UNTIL:");
+
+    expect(skipCheckbox.checked).toBe(false);
+    skipCheckbox.checked = true;
+    skipCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+
+    let sourceWithSkip = localStorage.getItem("mediant-org-source") ?? "";
+    expect(sourceWithSkip).toContain(":EXCEPTION-2026-04-21: cancelled");
+
+    skipCheckbox.checked = false;
+    skipCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+
+    sourceWithSkip = localStorage.getItem("mediant-org-source") ?? "";
+    expect(sourceWithSkip).not.toContain(":EXCEPTION-2026-04-21: cancelled");
+
+    skipCheckbox.checked = true;
+    skipCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
     await flush();
 
     const finalSource = localStorage.getItem("mediant-org-source") ?? "";
