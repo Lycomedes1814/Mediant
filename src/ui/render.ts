@@ -334,6 +334,7 @@ function renderItem(
 ): HTMLElement {
   const row = el("div", className);
   if (item.entry.todo === "DONE") row.classList.add("item-done");
+  if (item.skipped) row.classList.add("item-skipped");
 
   const primaryTag = item.entry.tags[0];
   if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
@@ -367,10 +368,15 @@ function renderItem(
 }
 
 function renderOverrideChip(
-  override: { kind: "shift" | "reschedule"; detail: string },
+  override: { kind: "cancelled" | "shift" | "reschedule"; detail: string },
 ): HTMLElement {
   const chip = el("span", `item-override-chip override-${override.kind}`);
-  chip.textContent = override.kind === "shift" ? "shifted" : "moved";
+  chip.textContent =
+    override.kind === "cancelled"
+      ? "skipped"
+      : override.kind === "shift"
+        ? "shifted"
+        : "moved";
   chip.title = override.detail;
   chip.setAttribute("aria-label", `${chip.textContent} (${override.detail})`);
   return chip;

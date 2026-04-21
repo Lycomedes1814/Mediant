@@ -395,13 +395,17 @@ describe("expandOccurrences", () => {
     expect(occs[0].baseStartMinutes).toBe(17 * 60);
   });
 
-  it("drops a cancelled occurrence even if it carries a note", () => {
+  it("keeps a cancelled occurrence on its base slot and preserves its note", () => {
     const ts = parseTimestamps("<2026-05-04 ma. 17:00 +1w>")[0];
     const exceptions = new Map<string, RecurrenceException>([
       ["2026-05-04", ex({ override: { kind: "cancelled" }, note: "bortreist" })],
     ]);
     const occs = expandOccurrences(ts, exceptions, may4, may10End);
-    expect(occs).toHaveLength(0);
+    expect(occs).toHaveLength(1);
+    expect(occs[0].baseDate).toBe("2026-05-04");
+    expect(occs[0].startTime).toBe("17:00");
+    expect(occs[0].override).toEqual({ kind: "cancelled" });
+    expect(occs[0].note).toBe("bortreist");
   });
 
   it("applies a positive shift, preserving duration", () => {
@@ -623,16 +627,18 @@ describe("expandOccurrences", () => {
       ["2026-05-18", ex({ note: "Husk matte" })],
     ]);
     const occs = expandOccurrences(ts, exceptions, may4, longEnd);
-    // Bases: 04, 11, 18, 25. 04 dropped → 3 occurrences.
-    expect(occs).toHaveLength(3);
+    // Bases: 04, 11, 18, 25. The cancelled one stays visible.
+    expect(occs).toHaveLength(4);
     expect(occs.map((o) => o.baseDate)).toEqual([
+      "2026-05-04",
       "2026-05-11",
       "2026-05-18",
       "2026-05-25",
     ]);
-    expect(occs[0].startTime).toBe("17:45");
-    expect(occs[1].note).toBe("Husk matte");
-    expect(occs[2].override).toBeNull();
+    expect(occs[0].override).toEqual({ kind: "cancelled" });
+    expect(occs[1].startTime).toBe("17:45");
+    expect(occs[2].note).toBe("Husk matte");
+    expect(occs[3].override).toBeNull();
   });
 
   it("date-only timestamp: shift by days moves the day, not the time", () => {

@@ -130,6 +130,17 @@ describe("main.ts integration", () => {
     sourceWithMove = localStorage.getItem("mediant-org-source") ?? "";
     expect(sourceWithMove).not.toContain(":EXCEPTION-2026-04-21: reschedule 2026-04-29 18:00");
 
+    occurrenceInput!.value = "18:30-21:15";
+    applyOverrideButton!.click();
+    await flush();
+
+    const sourceWithSameDayTimeRange = localStorage.getItem("mediant-org-source") ?? "";
+    expect(sourceWithSameDayTimeRange).toContain(":EXCEPTION-2026-04-21: reschedule 2026-04-21 18:30-21:15");
+    expect(document.querySelector<HTMLElement>(".occurrence-state")?.textContent).toBe("Moved to 18:30–21:15");
+
+    clearOverrideButton!.click();
+    await flush();
+
     endSeriesCheckbox!.checked = true;
     endSeriesCheckbox!.dispatchEvent(new Event("change", { bubbles: true }));
     await flush();
@@ -165,7 +176,13 @@ describe("main.ts integration", () => {
 
     const finalSource = localStorage.getItem("mediant-org-source") ?? "";
     expect(finalSource).toContain(":PROPERTIES:\n:EXCEPTION-2026-04-21: cancelled\n:END:");
-    expect(document.querySelector(".item-title[data-base-date='2026-04-21']")).toBeNull();
+    const skippedTitle = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-21']");
+    expect(skippedTitle).not.toBeNull();
+    expect(skippedTitle?.textContent).toContain("Yoga deluxe");
+    const skippedRow = skippedTitle?.closest(".item-skipped");
+    expect(skippedRow).not.toBeNull();
+    const skippedChip = skippedTitle?.querySelector<HTMLElement>(".item-override-chip.override-cancelled");
+    expect(skippedChip?.textContent).toBe("skipped");
   });
 });
 

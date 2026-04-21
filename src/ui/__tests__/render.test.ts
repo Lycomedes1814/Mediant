@@ -169,6 +169,38 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".tag")?.textContent).toContain("music");
   });
 
+  it("renders skipped occurrences with marker and strikethrough class", () => {
+    const container = document.createElement("div");
+    const week = makeWeek([
+      [
+        makeItem({
+          title: "Yoga",
+          date: new Date(2026, 3, 20, 18, 0),
+          startTime: "18:00",
+          baseDate: "2026-04-20",
+          skipped: true,
+          override: { kind: "cancelled", detail: "Skipped occurrence" },
+        }),
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+    ]);
+
+    renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 9, 0));
+
+    const row = container.querySelector(".timed-item") as HTMLElement | null;
+    expect(row).not.toBeNull();
+    expect(row?.classList.contains("item-skipped")).toBe(true);
+
+    const chip = container.querySelector(".item-override-chip") as HTMLElement | null;
+    expect(chip?.textContent).toBe("skipped");
+    expect(chip?.classList.contains("override-cancelled")).toBe(true);
+  });
+
   it("updates all rendered tag pills when the color picker changes", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
@@ -295,6 +327,7 @@ function makeItem(overrides: Partial<AgendaItem> & {
     baseStartMinutes: overrides.baseStartMinutes ?? null,
     instanceNote: overrides.instanceNote ?? null,
     override: overrides.override ?? null,
+    skipped: overrides.skipped ?? false,
   };
 }
 

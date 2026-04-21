@@ -206,7 +206,8 @@ function findNextPlanningOccurrence(
       rangeEnd,
       entry.seriesUntil,
     );
-    if (occurrences.length > 0) return earliestOccurrence(occurrences).date;
+    const visible = occurrences.filter((occ) => occ.override?.kind !== "cancelled");
+    if (visible.length > 0) return earliestOccurrence(visible).date;
     windowDays *= 2;
   }
 
@@ -235,7 +236,8 @@ function findLatestPastPlanningOccurrence(
       yesterdayEnd,
       entry.seriesUntil,
     );
-    if (occurrences.length > 0) return latestOccurrence(occurrences).date;
+    const visible = occurrences.filter((occ) => occ.override?.kind !== "cancelled");
+    if (visible.length > 0) return latestOccurrence(visible).date;
     windowDays *= 2;
   }
 
@@ -276,6 +278,7 @@ function buildAgendaItem(
     baseStartMinutes: hasRepeater ? occ.baseStartMinutes : null,
     instanceNote: occ.note,
     override: summarizeOverride(occ.override, occ.baseDate),
+    skipped: occ.override?.kind === "cancelled",
   };
 }
 
@@ -284,7 +287,9 @@ function summarizeOverride(
   baseDate: string,
 ): AgendaItemOverride | null {
   if (override === null) return null;
-  if (override.kind === "cancelled") return null; // filtered during expansion, but guard anyway
+  if (override.kind === "cancelled") {
+    return { kind: "cancelled", detail: "Skipped occurrence" };
+  }
   if (override.kind === "shift") {
     return { kind: "shift", detail: formatShiftDetail(override.offsetMinutes) };
   }

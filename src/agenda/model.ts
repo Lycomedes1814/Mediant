@@ -9,12 +9,11 @@ export type RenderCategory = "all-day" | "timed" | "deadline" | "scheduled";
 
 /**
  * A summary of the per-occurrence override applied to this item.
- * `cancelled` is filtered out during expansion and never appears here;
  * `detail` is a short, renderer-ready string (e.g. `"+45m"`,
  * `"from 2026-05-11"`) suitable for chip text / tooltips.
  */
 export interface AgendaItemOverride {
-  readonly kind: "shift" | "reschedule";
+  readonly kind: "cancelled" | "shift" | "reschedule";
   readonly detail: string;
 }
 
@@ -38,6 +37,7 @@ export interface AgendaItem {
   readonly baseStartMinutes: number | null;
   readonly instanceNote: string | null;
   readonly override: AgendaItemOverride | null;
+  readonly skipped: boolean;
 }
 
 /**

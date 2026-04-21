@@ -231,7 +231,7 @@ function buildAddPanel(): void {
   overrideBtn.className = "occurrence-btn";
   overrideBtn.textContent = "Apply";
   overrideBtn.addEventListener("click", () => {
-    const value = parseOccurrenceOverrideInput(occurrenceInput.value);
+    const value = parseOccurrenceOverrideInput(occurrenceInput.value, editingBaseDate);
     if (!value) { occurrenceInput.focus(); return; }
     applyOverride(value);
   });
@@ -748,7 +748,7 @@ const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(-([01]\d|2[0-3]):[0-5]\d)?$/;
  * Date forms: DD, DD/MM, DD/MM/YYYY. Time forms: HH:MM or HH:MM-HH:MM.
  * Returns null on invalid input.
  */
-function parseDateTime(raw: string): { date: string; time: string } | null {
+function parseDateTime(raw: string, fallbackDate?: string): { date: string; time: string } | null {
   const parts = raw.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return { date: "", time: "" };
 
@@ -764,6 +764,7 @@ function parseDateTime(raw: string): { date: string; time: string } | null {
 
   if (!dateRaw) {
     if (!time) return null;
+    if (fallbackDate) return { date: fallbackDate, time };
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     return { date: today, time };
@@ -773,10 +774,10 @@ function parseDateTime(raw: string): { date: string; time: string } | null {
   return { date, time };
 }
 
-function parseOccurrenceOverrideInput(raw: string): string | null {
+function parseOccurrenceOverrideInput(raw: string, baseDate: string | null): string | null {
   const trimmed = raw.trim();
   if (/^[+-]\d+[mhd]$/.test(trimmed)) return `shift ${trimmed}`;
-  const parsed = parseDateTime(trimmed);
+  const parsed = parseDateTime(trimmed, baseDate ?? undefined);
   if (!parsed || !parsed.date) return null;
   const timePart = parsed.time ? ` ${parsed.time}` : "";
   return `reschedule ${parsed.date}${timePart}`;
@@ -1033,7 +1034,7 @@ function formatOccurrenceHeader(baseDate: string, base: { startTime: string | nu
   return out;
 }
 
-function describeOverride(override: RecurrenceOverride): string {
+function describeOverride(override: RecurrenceOverride, baseDate: string | null = null): string {
   if (override.kind === "cancelled") return "Skipped";
   if (override.kind === "shift") {
     const m = override.offsetMinutes;
@@ -1044,13 +1045,21 @@ function describeOverride(override: RecurrenceOverride): string {
     return `Shifted ${sign}${abs}m`;
   }
   // reschedule
+  const sameDate = baseDate !== null && override.date === baseDate;
+  let out = "Moved to";
+  if (!sameDate) {
   const [y, mo, d] = override.date.split("-").map(Number);
-  const dt = new Date(y, mo - 1, d);
-  const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()];
-  const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dt.getMonth()];
-  let out = `Moved to ${dayName} ${dt.getDate()} ${monthName}`;
+    const dt = new Date(y, mo - 1, d);
+    const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()];
+    const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dt.getMonth()];
+    out += ` ${dayName} ${dt.getDate()} ${monthName}`;
+  }
   if (override.startTime) {
-    out += override.endTime ? `, ${override.startTime}–${override.endTime}` : `, ${override.startTime}`;
+    out += sameDate
+      ? ` ${override.endTime ? `${override.startTime}–${override.endTime}` : override.startTime}`
+      : override.endTime
+        ? `, ${override.startTime}–${override.endTime}`
+        : `, ${override.startTime}`;
   }
   return out;
 }
@@ -1071,7 +1080,7 @@ function refreshOccurrenceSection(): void {
   const isSkipped = override?.kind === "cancelled";
 
   refs.occurrenceState.textContent = override
-    ? describeOverride(override)
+    ? describeOverride(override, editingBaseDate)
     : "On schedule";
   refs.occurrenceState.classList.toggle("is-modified", override !== null);
 

@@ -512,6 +512,15 @@ body {
   color: var(--text-done);
 }
 
+.item-skipped {
+  opacity: 0.7;
+}
+
+.item-skipped .item-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-dim);
+}
+
 .item-state.is-toggleable {
   cursor: pointer;
   user-select: none;
@@ -695,6 +704,11 @@ body {
   line-height: 1.4;
   vertical-align: 0.05em;
   cursor: help;
+}
+
+.override-cancelled {
+  color: var(--text-dim);
+  background: color-mix(in srgb, var(--border) 78%, transparent);
 }
 
 .item-instance-note {
@@ -1503,6 +1517,7 @@ body {
   }
 
   .timed-item .tag-badges,
+  .deadline-item .tag-badges,
   .day-deadline-item .tag-badges,
   .someday-item .tag-badges,
   .allday-item .tag-badges,

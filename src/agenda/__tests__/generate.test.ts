@@ -154,7 +154,7 @@ describe("recurrence", () => {
 describe("exceptions in agenda", () => {
   const APRIL_27 = new Date(2026, 3, 27); // Monday — start of test week
 
-  it("cancelled occurrence is not in the agenda", () => {
+  it("cancelled occurrence stays in the agenda as skipped", () => {
     const entries = parseOrg(
       "** TODO Yoga :health:\n" +
         "SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>\n" +
@@ -163,9 +163,16 @@ describe("exceptions in agenda", () => {
         ":END:\n",
     );
     const week = generateWeek(entries, APRIL_27);
-    // week contains Apr 27 → May 3. The base occurrence on Apr 27 is cancelled;
-    // no further base occurrence falls inside this window.
-    for (const day of week) expect(day.items).toHaveLength(0);
+    expect(week[0].items).toHaveLength(1);
+    expect(week[0].items[0].entry.title).toBe("Yoga");
+    expect(week[0].items[0].startTime).toBe("17:00");
+    expect(week[0].items[0].baseDate).toBe("2026-04-27");
+    expect(week[0].items[0].skipped).toBe(true);
+    expect(week[0].items[0].override).toEqual({
+      kind: "cancelled",
+      detail: "Skipped occurrence",
+    });
+    for (const day of week.slice(1)) expect(day.items).toHaveLength(0);
   });
 
   it("shifted occurrence keeps the entry's identity and records override metadata", () => {
@@ -265,6 +272,7 @@ describe("exceptions in agenda", () => {
     expect(week[0].items[0].startTime).toBe("17:00");
     expect(week[0].items[0].override).toBeNull();
     expect(week[0].items[0].baseDate).toBeNull(); // non-recurring → no base-slot identity
+    expect(week[0].items[0].skipped).toBe(false);
   });
 
   it("shift detail formats hours and days cleanly", () => {
@@ -352,6 +360,21 @@ describe(":SERIES-UNTIL: truncation in agenda", () => {
     expect(items).toHaveLength(0);
   });
 
+  it("collectDeadlines ignores skipped recurring occurrences and finds the next one", () => {
+    const entries = parseOrg(
+      "** TODO Yoga\n" +
+        "DEADLINE: <2026-04-27 ma. 17:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: cancelled\n" +
+        ":END:\n",
+    );
+    const items = collectDeadlines(entries, new Date(2026, 3, 27, 9, 0));
+    expect(items).toHaveLength(1);
+    expect(items[0].dueDate.getFullYear()).toBe(2026);
+    expect(items[0].dueDate.getMonth()).toBe(4);
+    expect(items[0].dueDate.getDate()).toBe(4);
+  });
+
   it("collectOverdueItems ignores occurrences past seriesUntil", () => {
     // Weekly SCHEDULED would produce an overdue on 2026-04-08; seriesUntil cuts
     // the series after Apr 01, so only Apr 01 is a valid past occurrence.
@@ -365,6 +388,21 @@ describe(":SERIES-UNTIL: truncation in agenda", () => {
     const items = collectOverdueItems(entries, new Date(2026, 3, 10, 12, 0));
     expect(items).toHaveLength(1);
     expect(items[0].dueDate.getDate()).toBe(1);
+  });
+
+  it("collectOverdueItems ignores skipped recurring occurrences and finds the latest real one", () => {
+    const entries = parseOrg(
+      "** TODO Yoga\n" +
+        "SCHEDULED: <2026-04-20 ma. 17:00 +1w>\n" +
+        ":PROPERTIES:\n" +
+        ":EXCEPTION-2026-04-27: cancelled\n" +
+        ":END:\n",
+    );
+    const items = collectOverdueItems(entries, new Date(2026, 4, 2, 12, 0));
+    expect(items).toHaveLength(1);
+    expect(items[0].dueDate.getFullYear()).toBe(2026);
+    expect(items[0].dueDate.getMonth()).toBe(3);
+    expect(items[0].dueDate.getDate()).toBe(20);
   });
 
   it("supports split-series handoff without overlapping base occurrences", () => {

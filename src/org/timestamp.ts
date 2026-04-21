@@ -263,9 +263,8 @@ export function stepDate(
  * position and by the edit panel to round-trip back to the right
  * `:EXCEPTION-<date>:` property key.
  *
- * `override` is the override that was applied (`shift` or `reschedule`),
- * or `null` if no override was applied. `cancelled` is filtered out
- * during expansion and never appears here.
+ * `override` is the override that was applied (`cancelled`, `shift`, or
+ * `reschedule`), or `null` if no override was applied.
  */
 export interface OccurrenceInstance {
   readonly date: Date;
@@ -297,7 +296,7 @@ const SHIFT_BUFFER_DAYS = 7;
  * as-is and both extras are ignored.
  *
  * For recurring timestamps:
- *   - cancelled occurrences are dropped
+ *   - cancelled occurrences stay visible on their original slot
  *   - shifted occurrences move their start (and end, if present); if the
  *     shift crosses midnight, the final calendar day moves with it but
  *     `baseDate` stays at the original slot
@@ -336,7 +335,6 @@ export function expandOccurrences(
     seenBaseKeys.add(baseKey);
     const exception = exceptions.get(baseKey) ?? null;
     const occ = applyException(ts, baseDate, baseKey, exception);
-    if (occ === null) continue; // cancelled
     if (occ.date < rangeStart || occ.date > rangeEnd) continue;
     results.push(occ);
   }
@@ -354,7 +352,6 @@ export function expandOccurrences(
     if (seriesUntil !== null && baseKey >= seriesUntil) continue;
     const baseDate = parseYMDWithTime(baseKey, ts.startTime);
     const occ = applyException(ts, baseDate, baseKey, exception);
-    if (occ === null) continue;
     if (occ.date < rangeStart || occ.date > rangeEnd) continue;
     results.push(occ);
   }
@@ -367,7 +364,7 @@ function applyException(
   baseDate: Date,
   baseKey: string,
   exception: RecurrenceException | null,
-): OccurrenceInstance | null {
+): OccurrenceInstance {
   const baseStartMinutes = ts.startTime !== null ? hhmmToMinutes(ts.startTime) : null;
 
   if (exception === null) {
@@ -376,7 +373,9 @@ function applyException(
 
   const { override, note } = exception;
 
-  if (override?.kind === "cancelled") return null;
+  if (override?.kind === "cancelled") {
+    return buildOccurrence(ts, baseDate, override, note, baseKey, baseStartMinutes);
+  }
 
   if (override?.kind === "shift") {
     const shiftedStart = new Date(baseDate.getTime() + override.offsetMinutes * 60_000);
