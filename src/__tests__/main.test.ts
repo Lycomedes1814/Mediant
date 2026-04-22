@@ -53,7 +53,10 @@ describe("main.ts integration", () => {
         "** TODO Rent",
         "DEADLINE: <2026-04-01 Wed +1w>",
         "",
-        "** TODO Yoga :work:",
+        "** TODO Focus block :work:",
+        "SCHEDULED: <2026-04-20 Mon 11:00>",
+        "",
+        "** TODO Yoga :work:health:",
         "SCHEDULED: <2026-04-21 Tue 17:00 .+1w>",
         "Body line.",
         "",
@@ -69,6 +72,38 @@ describe("main.ts integration", () => {
     expect(loadButton).not.toBeNull();
     loadButton!.click();
     await waitFor(() => document.querySelector(".days-card") !== null);
+
+    const workTag = document.querySelector<HTMLElement>(".tag[data-tag='work']");
+    expect(workTag).not.toBeNull();
+    workTag!.click();
+    await flush();
+    expect(document.querySelector(".active-tag-filters .tag[data-tag='work']")).not.toBeNull();
+    expect(Array.from(document.querySelectorAll<HTMLElement>(".item-title")).some(el => el.textContent?.includes("Inbox"))).toBe(false);
+    expect(Array.from(document.querySelectorAll<HTMLElement>(".item-title")).some(el => el.textContent?.includes("Yoga"))).toBe(true);
+    expect(Array.from(document.querySelectorAll<HTMLElement>(".item-title")).some(el => el.textContent?.includes("Focus block"))).toBe(true);
+
+    const healthTag = Array.from(document.querySelectorAll<HTMLElement>(".tag[data-tag='health']"))
+      .find(el => el.closest(".timed-item, .scheduled-item, .allday-item, .deadline-item, .overdue-item, .someday-item")) ?? null;
+    expect(healthTag).not.toBeNull();
+    healthTag!.click();
+    await flush();
+    expect(document.querySelector(".active-tag-filters .tag[data-tag='health']")).not.toBeNull();
+    expect(Array.from(document.querySelectorAll<HTMLElement>(".item-title")).some(el => el.textContent?.includes("Yoga"))).toBe(true);
+    expect(Array.from(document.querySelectorAll<HTMLElement>(".item-title")).some(el => el.textContent?.includes("Focus block"))).toBe(false);
+
+    const clearFiltersBtn = document.querySelector<HTMLButtonElement>(".clear-tag-filters");
+    expect(clearFiltersBtn).not.toBeNull();
+    clearFiltersBtn!.click();
+    await flush();
+    expect(Array.from(document.querySelectorAll<HTMLElement>(".item-title")).some(el => el.textContent?.includes("Inbox"))).toBe(true);
+
+    const colorModeBtn = document.querySelector<HTMLButtonElement>(".tag-color-mode-toggle");
+    expect(colorModeBtn).not.toBeNull();
+    colorModeBtn!.click();
+    await flush();
+    expect(document.querySelector(".tag[data-tag='work']")?.classList.contains("is-color-editable")).toBe(true);
+    colorModeBtn!.click();
+    await flush();
 
     const inboxTitle = Array.from(document.querySelectorAll<HTMLElement>(".item-title"))
       .find(el => el.textContent?.includes("Inbox"));

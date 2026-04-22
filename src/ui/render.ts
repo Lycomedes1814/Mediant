@@ -9,6 +9,11 @@ import type { AgendaWeek, AgendaDay, AgendaItem, DeadlineItem, OverdueItem, Some
 import { getTagColor, setTagColor, TAG_DEFAULT_COLOR } from "./tagColors.ts";
 import { notificationsEnabled, setNotificationsEnabled, requestPermission, clearScheduled, scheduleNotifications } from "./notifications.ts";
 
+export interface RenderAgendaOptions {
+  readonly activeTagFilters?: readonly string[];
+  readonly tagColorEditMode?: boolean;
+}
+
 export function createThemeToggle(): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.className = "theme-toggle";
@@ -63,20 +68,21 @@ const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
 
 // ── Public API ───────────────────────────────────────────────────────
 
-export function renderAgenda(
+function renderAgendaBase(
   container: HTMLElement,
   week: AgendaWeek,
   deadlines: DeadlineItem[],
   overdue: OverdueItem[],
   someday: SomedayItem[],
   today: Date,
+  options: RenderAgendaOptions = {},
 ): void {
   container.innerHTML = "";
 
   // Header
   const startDate = week[0].date;
   const endDate = week[6].date;
-  container.appendChild(renderHeader(startDate, endDate));
+  container.appendChild(renderHeader(startDate, endDate, options));
 
   // Overdue section (before deadlines — most urgent)
   if (overdue.length > 0) {
@@ -103,7 +109,7 @@ export function renderAgenda(
 
 // ── Header ───────────────────────────────────────────────────────────
 
-function renderHeader(startDate: Date, endDate: Date): HTMLElement {
+function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptions): HTMLElement {
   const header = el("header", "agenda-header");
 
   const nav = el("nav", "agenda-nav");
@@ -135,9 +141,37 @@ function renderHeader(startDate: Date, endDate: Date): HTMLElement {
   addBtn.textContent = "+Add";
   addBtn.dataset.action = "add";
 
-  actions.append(todayBtn, addBtn, createNotificationToggle(), createThemeToggle());
+  const colorModeBtn = el("button", "tag-color-mode-toggle");
+  colorModeBtn.textContent = options.tagColorEditMode ? "Color tags: on" : "Color tags";
+  colorModeBtn.dataset.action = "toggle-tag-color-mode";
+  colorModeBtn.setAttribute("aria-pressed", options.tagColorEditMode ? "true" : "false");
+  if (options.tagColorEditMode) colorModeBtn.classList.add("is-on");
+
+  actions.append(todayBtn, addBtn, colorModeBtn, createNotificationToggle(), createThemeToggle());
   header.append(nav, actions);
+
+  if ((options.activeTagFilters?.length ?? 0) > 0) {
+    header.appendChild(renderActiveTagFilters(options.activeTagFilters ?? []));
+  }
   return header;
+}
+
+function renderActiveTagFilters(tags: readonly string[]): HTMLElement {
+  const row = el("div", "active-tag-filters");
+
+  const label = el("span", "active-tag-filters-label");
+  label.textContent = "Filtering:";
+  row.appendChild(label);
+
+  for (const tag of tags) {
+    row.appendChild(renderTag(tag, { selected: true }));
+  }
+
+  const clearBtn = el("button", "clear-tag-filters");
+  clearBtn.textContent = "Clear";
+  clearBtn.dataset.action = "clear-tag-filters";
+  row.appendChild(clearBtn);
+  return row;
 }
 
 // ── Deadlines ────────────────────────────────────────────────────────
@@ -167,7 +201,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     const title = renderTitle(dl.entry);
     if (dl.baseDate) title.dataset.baseDate = dl.baseDate;
 
-    row.append(title, meta, renderTags(dl.entry.tags));
+    row.append(title, meta, renderTags(dl.entry.tags, optionsForTags()));
     section.appendChild(row);
   }
 
@@ -196,7 +230,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
     const title = renderTitle(item.entry);
     if (item.baseDate) title.dataset.baseDate = item.baseDate;
 
-    row.append(title, meta, renderTags(item.entry.tags));
+    row.append(title, meta, renderTags(item.entry.tags, optionsForTags()));
     section.appendChild(row);
   }
 
@@ -219,7 +253,7 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
     const state = renderStateBadge(item.entry, "TODO");
     const title = renderTitle(item.entry);
 
-    row.append(state, title, renderTags(item.entry.tags));
+    row.append(state, title, renderTags(item.entry.tags, optionsForTags()));
     section.appendChild(row);
   }
 
@@ -365,7 +399,7 @@ function renderItem(
     title.appendChild(document.createTextNode(" "));
     title.appendChild(renderOverrideChip(item.override));
   }
-  children.push(title, renderTags(item.entry.tags));
+  children.push(title, renderTags(item.entry.tags, optionsForTags()));
   row.append(...children);
   return row;
 }
@@ -513,34 +547,79 @@ function renderCheckboxItems(items: readonly { text: string; checked: boolean }[
   return list;
 }
 
-function renderTags(tags: readonly string[]): HTMLElement {
+function optionsForTags(): Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode"> {
+  return currentRenderOptions;
+}
+
+let currentRenderOptions: Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode"> = {};
+
+function renderTags(tags: readonly string[], options: Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode">): HTMLElement {
   const badges = el("span", "tag-badges");
   for (const tag of tags) {
-    const span = el("span", "tag");
-    span.dataset.tag = tag;
-    span.style.background = getTagColor(tag);
-    span.textContent = tag;
-
-    const picker = document.createElement("input");
-    picker.type = "color";
-    picker.className = "tag-color-picker";
-    picker.value = getTagColor(tag);
-
-    picker.addEventListener("click", (e) => {
-      e.stopPropagation();
-    });
-
-    picker.addEventListener("input", () => {
-      setTagColor(tag, picker.value);
-      document.querySelectorAll<HTMLElement>(`.tag[data-tag="${tag}"]`).forEach((el) => {
-        el.style.background = picker.value;
-      });
-    });
-
-    span.appendChild(picker);
-    badges.appendChild(span);
+    badges.appendChild(renderTag(tag, {
+      selected: (options.activeTagFilters ?? []).includes(tag),
+      colorEditMode: options.tagColorEditMode ?? false,
+    }));
   }
   return badges;
+}
+
+function renderTag(
+  tag: string,
+  options: { selected?: boolean; colorEditMode?: boolean } = {},
+): HTMLElement {
+  const span = el("span", "tag");
+  span.dataset.tag = tag;
+  span.dataset.action = "toggle-tag-filter";
+  span.style.background = getTagColor(tag);
+  span.textContent = tag;
+  span.setAttribute("role", "button");
+  span.setAttribute("tabindex", "0");
+  span.setAttribute("aria-pressed", options.selected ? "true" : "false");
+  span.setAttribute("aria-label", options.selected ? `Remove tag filter ${tag}` : `Filter by tag ${tag}`);
+  if (options.selected) span.classList.add("is-selected");
+  if (options.colorEditMode) span.classList.add("is-color-editable");
+
+  const picker = document.createElement("input");
+  picker.type = "color";
+  picker.className = "tag-color-picker";
+  picker.value = getTagColor(tag);
+
+  picker.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
+
+  picker.addEventListener("input", () => {
+    setTagColor(tag, picker.value);
+    document.querySelectorAll<HTMLElement>(`.tag[data-tag="${tag}"]`).forEach((el) => {
+      el.style.background = picker.value;
+    });
+  });
+
+  span.appendChild(picker);
+  return span;
+}
+
+export function renderAgenda(
+  container: HTMLElement,
+  week: AgendaWeek,
+  deadlines: DeadlineItem[],
+  overdue: OverdueItem[],
+  someday: SomedayItem[],
+  today: Date,
+  options: RenderAgendaOptions = {},
+): void {
+  currentRenderOptions = {
+    activeTagFilters: options.activeTagFilters ?? [],
+    tagColorEditMode: options.tagColorEditMode ?? false,
+  };
+  renderAgendaBase(container, week, deadlines, overdue, someday, today, options);
+  currentRenderOptions = {};
+}
+
+export function openTagColorPicker(tagEl: HTMLElement): void {
+  const picker = tagEl.querySelector<HTMLInputElement>(".tag-color-picker");
+  picker?.click();
 }
 
 function formatTimeRange(start: string | null, end: string | null): string {

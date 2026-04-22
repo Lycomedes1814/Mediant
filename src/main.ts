@@ -9,7 +9,8 @@ import {
 } from "./org/sourceEdit.ts";
 import { stepDate } from "./org/timestamp.ts";
 import { generateWeek, collectDeadlines, collectOverdueItems, collectSomedayItems } from "./agenda/generate.ts";
-import { renderAgenda, createThemeToggle } from "./ui/render.ts";
+import { renderAgenda, createThemeToggle, openTagColorPicker } from "./ui/render.ts";
+import type { AgendaWeek, DeadlineItem, OverdueItem, SomedayItem } from "./agenda/model.ts";
 import { getTagColor } from "./ui/tagColors.ts";
 import { scheduleNotifications } from "./ui/notifications.ts";
 
@@ -25,6 +26,8 @@ let currentSource = localStorage.getItem("mediant-org-source") ?? "";
 let serverMode = false;
 let serverVersion: string | null = null;
 let agendaLoaded = false;
+let activeTagFilters = new Set<string>();
+let tagColorEditMode = false;
 
 /** Collect every unique tag from the current parsed entries. */
 function collectAllTags(): string[] {
@@ -1522,6 +1525,47 @@ function navigateWeek(direction: "prev" | "next" | "today"): void {
   render();
 }
 
+function entryMatchesTagFilters(entry: Pick<OrgEntry, "tags">): boolean {
+  if (activeTagFilters.size === 0) return true;
+  return [...activeTagFilters].every(tag => entry.tags.includes(tag));
+}
+
+function filterWeekByTags(week: AgendaWeek): AgendaWeek {
+  return week.map(day => ({
+    ...day,
+    items: day.items.filter(item => entryMatchesTagFilters(item.entry)),
+  })) as AgendaWeek;
+}
+
+function filterDeadlinesByTags(items: DeadlineItem[]): DeadlineItem[] {
+  return items.filter(item => entryMatchesTagFilters(item.entry));
+}
+
+function filterOverdueByTags(items: OverdueItem[]): OverdueItem[] {
+  return items.filter(item => entryMatchesTagFilters(item.entry));
+}
+
+function filterSomedayByTags(items: SomedayItem[]): SomedayItem[] {
+  return items.filter(item => entryMatchesTagFilters(item.entry));
+}
+
+function toggleTagFilter(tag: string): void {
+  if (activeTagFilters.has(tag)) activeTagFilters.delete(tag);
+  else activeTagFilters.add(tag);
+  render();
+}
+
+function clearTagFilters(): void {
+  if (activeTagFilters.size === 0) return;
+  activeTagFilters.clear();
+  render();
+}
+
+function toggleTagColorMode(): void {
+  tagColorEditMode = !tagColorEditMode;
+  render();
+}
+
 function isTypingTarget(target: EventTarget | null): boolean {
   const el = target instanceof HTMLElement ? target : null;
   if (!el) return false;
@@ -1548,6 +1592,12 @@ async function init(): Promise<void> {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (addPanelEl?.classList.contains("is-open")) closeAddPanel();
+      return;
+    }
+    const actionEl = e.target instanceof HTMLElement ? e.target.closest<HTMLElement>("[data-action]") : null;
+    if (actionEl && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      actionEl.click();
       return;
     }
     if (e.altKey || e.ctrlKey || e.metaKey || isTypingTarget(e.target)) return;
@@ -1757,13 +1807,20 @@ function render(): void {
   const deadlines = collectDeadlines(entries, today);
   const overdue = collectOverdueItems(entries, today);
   const someday = collectSomedayItems(entries);
+  const filteredWeek = filterWeekByTags(week);
+  const filteredDeadlines = filterDeadlinesByTags(deadlines);
+  const filteredOverdue = filterOverdueByTags(overdue);
+  const filteredSomeday = filterSomedayByTags(someday);
 
-  renderAgenda(container, week, deadlines, overdue, someday, today);
+  renderAgenda(container, filteredWeek, filteredDeadlines, filteredOverdue, filteredSomeday, today, {
+    activeTagFilters: [...activeTagFilters].sort(),
+    tagColorEditMode,
+  });
 
   // Schedule notifications for today's timed events
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const notifItems: { title: string; dateStr: string; startTime: string }[] = [];
-  for (const day of week) {
+  for (const day of filteredWeek) {
     for (const item of day.items) {
       if (item.startTime) {
         const d = item.date;
@@ -1781,6 +1838,18 @@ function render(): void {
 
 function setupNavigation(): void {
   document.addEventListener("click", (e) => {
+    const tagEl = (e.target as HTMLElement).closest<HTMLElement>(".tag[data-tag]");
+    if (tagEl) {
+      const tag = tagEl.dataset.tag;
+      if (!tag) return;
+      if (tagColorEditMode || e.altKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        openTagColorPicker(tagEl);
+        return;
+      }
+    }
+
     const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-action]");
     if (!btn) return;
     const action = btn.dataset.action;
@@ -1790,6 +1859,13 @@ function setupNavigation(): void {
       navigateWeek(action);
     } else if (action === "add") {
       openAddPanel();
+    } else if (action === "toggle-tag-color-mode") {
+      toggleTagColorMode();
+    } else if (action === "toggle-tag-filter") {
+      const tag = btn.dataset.tag;
+      if (tag) toggleTagFilter(tag);
+    } else if (action === "clear-tag-filters") {
+      clearTagFilters();
     } else if (action === "edit") {
       const line = Number(btn.dataset.line);
       const baseDate = btn.dataset.baseDate ?? null;

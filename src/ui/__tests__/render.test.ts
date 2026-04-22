@@ -274,6 +274,31 @@ describe("renderAgenda", () => {
     expect(new Set(afterValues).size).toBe(1);
     expect(afterValues[0]).not.toBe(beforeValues[0]);
   });
+
+  it("renders active tag filters and color-edit mode state in the header", () => {
+    const container = document.createElement("div");
+    const week = makeWeek([
+      [makeItem({ title: "Tagged", date: new Date(2026, 3, 20, 9, 0), startTime: "09:00", tags: ["work"] })],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+    ]);
+
+    renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 8, 0), {
+      activeTagFilters: ["work"],
+      tagColorEditMode: true,
+    });
+
+    const filterRow = container.querySelector(".active-tag-filters");
+    expect(filterRow).not.toBeNull();
+    expect(filterRow?.textContent).toContain("Filtering:");
+    expect(filterRow?.querySelector(".tag[data-tag='work']")?.classList.contains("is-selected")).toBe(true);
+    expect(container.querySelector(".tag-color-mode-toggle")?.classList.contains("is-on")).toBe(true);
+    expect(container.querySelector(".timed-item .tag[data-tag='work']")?.classList.contains("is-color-editable")).toBe(true);
+  });
 });
 
 describe("UI toggles", () => {
