@@ -634,6 +634,28 @@ function makeTagPicker(label: string, id: string): TagPicker {
   container.append(lbl, wrapper);
 
   let selected: string[] = [];
+  let activeOptionIndex = -1;
+  let selectActiveOption: (() => void) | null = null;
+
+  function updateActiveOption(nextIndex: number): void {
+    const options = Array.from(dropdown.querySelectorAll<HTMLElement>(".tag-picker-option"));
+    if (options.length === 0) {
+      activeOptionIndex = -1;
+      selectActiveOption = null;
+      return;
+    }
+    activeOptionIndex = ((nextIndex % options.length) + options.length) % options.length;
+    options.forEach((opt, idx) => {
+      const isActive = idx === activeOptionIndex;
+      opt.classList.toggle("is-active", isActive);
+      opt.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+    selectActiveOption = options[activeOptionIndex].dataset.selectIndex
+      ? optionActions[Number(options[activeOptionIndex].dataset.selectIndex)] ?? null
+      : null;
+  }
+
+  let optionActions: Array<() => void> = [];
 
   function renderPills(): void {
     pillsEl.innerHTML = "";
@@ -668,6 +690,7 @@ function makeTagPicker(label: string, id: string): TagPicker {
       : allTags;
 
     dropdown.innerHTML = "";
+    optionActions = [];
     for (const tag of matches) {
       const opt = document.createElement("div");
       opt.className = "tag-picker-option";
@@ -676,12 +699,16 @@ function makeTagPicker(label: string, id: string): TagPicker {
       swatch.className = "tag-picker-swatch";
       swatch.style.background = getTagColor(tag);
       opt.prepend(swatch);
-      opt.addEventListener("mousedown", (e) => {
-        e.preventDefault(); // keep focus on input
+      const select = (): void => {
         selected.push(tag);
         input.value = "";
         renderPills();
         showDropdown();
+      };
+      opt.dataset.selectIndex = String(optionActions.push(select) - 1);
+      opt.addEventListener("mousedown", (e) => {
+        e.preventDefault(); // keep focus on input
+        select();
       });
       dropdown.appendChild(opt);
     }
@@ -691,22 +718,37 @@ function makeTagPicker(label: string, id: string): TagPicker {
       const addOpt = document.createElement("div");
       addOpt.className = "tag-picker-option tag-picker-option-new";
       addOpt.textContent = `Add "${input.value.trim()}"`;
-      addOpt.addEventListener("mousedown", (e) => {
-        e.preventDefault();
+      const select = (): void => {
         selected.push(input.value.trim());
         input.value = "";
         renderPills();
         showDropdown();
+      };
+      addOpt.dataset.selectIndex = String(optionActions.push(select) - 1);
+      addOpt.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        select();
       });
       dropdown.appendChild(addOpt);
     }
 
-    dropdown.style.display = (matches.length > 0 || dropdown.children.length > 0) ? "block" : "none";
+    const hasOptions = dropdown.children.length > 0;
+    dropdown.style.display = hasOptions ? "block" : "none";
+    if (!hasOptions) {
+      activeOptionIndex = -1;
+      selectActiveOption = null;
+      return;
+    }
+    updateActiveOption(activeOptionIndex >= 0 ? activeOptionIndex : 0);
   }
 
   input.addEventListener("focus", showDropdown);
   input.addEventListener("input", showDropdown);
-  input.addEventListener("blur", () => { dropdown.style.display = "none"; });
+  input.addEventListener("blur", () => {
+    dropdown.style.display = "none";
+    activeOptionIndex = -1;
+    selectActiveOption = null;
+  });
 
   // Backspace on empty input removes last pill
   input.addEventListener("keydown", (e) => {
@@ -714,12 +756,32 @@ function makeTagPicker(label: string, id: string): TagPicker {
       selected.pop();
       renderPills();
       showDropdown();
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      if (dropdown.children.length > 0) {
+        e.preventDefault();
+        updateActiveOption(activeOptionIndex + 1);
+      }
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      if (dropdown.children.length > 0) {
+        e.preventDefault();
+        updateActiveOption(activeOptionIndex - 1);
+      }
+      return;
     }
     // Enter commits typed text as new tag
     if (e.key === "Enter") {
-      e.preventDefault();
+      if (selectActiveOption) {
+        e.preventDefault();
+        selectActiveOption();
+        return;
+      }
       const val = input.value.trim();
       if (val && !selected.some(t => t.toLowerCase() === val.toLowerCase())) {
+        e.preventDefault();
         selected.push(val);
         input.value = "";
         renderPills();
@@ -1467,10 +1529,12 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return Boolean(el.closest("input, textarea, select, [contenteditable='true']"));
 }
 
-function getNavigationKey(e: KeyboardEvent): "next" | "prev" | null {
+function getShortcutAction(e: KeyboardEvent): "next" | "prev" | "today" | "add" | null {
   const key = e.key.toLowerCase();
   if (key === "n" || e.code === "KeyN" || e.keyCode === 78) return "next";
   if (key === "p" || e.code === "KeyP" || e.keyCode === 80) return "prev";
+  if (key === "t" || e.code === "KeyT" || e.keyCode === 84) return "today";
+  if (key === "a" || e.code === "KeyA" || e.keyCode === 65) return "add";
   return null;
 }
 
@@ -1487,13 +1551,19 @@ async function init(): Promise<void> {
       return;
     }
     if (e.altKey || e.ctrlKey || e.metaKey || isTypingTarget(e.target)) return;
-    const navKey = getNavigationKey(e);
-    if (navKey === "next") {
+    const action = getShortcutAction(e);
+    if (action === "next") {
       e.preventDefault();
       navigateWeek("next");
-    } else if (navKey === "prev") {
+    } else if (action === "prev") {
       e.preventDefault();
       navigateWeek("prev");
+    } else if (action === "today") {
+      e.preventDefault();
+      navigateWeek("today");
+    } else if (action === "add") {
+      e.preventDefault();
+      openAddPanel();
     }
   });
 

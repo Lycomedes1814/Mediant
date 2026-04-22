@@ -53,7 +53,7 @@ describe("main.ts integration", () => {
         "** TODO Rent",
         "DEADLINE: <2026-04-01 Wed +1w>",
         "",
-        "** TODO Yoga",
+        "** TODO Yoga :work:",
         "SCHEDULED: <2026-04-21 Tue 17:00 .+1w>",
         "Body line.",
         "",
@@ -91,6 +91,21 @@ describe("main.ts integration", () => {
     await flush();
     expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
 
+    keydownHandler!(makeKeydownEvent("n", document.body));
+    await flush();
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("27 April – 3 May 2026");
+
+    keydownHandler!(makeKeydownEvent("t", document.body));
+    await flush();
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
+
+    keydownHandler!(makeKeydownEvent("a", document.body));
+    await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
+    expect(document.querySelector<HTMLInputElement>("#add-title")?.value).toBe("");
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await flush();
+
     const deadlineTitle = document.querySelector<HTMLElement>(".deadlines-section .item-title[data-base-date='2026-04-22']");
     expect(deadlineTitle).not.toBeNull();
     deadlineTitle!.click();
@@ -106,6 +121,7 @@ describe("main.ts integration", () => {
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
 
     const titleInput = document.querySelector<HTMLInputElement>("#add-title");
+    const tagInput = document.querySelector<HTMLInputElement>("#add-tags");
     const schedInput = document.querySelector<HTMLInputElement>("#add-sched");
     const schedField = document.querySelector<HTMLInputElement>("#add-sched")?.closest(".add-field");
     const schedPreview = schedField?.querySelector<HTMLElement>(".datetime-preview");
@@ -116,6 +132,7 @@ describe("main.ts integration", () => {
     const checkboxSection = document.querySelector<HTMLElement>(".edit-checkboxes");
     const saveButton = document.querySelector<HTMLButtonElement>(".add-save-btn");
     expect(titleInput?.value).toBe("Yoga");
+    expect(tagInput).not.toBeNull();
     expect(schedInput?.value).toBe("21/04/2026 17:00");
     expect(schedPreview?.textContent).toBe("Tue 21 Apr 2026, 17:00");
     expect(saveButton?.textContent).toBe("Save");
@@ -127,6 +144,18 @@ describe("main.ts integration", () => {
     expect((schedRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
     expect((deadRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
     expect(checkboxSection?.style.display).toBe("none");
+
+    tagInput!.focus();
+    tagInput!.value = "wo";
+    tagInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    tagInput!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    tagInput!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+    await flush();
+
+    const selectedTags = Array.from(document.querySelectorAll<HTMLElement>(".tag-picker-pill span"))
+      .map(el => el.textContent)
+      .filter((text): text is string => Boolean(text));
+    expect(selectedTags).toContain("work");
 
     titleInput!.value = "Yoga deluxe";
     schedInput!.value = "2";
@@ -205,6 +234,7 @@ describe("main.ts integration", () => {
 
     const editedSource = localStorage.getItem("mediant-org-source") ?? "";
     expect(editedSource).toContain("** TODO Yoga deluxe");
+    expect(editedSource).toContain(":work:");
     expect(editedSource).toContain("DEADLINE: <2026-04-23 Thu 08:00 .+1m> SCHEDULED: <2026-04-22 Wed 19:15 ++1w>");
     expect(editedSource).toContain("Body line.");
 
@@ -339,8 +369,11 @@ describe("main.ts integration", () => {
     expect(typingTitleInput).not.toBeNull();
     typingTitleInput!.focus();
     keydownHandler!(makeKeydownEvent("n", typingTitleInput!));
+    keydownHandler!(makeKeydownEvent("t", typingTitleInput!));
+    keydownHandler!(makeKeydownEvent("a", typingTitleInput!));
     await flush();
     expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
+    expect(document.querySelector(".add-panel.is-open")).not.toBeNull();
   });
 
 });

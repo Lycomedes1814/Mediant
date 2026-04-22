@@ -1157,6 +1157,10 @@ body {
   background: var(--border);
 }
 
+.tag-picker-option.is-active {
+  background: var(--border);
+}
+
 .tag-picker-option-new {
   font-style: italic;
   opacity: 0.8;
