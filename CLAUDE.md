@@ -95,17 +95,19 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Tags** rendered as colored badge pills, right-aligned. Colors auto-assigned from a palette and persisted in localStorage (`mediant-tag-colors`).
 - **Tag filtering** — clicking a tag toggles it in the active filter set. Filtering applies to the 7-day agenda, overdue section, upcoming deadlines, and someday section. Multiple selected tags use AND semantics: an item must contain every selected tag to remain visible.
 - **Tag color mode** — explicit toolbar toggle that repurposes tag clicks from filtering to recoloring. `Alt`-click on a tag opens its color picker directly without changing mode.
+- **Tag picker keyboard support** — in the add/edit panel, `ArrowUp`/`ArrowDown` move through tag suggestions, `Enter` selects the highlighted suggestion, and `Backspace` on an empty tag field removes the last selected pill.
 - **Priority badges** — `[#A]`/`[#B]`/`[#C]` rendered as small colored badges (red/amber/blue) nested inside the item title so the row grid templates stay fixed
 - **Progress badges** — `[2/3]` rendered as a small badge next to the title (green when complete, gray otherwise)
-- **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under the agenda item; checked items dimmed with strikethrough
+- **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under the agenda item; checked items dimmed with strikethrough. The checklist editor is hidden in the add/edit panel whenever a repeater is active, because checklist state is not modeled per occurrence.
 - **Recurrence-exception chip** — shifted, rescheduled, or cancelled occurrences show a small muted chip (`shifted` / `moved` / `skipped`) nested in the title, with detail such as `+45m`, `from 2026-05-11 17:00-18:00`, or `Skipped occurrence` in the tooltip.
 - **Instance note** — `:EXCEPTION-NOTE-<date>:` renders as an italic one-liner directly under the occurrence, aligned with the row's title column.
 - **Now line** on today's card — orange line positioned proportionally within the timed section
 - **Navigation** — prev/next by 7-day increments, "Today" button returns to today as start date
-- **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open add-item panel, `c` toggle tag color mode. Disabled while focus is inside text inputs, textareas, selects, or other editable controls.
+- **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open add-item panel, `c` toggle tag color mode, `x` clear active tag filters. Disabled while focus is inside text inputs, textareas, selects, or other editable controls.
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE), sorted alphabetically
 - **Add-item panel** — slide-in panel for creating TODO tasks and events. Generates Org text and appends to the active source (server file or localStorage).
 - **Edit-item panel** — same slide-in panel, opened from a per-item edit button. Rewrites the existing Org block in place, preserving body lines. Shows interactive checkbox toggles for entries with checkbox items. When the clicked item is an occurrence of a repeating series, a **"This occurrence"** block appears alongside the **"Series"** fields, exposing Skip / Shift / Move / Save note / Clear actions that write `:EXCEPTION-<base>:` / `:EXCEPTION-NOTE-<base>:` via `upsertProperty` and `removeProperty`. The base date passed through from the click (`data-base-date` on the clicked title) is always the **unshifted** slot, so writes stay stable even after a reschedule moves the occurrence to a different day.
+- **Shorthand date input** — add/edit date fields accept `DD`, `DD/MM`, `DD/MM/YY`, `DD/MM/YYYY`, `+N`, and weekday names `mon`..`sun`. Ambiguous numeric forms resolve to the next future occurrence, and 2-digit years are interpreted in the current century.
 - **Org source persistence** — in static mode, the textarea content is saved to `localStorage` (`mediant-org-source`). In server mode, the source is the file passed to `mediant <file.org>` and localStorage is not used for it. All writes flow through `persistSource()` in `main.ts`, which dispatches to the active backend.
 
 ## Testing
