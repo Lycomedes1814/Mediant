@@ -127,6 +127,23 @@ describe("main.ts integration", () => {
     updatedTitle!.click();
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
 
+    const invalidSchedInput = document.querySelector<HTMLInputElement>("#add-sched");
+    const invalidSchedPreview = document.querySelector<HTMLElement>("#add-sched + .datetime-preview");
+    const invalidTitleInput = document.querySelector<HTMLInputElement>("#add-title");
+    const sourceBeforeInvalidSave = localStorage.getItem("mediant-org-source") ?? "";
+    expect(invalidSchedInput).not.toBeNull();
+    expect(invalidSchedPreview).not.toBeNull();
+    expect(invalidTitleInput).not.toBeNull();
+
+    invalidTitleInput!.value = "Yoga should not save";
+    invalidSchedInput!.value = "31/0";
+    invalidSchedInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(invalidSchedPreview?.textContent).toBe("");
+    saveButton!.click();
+    await flush();
+
+    expect(localStorage.getItem("mediant-org-source")).toBe(sourceBeforeInvalidSave);
+
     const occurrenceToggles = document.querySelectorAll<HTMLInputElement>(".occurrence-toggle-checkbox");
     const skipCheckbox = occurrenceToggles[0];
     const endSeriesCheckbox = occurrenceToggles[1];

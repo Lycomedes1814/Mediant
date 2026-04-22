@@ -710,13 +710,25 @@ function expandDate(raw: string): string {
     if (!Number.isFinite(d.getTime())) return "";
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   };
+  const validateDateParts = (year: number, month: number, day: number): string => {
+    if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return "";
+    if (month < 1 || month > 12 || day < 1 || day > 31) return "";
+    const candidate = new Date(year, month - 1, day);
+    if (!Number.isFinite(candidate.getTime())) return "";
+    if (
+      candidate.getFullYear() !== year
+      || candidate.getMonth() !== month - 1
+      || candidate.getDate() !== day
+    ) return "";
+    return fmt(candidate);
+  };
 
   const full = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (full) return `${full[3]}-${full[2].padStart(2, "0")}-${full[1].padStart(2, "0")}`;
+  if (full) return validateDateParts(Number(full[3]), Number(full[2]), Number(full[1]));
   const dm = raw.match(/^(\d{1,2})\/(\d{1,2})$/);
-  if (dm) return `${now.getFullYear()}-${dm[2].padStart(2, "0")}-${dm[1].padStart(2, "0")}`;
+  if (dm) return validateDateParts(now.getFullYear(), Number(dm[2]), Number(dm[1]));
   const d = raw.match(/^(\d{1,2})$/);
-  if (d) return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${d[1].padStart(2, "0")}`;
+  if (d) return validateDateParts(now.getFullYear(), now.getMonth() + 1, Number(d[1]));
 
   const plus = raw.match(/^\+(\d+)$/);
   if (plus) {
