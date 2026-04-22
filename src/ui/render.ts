@@ -372,13 +372,14 @@ function renderItem(
 function renderOverrideChip(
   override: { kind: "cancelled" | "shift" | "reschedule"; detail: string },
 ): HTMLElement {
-  const chip = el("span", `item-override-chip override-${override.kind}`);
+  const chipClass = override.kind === "cancelled"
+    ? "item-override-chip override-cancelled"
+    : "item-override-chip";
+  const chip = el("span", chipClass);
   chip.textContent =
     override.kind === "cancelled"
       ? "skipped"
-      : override.kind === "shift"
-        ? "shifted"
-        : "moved";
+      : "moved";
   chip.title = override.detail;
   chip.setAttribute("aria-label", `${chip.textContent} (${override.detail})`);
   return chip;

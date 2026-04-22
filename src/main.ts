@@ -90,7 +90,6 @@ interface AddPanelRefs {
   occurrencePreview: HTMLElement;
   noteTextarea: HTMLTextAreaElement;
   clearOverrideBtn: HTMLButtonElement;
-  clearNoteBtn: HTMLButtonElement;
 }
 let addPanelRefs: AddPanelRefs | null = null;
 
@@ -369,12 +368,7 @@ function buildAddPanel(): void {
     const text = noteTextarea.value.trim();
     if (text) applyNote(text); else clearException("note");
   });
-  const clearNoteBtn = document.createElement("button");
-  clearNoteBtn.type = "button";
-  clearNoteBtn.className = "occurrence-btn occurrence-btn-secondary";
-  clearNoteBtn.textContent = "Clear note";
-  clearNoteBtn.addEventListener("click", () => clearException("note"));
-  noteRow.append(saveNoteBtn, clearNoteBtn);
+  noteRow.append(saveNoteBtn);
   occurrenceSection.appendChild(noteRow);
 
   // Save button
@@ -489,7 +483,6 @@ function buildAddPanel(): void {
     occurrencePreview,
     noteTextarea,
     clearOverrideBtn,
-    clearNoteBtn,
   };
 }
 
@@ -1328,9 +1321,9 @@ function describeOverride(override: RecurrenceOverride, baseDate: string | null 
     const m = override.offsetMinutes;
     const sign = m >= 0 ? "+" : "-";
     const abs = Math.abs(m);
-    if (abs % 1440 === 0) return `Shifted ${sign}${abs / 1440}d`;
-    if (abs % 60 === 0) return `Shifted ${sign}${abs / 60}h`;
-    return `Shifted ${sign}${abs}m`;
+    if (abs % 1440 === 0) return `Moved ${sign}${abs / 1440}d`;
+    if (abs % 60 === 0) return `Moved ${sign}${abs / 60}h`;
+    return `Moved ${sign}${abs}m`;
   }
   // reschedule
   const sameDate = baseDate !== null && override.date === baseDate;
@@ -1380,7 +1373,6 @@ function refreshOccurrenceSection(): void {
   refs.endSeriesCheckbox.checked = isSeriesLast;
   refs.endSeriesCheckbox.disabled = nextBaseKey === null;
   refs.clearOverrideBtn.style.display = override ? "" : "none";
-  refs.clearNoteBtn.style.display = note ? "" : "none";
 
   // Only rewrite textarea when it doesn't match the stored note, so
   // in-progress typing doesn't get clobbered by refresh calls.

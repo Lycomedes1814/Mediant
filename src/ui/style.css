@@ -1423,7 +1423,13 @@ body {
 }
 
 .occurrence-btn-secondary {
-  color: var(--text-dim);
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg-card) 82%, var(--border-today) 18%);
+}
+
+.occurrence-btn-secondary:hover {
+  border-color: var(--border-today);
+  background: color-mix(in srgb, var(--bg-card) 70%, var(--border-today) 30%);
 }
 
 .occurrence-note {
