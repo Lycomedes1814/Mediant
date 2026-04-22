@@ -795,13 +795,34 @@ function expandDate(raw: string): string {
     ) return "";
     return fmt(candidate);
   };
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const full = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (full) return validateDateParts(Number(full[3]), Number(full[2]), Number(full[1]));
   const dm = raw.match(/^(\d{1,2})\/(\d{1,2})$/);
-  if (dm) return validateDateParts(now.getFullYear(), Number(dm[2]), Number(dm[1]));
+  if (dm) {
+    const day = Number(dm[1]);
+    const month = Number(dm[2]);
+    const thisYear = validateDateParts(now.getFullYear(), month, day);
+    if (thisYear) {
+      const [year, candidateMonth, date] = thisYear.split("-").map(Number);
+      const candidate = new Date(year, candidateMonth - 1, date);
+      if (candidate >= today) return thisYear;
+    }
+    return validateDateParts(now.getFullYear() + 1, month, day);
+  }
   const d = raw.match(/^(\d{1,2})$/);
-  if (d) return validateDateParts(now.getFullYear(), now.getMonth() + 1, Number(d[1]));
+  if (d) {
+    const day = Number(d[1]);
+    const thisMonth = validateDateParts(now.getFullYear(), now.getMonth() + 1, day);
+    if (thisMonth) {
+      const [year, month, date] = thisMonth.split("-").map(Number);
+      const candidate = new Date(year, month - 1, date);
+      if (candidate >= today) return thisMonth;
+    }
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return validateDateParts(nextMonth.getFullYear(), nextMonth.getMonth() + 1, day);
+  }
 
   const plus = raw.match(/^\+(\d+)$/);
   if (plus) {

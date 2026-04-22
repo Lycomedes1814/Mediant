@@ -129,7 +129,19 @@ describe("main.ts integration", () => {
     titleInput!.value = "Yoga deluxe";
     schedInput!.value = "2";
     schedInput!.dispatchEvent(new Event("input", { bubbles: true }));
-    expect(schedPreview?.textContent).toBe("Thu 2 Apr 2026, all day");
+    expect(schedPreview?.textContent).toBe("Sat 2 May 2026, all day");
+
+    deadInput!.value = "5";
+    deadInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(document.querySelector<HTMLElement>("#add-dead")?.closest(".add-field")?.querySelector(".datetime-preview")?.textContent)
+      .toBe("Tue 5 May 2026, all day");
+    expect(deadRepeatSelect?.closest(".add-field")).not.toBeNull();
+    expect((deadRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
+
+    deadInput!.value = "5/3";
+    deadInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(document.querySelector<HTMLElement>("#add-dead")?.closest(".add-field")?.querySelector(".datetime-preview")?.textContent)
+      .toBe("Fri 5 Mar 2027, all day");
 
     schedInput!.value = "21/";
     schedInput!.dispatchEvent(new Event("input", { bubbles: true }));
