@@ -75,6 +75,8 @@ interface AddPanelRefs {
   deadTimePicker: HTMLInputElement;
   tagPicker: TagPicker;
   repeatSelect: HTMLSelectElement;
+  schedRepeatSelect: HTMLSelectElement;
+  deadRepeatSelect: HTMLSelectElement;
   checkboxSection: HTMLElement;
   syncVisibility: () => void;
   occurrenceSection: HTMLElement;
@@ -92,6 +94,24 @@ interface AddPanelRefs {
 let addPanelRefs: AddPanelRefs | null = null;
 
 const DAY_ABBREVS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const EVENT_REPEAT_OPTIONS = [
+  { value: "", label: "None" },
+  { value: "+1d", label: "Every day (+1d)" },
+  { value: "+1w", label: "Every week (+1w)" },
+  { value: "+2w", label: "Every 2 weeks (+2w)" },
+  { value: "+1m", label: "Every month (+1m)" },
+  { value: "+1y", label: "Every year (+1y)" },
+ ] as const;
+
+const TODO_REPEAT_OPTIONS = [
+  ...EVENT_REPEAT_OPTIONS,
+  { value: "++1d", label: "Next future day (++1d)" },
+  { value: "++1w", label: "Next future week (++1w)" },
+  { value: "++1m", label: "Next future month (++1m)" },
+  { value: ".+1d", label: "1 day from done (.+1d)" },
+  { value: ".+1w", label: "1 week from done (.+1w)" },
+  { value: ".+1m", label: "1 month from done (.+1m)" },
+] as const;
 
 function buildAddPanel(): void {
   addOverlayEl = document.createElement("div");
@@ -165,15 +185,14 @@ function buildAddPanel(): void {
   form.appendChild(deadInput.container);
 
   // Repeat (event only)
-  const repeatSelect = makeSelect("Repeat", "add-repeat", [
-    { value: "", label: "None" },
-    { value: "+1d", label: "Daily" },
-    { value: "+1w", label: "Weekly" },
-    { value: "+2w", label: "Every 2 weeks" },
-    { value: "+1m", label: "Monthly" },
-    { value: "+1y", label: "Yearly" },
-  ]);
+  const repeatSelect = makeSelect("Repeat", "add-repeat", [...EVENT_REPEAT_OPTIONS]);
   form.appendChild(repeatSelect.container);
+
+  const schedRepeatSelect = makeSelect("Scheduled repeat", "add-sched-repeat", [...TODO_REPEAT_OPTIONS]);
+  form.appendChild(schedRepeatSelect.container);
+
+  const deadRepeatSelect = makeSelect("Deadline repeat", "add-dead-repeat", [...TODO_REPEAT_OPTIONS]);
+  form.appendChild(deadRepeatSelect.container);
 
   // Tags
   const tagPicker = makeTagPicker("Tags", "add-tags");
@@ -186,7 +205,9 @@ function buildAddPanel(): void {
     whenInput.container.style.display = isTodo ? "none" : "";
     repeatSelect.container.style.display = isTodo ? "none" : "";
     schedInput.container.style.display = isTodo ? "" : "none";
+    schedRepeatSelect.container.style.display = isTodo ? "" : "none";
     deadInput.container.style.display = isTodo ? "" : "none";
+    deadRepeatSelect.container.style.display = isTodo ? "" : "none";
     updateDateTimePreview(whenInput.input, whenInput.preview);
     updateDateTimePreview(schedInput.input, schedInput.preview);
     updateDateTimePreview(deadInput.input, deadInput.preview);
@@ -343,8 +364,8 @@ function buildAddPanel(): void {
         type: "todo", level: editingLevel, heading, tags: tagsVal,
         todoState: editingTodoState,
         priority: editingPriority, progress: editingProgress,
-        schedDate: s.date, schedTime: s.time, schedRepeater: editingSchedRepeater,
-        deadDate: d.date, deadTime: d.time, deadRepeater: editingDeadRepeater,
+        schedDate: s.date, schedTime: s.time, schedRepeater: schedRepeatSelect.select.value || null,
+        deadDate: d.date, deadTime: d.time, deadRepeater: deadRepeatSelect.select.value || null,
         checkboxItems: cbItems,
       });
     }
@@ -395,6 +416,8 @@ function buildAddPanel(): void {
     deadTimePicker: deadInput.timePicker,
     tagPicker,
     repeatSelect: repeatSelect.select,
+    schedRepeatSelect: schedRepeatSelect.select,
+    deadRepeatSelect: deadRepeatSelect.select,
     checkboxSection,
     syncVisibility,
     occurrenceSection,
@@ -1003,6 +1026,12 @@ function buildOrgText(opts: BuildOrgOpts): string {
   return lines.join("\n");
 }
 
+function formatRepeaterValue(
+  repeater: { mark: "+" | ".+" | "++"; value: number; unit: "d" | "w" | "m" | "y" } | null | undefined,
+): string {
+  return repeater ? `${repeater.mark}${repeater.value}${repeater.unit}` : "";
+}
+
 function replaceOrgBlock(sourceLine: number, newText: string): void {
   const updated = replaceOrgBlockInSource(currentSource, sourceLine, newText);
   void persistSource(updated);
@@ -1050,6 +1079,8 @@ function openAddPanel(): void {
   syncPickersFromText(refs.deadInput, refs.deadDatePicker, refs.deadTimePicker);
   refs.tagPicker.setTags([]);
   refs.repeatSelect.value = "";
+  refs.schedRepeatSelect.value = "";
+  refs.deadRepeatSelect.value = "";
   rebuildCheckboxUI(refs.checkboxSection);
   const todoRadio = refs.typeGroup.querySelector<HTMLInputElement>("input[value='todo']");
   if (todoRadio) todoRadio.checked = true;
@@ -1108,6 +1139,8 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   refs.schedInput.value = "";
   refs.deadInput.value = "";
   refs.repeatSelect.value = "";
+  refs.schedRepeatSelect.value = "";
+  refs.deadRepeatSelect.value = "";
   editingSchedRepeater = null;
   editingDeadRepeater = null;
 
@@ -1115,20 +1148,22 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
     const ts = entry.timestamps[0] ?? null;
     if (ts) {
       refs.whenInput.value = tsToDateTimeDisplay(ts);
-      refs.repeatSelect.value = ts.repeater ? `+${ts.repeater.value}${ts.repeater.unit}` : "";
+      refs.repeatSelect.value = formatRepeaterValue(ts.repeater);
     }
   } else {
     const sched = entry.planning.find(p => p.kind === "scheduled");
     const deadline = entry.planning.find(p => p.kind === "deadline");
     if (sched) {
       refs.schedInput.value = tsToDateTimeDisplay(sched.timestamp);
+      refs.schedRepeatSelect.value = formatRepeaterValue(sched.timestamp.repeater);
       editingSchedRepeater = sched.timestamp.repeater
-        ? `+${sched.timestamp.repeater.value}${sched.timestamp.repeater.unit}` : null;
+        ? formatRepeaterValue(sched.timestamp.repeater) : null;
     }
     if (deadline) {
       refs.deadInput.value = tsToDateTimeDisplay(deadline.timestamp);
+      refs.deadRepeatSelect.value = formatRepeaterValue(deadline.timestamp.repeater);
       editingDeadRepeater = deadline.timestamp.repeater
-        ? `+${deadline.timestamp.repeater.value}${deadline.timestamp.repeater.unit}` : null;
+        ? formatRepeaterValue(deadline.timestamp.repeater) : null;
     }
   }
 

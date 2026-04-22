@@ -5,6 +5,12 @@ import {
   replaceOrgBlockInSource,
   toggleDoneInSource,
 } from "../sourceEdit.ts";
+import { beforeEach, vi } from "vitest";
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(2026, 3, 22, 10, 0, 0));
+});
 
 describe("replaceOrgBlockInSource", () => {
   it("replaces planning fields while preserving body text", () => {
@@ -98,7 +104,7 @@ describe("replaceOrgBlockInSource", () => {
 });
 
 describe("toggleDoneInSource", () => {
-  it("flips TODO to DONE without touching the rest of the block", () => {
+  it("flips TODO to DONE without touching the rest of the block for non-repeating items", () => {
     const source =
       "** TODO Task :work:\n" +
       "SCHEDULED: <2026-04-07 ti.>\n" +
@@ -108,6 +114,50 @@ describe("toggleDoneInSource", () => {
       "** DONE Task :work:\n" +
       "SCHEDULED: <2026-04-07 ti.>\n" +
       "Body.\n",
+    );
+  });
+
+  it("advances + repeaters by exactly one interval and keeps TODO", () => {
+    const source =
+      "** TODO Rent\n" +
+      "DEADLINE: <2026-04-01 Wed +1m>\n";
+
+    expect(toggleDoneInSource(source, 1)).toBe(
+      "** TODO Rent\n" +
+      "DEADLINE: <2026-05-01 Fri +1m>\n",
+    );
+  });
+
+  it("advances ++ repeaters until they land in the future", () => {
+    const source =
+      "** TODO Call Father\n" +
+      "DEADLINE: <2026-04-01 Wed ++1w>\n";
+
+    expect(toggleDoneInSource(source, 1)).toBe(
+      "** TODO Call Father\n" +
+      "DEADLINE: <2026-04-29 Wed ++1w>\n",
+    );
+  });
+
+  it("advances .+ repeaters from today", () => {
+    const source =
+      "** TODO Batteries\n" +
+      "DEADLINE: <2026-04-01 Wed .+1m>\n";
+
+    expect(toggleDoneInSource(source, 1)).toBe(
+      "** TODO Batteries\n" +
+      "DEADLINE: <2026-05-22 Fri .+1m>\n",
+    );
+  });
+
+  it("uses the current time for timed ++ repeaters", () => {
+    const source =
+      "** TODO Trash\n" +
+      "DEADLINE: <2026-04-08 Wed 20:00 ++1d>\n";
+
+    expect(toggleDoneInSource(source, 1)).toBe(
+      "** TODO Trash\n" +
+      "DEADLINE: <2026-04-22 Wed 20:00 ++1d>\n",
     );
   });
 

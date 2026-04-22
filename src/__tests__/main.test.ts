@@ -47,8 +47,11 @@ describe("main.ts integration", () => {
     localStorage.setItem(
       "mediant-org-source",
       [
+        "** TODO Inbox",
+        "SCHEDULED: <2026-04-20 Mon>",
+        "",
         "** TODO Yoga",
-        "SCHEDULED: <2026-04-20 Mon 17:00 +1w>",
+        "SCHEDULED: <2026-04-21 Tue 17:00 .+1w>",
         "Body line.",
         "",
       ].join("\n"),
@@ -68,7 +71,9 @@ describe("main.ts integration", () => {
     expect(toggle?.textContent).toBe("TODO");
     toggle!.click();
     await flush();
-    expect(localStorage.getItem("mediant-org-source")).toContain("** DONE Yoga");
+    const toggledSource = localStorage.getItem("mediant-org-source") ?? "";
+    expect(toggledSource).toContain("** DONE Inbox");
+    expect(toggledSource).toContain("** TODO Yoga");
 
     expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
     expect(keydownHandler).not.toBeNull();
@@ -81,7 +86,7 @@ describe("main.ts integration", () => {
     await flush();
     expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
 
-    const title = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-20']");
+    const title = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-21']");
     expect(title).not.toBeNull();
     title!.click();
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
@@ -91,14 +96,19 @@ describe("main.ts integration", () => {
     const schedField = document.querySelector<HTMLInputElement>("#add-sched")?.closest(".add-field");
     const schedPreview = schedField?.querySelector<HTMLElement>(".datetime-preview");
     const schedPickerToggle = schedField?.querySelector<HTMLButtonElement>(".datetime-picker-toggle");
+    const schedRepeatSelect = document.querySelector<HTMLSelectElement>("#add-sched-repeat");
+    const deadRepeatSelect = document.querySelector<HTMLSelectElement>("#add-dead-repeat");
+    const deadInput = document.querySelector<HTMLInputElement>("#add-dead");
     const saveButton = document.querySelector<HTMLButtonElement>(".add-save-btn");
     expect(titleInput?.value).toBe("Yoga");
-    expect(schedInput?.value).toBe("20/04/2026 17:00");
-    expect(schedPreview?.textContent).toBe("Mon 20 Apr 2026, 17:00");
+    expect(schedInput?.value).toBe("21/04/2026 17:00");
+    expect(schedPreview?.textContent).toBe("Tue 21 Apr 2026, 17:00");
     expect(saveButton?.textContent).toBe("Save");
-    expect(schedField?.querySelector<HTMLInputElement>(".datetime-picker-popover input[type='date']")?.value).toBe("2026-04-20");
+    expect(schedField?.querySelector<HTMLInputElement>(".datetime-picker-popover input[type='date']")?.value).toBe("2026-04-21");
     expect(schedField?.querySelector<HTMLInputElement>(".datetime-picker-popover input[type='time']")?.value).toBe("17:00");
     expect(schedPickerToggle).not.toBeNull();
+    expect(schedRepeatSelect?.value).toBe(".+1w");
+    expect(deadRepeatSelect?.value).toBe("");
 
     titleInput!.value = "Yoga deluxe";
     schedInput!.value = "2";
@@ -132,12 +142,18 @@ describe("main.ts integration", () => {
     schedTimePicker!.dispatchEvent(new Event("input", { bubbles: true }));
     expect(schedInput!.value).toBe("22/04/2026 19:15");
     expect(schedPreview?.textContent).toBe("Wed 22 Apr 2026, 19:15");
+    schedRepeatSelect!.value = "++1w";
+    schedRepeatSelect!.dispatchEvent(new Event("change", { bubbles: true }));
+    deadInput!.value = "23/04/2026 08:00";
+    deadInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    deadRepeatSelect!.value = ".+1m";
+    deadRepeatSelect!.dispatchEvent(new Event("change", { bubbles: true }));
     saveButton!.click();
     await flush();
 
     const editedSource = localStorage.getItem("mediant-org-source") ?? "";
-    expect(editedSource).toContain("** DONE Yoga deluxe");
-    expect(editedSource).toContain("SCHEDULED: <2026-04-22 Wed 19:15 +1w>");
+    expect(editedSource).toContain("** TODO Yoga deluxe");
+    expect(editedSource).toContain("DEADLINE: <2026-04-23 Thu 08:00 .+1m> SCHEDULED: <2026-04-22 Wed 19:15 ++1w>");
     expect(editedSource).toContain("Body line.");
 
     const updatedTitle = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-22']");
