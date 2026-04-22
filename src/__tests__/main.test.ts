@@ -88,12 +88,17 @@ describe("main.ts integration", () => {
 
     const titleInput = document.querySelector<HTMLInputElement>("#add-title");
     const schedInput = document.querySelector<HTMLInputElement>("#add-sched");
-    const schedPreview = document.querySelector<HTMLElement>("#add-sched + .datetime-preview");
+    const schedField = document.querySelector<HTMLInputElement>("#add-sched")?.closest(".add-field");
+    const schedPreview = schedField?.querySelector<HTMLElement>(".datetime-preview");
+    const schedPickerToggle = schedField?.querySelector<HTMLButtonElement>(".datetime-picker-toggle");
     const saveButton = document.querySelector<HTMLButtonElement>(".add-save-btn");
     expect(titleInput?.value).toBe("Yoga");
     expect(schedInput?.value).toBe("20/04/2026 17:00");
     expect(schedPreview?.textContent).toBe("Mon 20 Apr 2026, 17:00");
     expect(saveButton?.textContent).toBe("Save");
+    expect(schedField?.querySelector<HTMLInputElement>(".datetime-picker-popover input[type='date']")?.value).toBe("2026-04-20");
+    expect(schedField?.querySelector<HTMLInputElement>(".datetime-picker-popover input[type='time']")?.value).toBe("17:00");
+    expect(schedPickerToggle).not.toBeNull();
 
     titleInput!.value = "Yoga deluxe";
     schedInput!.value = "2";
@@ -114,21 +119,35 @@ describe("main.ts integration", () => {
     schedInput!.dispatchEvent(new Event("input", { bubbles: true }));
     expect(schedPreview?.textContent).toBe("Tue 21 Apr 2026, 18:30");
     expect(schedPreview?.classList.contains("is-visible")).toBe(true);
+
+    const schedDatePicker = schedField?.querySelector<HTMLInputElement>(".datetime-picker-popover input[type='date']");
+    const schedTimePicker = schedField?.querySelector<HTMLInputElement>(".datetime-picker-popover input[type='time']");
+    expect(schedDatePicker).not.toBeNull();
+    expect(schedTimePicker).not.toBeNull();
+    schedPickerToggle!.click();
+    expect(schedField?.querySelector<HTMLElement>(".datetime-picker-popover")?.classList.contains("is-open")).toBe(true);
+    schedDatePicker!.value = "2026-04-22";
+    schedDatePicker!.dispatchEvent(new Event("input", { bubbles: true }));
+    schedTimePicker!.value = "19:15";
+    schedTimePicker!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(schedInput!.value).toBe("22/04/2026 19:15");
+    expect(schedPreview?.textContent).toBe("Wed 22 Apr 2026, 19:15");
     saveButton!.click();
     await flush();
 
     const editedSource = localStorage.getItem("mediant-org-source") ?? "";
     expect(editedSource).toContain("** DONE Yoga deluxe");
-    expect(editedSource).toContain("SCHEDULED: <2026-04-21 Tue 18:30 +1w>");
+    expect(editedSource).toContain("SCHEDULED: <2026-04-22 Wed 19:15 +1w>");
     expect(editedSource).toContain("Body line.");
 
-    const updatedTitle = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-21']");
+    const updatedTitle = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-22']");
     expect(updatedTitle).not.toBeNull();
     updatedTitle!.click();
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
 
     const invalidSchedInput = document.querySelector<HTMLInputElement>("#add-sched");
-    const invalidSchedPreview = document.querySelector<HTMLElement>("#add-sched + .datetime-preview");
+    const invalidSchedField = document.querySelector<HTMLInputElement>("#add-sched")?.closest(".add-field");
+    const invalidSchedPreview = invalidSchedField?.querySelector<HTMLElement>(".datetime-preview");
     const invalidTitleInput = document.querySelector<HTMLInputElement>("#add-title");
     const sourceBeforeInvalidSave = localStorage.getItem("mediant-org-source") ?? "";
     expect(invalidSchedInput).not.toBeNull();
@@ -166,33 +185,33 @@ describe("main.ts integration", () => {
     await flush();
 
     let sourceWithShift = localStorage.getItem("mediant-org-source") ?? "";
-    expect(sourceWithShift).toContain(":EXCEPTION-2026-04-21: shift +45m");
+    expect(sourceWithShift).toContain(":EXCEPTION-2026-04-22: shift +45m");
 
     clearOverrideButton!.click();
     await flush();
 
     sourceWithShift = localStorage.getItem("mediant-org-source") ?? "";
-    expect(sourceWithShift).not.toContain(":EXCEPTION-2026-04-21: shift +45m");
+    expect(sourceWithShift).not.toContain(":EXCEPTION-2026-04-22: shift +45m");
 
     occurrenceInput!.value = "29/04/2026 18:00";
     applyOverrideButton!.click();
     await flush();
 
     let sourceWithMove = localStorage.getItem("mediant-org-source") ?? "";
-    expect(sourceWithMove).toContain(":EXCEPTION-2026-04-21: reschedule 2026-04-29 18:00");
+    expect(sourceWithMove).toContain(":EXCEPTION-2026-04-22: reschedule 2026-04-29 18:00");
 
     clearOverrideButton!.click();
     await flush();
 
     sourceWithMove = localStorage.getItem("mediant-org-source") ?? "";
-    expect(sourceWithMove).not.toContain(":EXCEPTION-2026-04-21: reschedule 2026-04-29 18:00");
+    expect(sourceWithMove).not.toContain(":EXCEPTION-2026-04-22: reschedule 2026-04-29 18:00");
 
     occurrenceInput!.value = "18:30-21:15";
     applyOverrideButton!.click();
     await flush();
 
     const sourceWithSameDayTimeRange = localStorage.getItem("mediant-org-source") ?? "";
-    expect(sourceWithSameDayTimeRange).toContain(":EXCEPTION-2026-04-21: reschedule 2026-04-21 18:30-21:15");
+    expect(sourceWithSameDayTimeRange).toContain(":EXCEPTION-2026-04-22: reschedule 2026-04-22 18:30-21:15");
     expect(document.querySelector<HTMLElement>(".occurrence-state")?.textContent).toBe("Moved to 18:30–21:15");
 
     clearOverrideButton!.click();
@@ -203,7 +222,7 @@ describe("main.ts integration", () => {
     await flush();
 
     let sourceWithSeriesEnd = localStorage.getItem("mediant-org-source") ?? "";
-    expect(sourceWithSeriesEnd).toContain(":SERIES-UNTIL: 2026-04-28");
+    expect(sourceWithSeriesEnd).toContain(":SERIES-UNTIL: 2026-04-29");
 
     endSeriesCheckbox!.checked = false;
     endSeriesCheckbox!.dispatchEvent(new Event("change", { bubbles: true }));
@@ -218,22 +237,22 @@ describe("main.ts integration", () => {
     await flush();
 
     let sourceWithSkip = localStorage.getItem("mediant-org-source") ?? "";
-    expect(sourceWithSkip).toContain(":EXCEPTION-2026-04-21: cancelled");
+    expect(sourceWithSkip).toContain(":EXCEPTION-2026-04-22: cancelled");
 
     skipCheckbox.checked = false;
     skipCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
     await flush();
 
     sourceWithSkip = localStorage.getItem("mediant-org-source") ?? "";
-    expect(sourceWithSkip).not.toContain(":EXCEPTION-2026-04-21: cancelled");
+    expect(sourceWithSkip).not.toContain(":EXCEPTION-2026-04-22: cancelled");
 
     skipCheckbox.checked = true;
     skipCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
     await flush();
 
     const finalSource = localStorage.getItem("mediant-org-source") ?? "";
-    expect(finalSource).toContain(":PROPERTIES:\n:EXCEPTION-2026-04-21: cancelled\n:END:");
-    const skippedTitle = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-21']");
+    expect(finalSource).toContain(":PROPERTIES:\n:EXCEPTION-2026-04-22: cancelled\n:END:");
+    const skippedTitle = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-22']");
     expect(skippedTitle).not.toBeNull();
     expect(skippedTitle?.textContent).toContain("Yoga deluxe");
     const skippedRow = skippedTitle?.closest(".item-skipped");

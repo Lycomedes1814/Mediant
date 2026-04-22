@@ -63,10 +63,16 @@ interface AddPanelRefs {
   titleInput: HTMLInputElement;
   whenInput: HTMLInputElement;
   whenPreview: HTMLElement;
+  whenDatePicker: HTMLInputElement;
+  whenTimePicker: HTMLInputElement;
   schedInput: HTMLInputElement;
   schedPreview: HTMLElement;
+  schedDatePicker: HTMLInputElement;
+  schedTimePicker: HTMLInputElement;
   deadInput: HTMLInputElement;
   deadPreview: HTMLElement;
+  deadDatePicker: HTMLInputElement;
+  deadTimePicker: HTMLInputElement;
   tagPicker: TagPicker;
   repeatSelect: HTMLSelectElement;
   checkboxSection: HTMLElement;
@@ -191,6 +197,15 @@ function buildAddPanel(): void {
   whenInput.input.addEventListener("input", () => updateDateTimePreview(whenInput.input, whenInput.preview));
   schedInput.input.addEventListener("input", () => updateDateTimePreview(schedInput.input, schedInput.preview));
   deadInput.input.addEventListener("input", () => updateDateTimePreview(deadInput.input, deadInput.preview));
+  whenInput.input.addEventListener("input", () => syncPickersFromText(whenInput.input, whenInput.datePicker, whenInput.timePicker));
+  schedInput.input.addEventListener("input", () => syncPickersFromText(schedInput.input, schedInput.datePicker, schedInput.timePicker));
+  deadInput.input.addEventListener("input", () => syncPickersFromText(deadInput.input, deadInput.datePicker, deadInput.timePicker));
+  whenInput.datePicker.addEventListener("input", () => syncTextFromPickers(whenInput.input, whenInput.preview, whenInput.datePicker, whenInput.timePicker));
+  whenInput.timePicker.addEventListener("input", () => syncTextFromPickers(whenInput.input, whenInput.preview, whenInput.datePicker, whenInput.timePicker));
+  schedInput.datePicker.addEventListener("input", () => syncTextFromPickers(schedInput.input, schedInput.preview, schedInput.datePicker, schedInput.timePicker));
+  schedInput.timePicker.addEventListener("input", () => syncTextFromPickers(schedInput.input, schedInput.preview, schedInput.datePicker, schedInput.timePicker));
+  deadInput.datePicker.addEventListener("input", () => syncTextFromPickers(deadInput.input, deadInput.preview, deadInput.datePicker, deadInput.timePicker));
+  deadInput.timePicker.addEventListener("input", () => syncTextFromPickers(deadInput.input, deadInput.preview, deadInput.datePicker, deadInput.timePicker));
 
   // Checkbox section
   const checkboxSection = document.createElement("div");
@@ -368,10 +383,16 @@ function buildAddPanel(): void {
     titleInput: titleInput.input,
     whenInput: whenInput.input,
     whenPreview: whenInput.preview,
+    whenDatePicker: whenInput.datePicker,
+    whenTimePicker: whenInput.timePicker,
     schedInput: schedInput.input,
     schedPreview: schedInput.preview,
+    schedDatePicker: schedInput.datePicker,
+    schedTimePicker: schedInput.timePicker,
     deadInput: deadInput.input,
     deadPreview: deadInput.preview,
+    deadDatePicker: deadInput.datePicker,
+    deadTimePicker: deadInput.timePicker,
     tagPicker,
     repeatSelect: repeatSelect.select,
     checkboxSection,
@@ -746,7 +767,10 @@ function expandDate(raw: string): string {
   return "";
 }
 
-function makeDateTimeInput(label: string, id: string): { container: HTMLElement; input: HTMLInputElement; preview: HTMLElement } {
+function makeDateTimeInput(
+  label: string,
+  id: string,
+): { container: HTMLElement; input: HTMLInputElement; preview: HTMLElement; datePicker: HTMLInputElement; timePicker: HTMLInputElement } {
   const container = document.createElement("div");
   container.className = "add-field";
 
@@ -758,13 +782,61 @@ function makeDateTimeInput(label: string, id: string): { container: HTMLElement;
   const input = document.createElement("input");
   input.type = "text";
   input.id = id;
-  input.className = "add-input";
+  input.className = "add-input datetime-text-input";
+
+  const inputWrap = document.createElement("div");
+  inputWrap.className = "datetime-input-wrap";
+
+  const toggleBtn = document.createElement("button");
+  toggleBtn.type = "button";
+  toggleBtn.className = "datetime-picker-toggle";
+  toggleBtn.setAttribute("aria-label", `Open ${label.toLowerCase()} picker`);
+  toggleBtn.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.5a.75.75 0 0 1 1.5 0V3h5V1.5a.75.75 0 0 1 1.5 0V3h.75A2.25 2.25 0 0 1 15 5.25v7.5A2.25 2.25 0 0 1 12.75 15h-9.5A2.25 2.25 0 0 1 1 12.75v-7.5A2.25 2.25 0 0 1 3.25 3H4V1.5ZM2.5 6v6.75c0 .414.336.75.75.75h9.5a.75.75 0 0 0 .75-.75V6h-11Z"/></svg>`;
+
+  const pickerPopover = document.createElement("div");
+  pickerPopover.className = "datetime-picker-popover";
+
+  const datePicker = document.createElement("input");
+  datePicker.type = "date";
+  datePicker.className = "add-input datetime-picker-input";
+
+  const timePicker = document.createElement("input");
+  timePicker.type = "time";
+  timePicker.className = "add-input datetime-picker-input";
+  timePicker.step = "60";
+
+  pickerPopover.append(datePicker, timePicker);
+
+  const closePopover = (): void => {
+    pickerPopover.classList.remove("is-open");
+    toggleBtn.classList.remove("is-open");
+  };
+  toggleBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    const willOpen = !pickerPopover.classList.contains("is-open");
+    document.querySelectorAll<HTMLElement>(".datetime-picker-popover.is-open")
+      .forEach(pop => pop.classList.remove("is-open"));
+    document.querySelectorAll<HTMLElement>(".datetime-picker-toggle.is-open")
+      .forEach(btn => btn.classList.remove("is-open"));
+    if (willOpen) {
+      pickerPopover.classList.add("is-open");
+      toggleBtn.classList.add("is-open");
+    }
+  });
+  document.addEventListener("click", (e) => {
+    if (!(e.target instanceof Node) || inputWrap.contains(e.target)) return;
+    closePopover();
+  });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closePopover();
+  });
 
   const preview = document.createElement("div");
   preview.className = "datetime-preview";
 
-  container.append(lbl, input, preview);
-  return { container, input, preview };
+  inputWrap.append(input, toggleBtn, pickerPopover);
+  container.append(lbl, inputWrap, preview);
+  return { container, input, preview, datePicker, timePicker };
 }
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(-([01]\d|2[0-3]):[0-5]\d)?$/;
@@ -826,6 +898,37 @@ function updateDateTimePreview(input: HTMLInputElement, preview: HTMLElement, fa
   const text = formatDateTimePreview(input.value, fallbackDate);
   preview.textContent = text;
   preview.classList.toggle("is-visible", text !== "");
+}
+
+function splitDateTimeForPickers(raw: string): { date: string; time: string } {
+  const parsed = parseDateTime(raw);
+  if (!parsed?.date) return { date: "", time: "" };
+  return {
+    date: parsed.date,
+    time: TIME_RE.test(parsed.time) && !parsed.time.includes("-") ? parsed.time : "",
+  };
+}
+
+function syncPickersFromText(
+  input: HTMLInputElement,
+  datePicker: HTMLInputElement,
+  timePicker: HTMLInputElement,
+): void {
+  const parts = splitDateTimeForPickers(input.value.trim());
+  datePicker.value = parts.date;
+  timePicker.value = parts.time;
+}
+
+function syncTextFromPickers(
+  input: HTMLInputElement,
+  preview: HTMLElement,
+  datePicker: HTMLInputElement,
+  timePicker: HTMLInputElement,
+): void {
+  const date = datePicker.value.trim();
+  const time = timePicker.value.trim();
+  input.value = date ? (time ? `${isoToDisplayDate(date)} ${time}` : isoToDisplayDate(date)) : "";
+  updateDateTimePreview(input, preview);
 }
 
 function parseOccurrenceOverrideInput(raw: string, baseDate: string | null): string | null {
@@ -942,6 +1045,9 @@ function openAddPanel(): void {
   updateDateTimePreview(refs.whenInput, refs.whenPreview);
   updateDateTimePreview(refs.schedInput, refs.schedPreview);
   updateDateTimePreview(refs.deadInput, refs.deadPreview);
+  syncPickersFromText(refs.whenInput, refs.whenDatePicker, refs.whenTimePicker);
+  syncPickersFromText(refs.schedInput, refs.schedDatePicker, refs.schedTimePicker);
+  syncPickersFromText(refs.deadInput, refs.deadDatePicker, refs.deadTimePicker);
   refs.tagPicker.setTags([]);
   refs.repeatSelect.value = "";
   rebuildCheckboxUI(refs.checkboxSection);
@@ -1029,6 +1135,9 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   updateDateTimePreview(refs.whenInput, refs.whenPreview);
   updateDateTimePreview(refs.schedInput, refs.schedPreview);
   updateDateTimePreview(refs.deadInput, refs.deadPreview);
+  syncPickersFromText(refs.whenInput, refs.whenDatePicker, refs.whenTimePicker);
+  syncPickersFromText(refs.schedInput, refs.schedDatePicker, refs.schedTimePicker);
+  syncPickersFromText(refs.deadInput, refs.deadDatePicker, refs.deadTimePicker);
 
   // Populate checkbox items
   editingCheckboxItems = entry.checkboxItems.map(ci => ({ text: ci.text, checked: ci.checked }));
