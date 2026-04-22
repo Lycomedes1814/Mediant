@@ -331,7 +331,7 @@ function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
 function renderItem(
   item: AgendaItem,
   className: string,
-  badge?: HTMLElement,
+  badge?: HTMLElement | HTMLElement[],
   showTime?: "always" | "optional",
 ): HTMLElement {
   const row = el("div", className);
@@ -352,7 +352,8 @@ function renderItem(
   }
 
   if (badge) {
-    children.push(badge);
+    if (Array.isArray(badge)) children.push(...badge);
+    else children.push(badge);
   } else if (item.entry.todo) {
     row.classList.add("has-state");
     children.push(renderStateBadge(item.entry));
@@ -429,7 +430,7 @@ function renderScheduledItem(item: AgendaItem): HTMLElement {
 function renderDayDeadlineItem(item: AgendaItem): HTMLElement {
   const kind = el("span", "item-kind");
   kind.textContent = "DEADLINE";
-  return renderItem(item, "day-deadline-item", kind, "optional");
+  return renderItem(item, "day-deadline-item", [kind, renderStateBadge(item.entry, "TODO")], "optional");
 }
 
 // ── State badge ─────────────────────────────────────────────────────

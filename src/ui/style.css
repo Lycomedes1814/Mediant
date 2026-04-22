@@ -425,7 +425,7 @@ body {
 
 .day-deadline-item {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
   align-items: baseline;
   padding: 0.2rem var(--section-padding-x);
   font-size: 0.875rem;
@@ -434,7 +434,7 @@ body {
 }
 
 .day-deadline-item.has-time {
-  grid-template-columns: var(--time-col) auto 1fr auto;
+  grid-template-columns: var(--time-col) auto auto 1fr auto;
 }
 
 .day-deadline-item .item-time {
@@ -445,6 +445,11 @@ body {
   letter-spacing: -0.01em;
 }
 
+.day-deadline-item .item-title {
+  min-width: 0;
+  font-weight: 500;
+}
+
 .day-deadline-item .item-kind {
   font-size: 0.6875rem;
   font-weight: 500;
@@ -452,11 +457,6 @@ body {
   border-radius: 0.25rem;
   padding: 0 0.25rem;
   line-height: 1.4;
-}
-
-.day-deadline-item .item-title {
-  min-width: 0;
-  font-weight: 500;
 }
 
 /* ── Someday section (bottom of agenda) ──────────────────────────── */
@@ -1621,6 +1621,35 @@ body {
 
   .scheduled-item.has-time .tag-badges {
     grid-column: 3;
+    grid-row: 2;
+  }
+
+  .day-deadline-item.has-time {
+    row-gap: 0.125rem;
+  }
+
+  .day-deadline-item.has-time .item-time {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .day-deadline-item.has-time .item-state {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .day-deadline-item.has-time .item-kind {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .day-deadline-item.has-time .item-title {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .day-deadline-item.has-time .tag-badges {
+    grid-column: 4;
     grid-row: 2;
   }
 

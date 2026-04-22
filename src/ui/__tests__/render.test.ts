@@ -208,6 +208,43 @@ describe("renderAgenda", () => {
     expect(chip?.classList.contains("override-cancelled")).toBe(true);
   });
 
+  it("renders in-calendar deadlines with a clickable todo badge before the title", () => {
+    const container = document.createElement("div");
+    const week = makeWeek([
+      [
+        makeItem({
+          title: "Due today",
+          date: new Date(2026, 3, 20, 16, 0),
+          startTime: "16:00",
+          category: "deadline",
+          entry: makeEntry({ title: "Due today", todo: "TODO", sourceLineNumber: 42 }),
+          sourceLineNumber: 42,
+        }),
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+    ]);
+
+    renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 9, 0));
+
+    const row = container.querySelector(".day-deadline-item") as HTMLElement | null;
+    expect(row).not.toBeNull();
+    const state = row?.querySelector(".item-state") as HTMLElement | null;
+    const kind = row?.querySelector(".item-kind") as HTMLElement | null;
+    const title = row?.querySelector(".item-title") as HTMLElement | null;
+    expect(state?.textContent).toBe("TODO");
+    expect(state?.getAttribute("data-action")).toBe("toggle-done");
+    expect(state?.getAttribute("data-line")).toBe("42");
+    expect(kind?.textContent).toBe("DEADLINE");
+    expect(title?.textContent).toContain("Due today");
+    expect(title?.previousElementSibling).toBe(state);
+    expect(state?.previousElementSibling).toBe(kind);
+  });
+
   it("updates all rendered tag pills when the color picker changes", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
