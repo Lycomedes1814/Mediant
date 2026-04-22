@@ -9,6 +9,7 @@
 - [ ] ICS export
 - [ ] ICS subscribe endpoint
 - [ ] Subscribe to ICS URLs within Mediant
+- [ ] Time-grid view
 
 ## This and future operations
 
