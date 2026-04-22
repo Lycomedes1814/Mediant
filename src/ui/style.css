@@ -1402,6 +1402,10 @@ body {
   min-width: 0;
 }
 
+.occurrence-preview {
+  margin-top: -0.1rem;
+}
+
 .occurrence-btn {
   padding: 0.375rem 0.75rem;
   background: var(--bg-card);

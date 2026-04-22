@@ -87,6 +87,7 @@ interface AddPanelRefs {
   endSeriesCheckboxRow: HTMLElement;
   endSeriesCheckbox: HTMLInputElement;
   occurrenceInput: HTMLInputElement;
+  occurrencePreview: HTMLElement;
   noteTextarea: HTMLTextAreaElement;
   clearOverrideBtn: HTMLButtonElement;
   clearNoteBtn: HTMLButtonElement;
@@ -273,6 +274,10 @@ function buildAddPanel(): void {
   const occurrenceInput = document.createElement("input");
   occurrenceInput.type = "text";
   occurrenceInput.className = "add-input occurrence-input";
+  const occurrencePreview = document.createElement("div");
+  occurrencePreview.className = "datetime-preview occurrence-preview";
+  occurrenceInput.addEventListener("input", () =>
+    updateOccurrencePreview(occurrenceInput, occurrencePreview, editingBaseDate ?? undefined));
   const overrideBtn = document.createElement("button");
   overrideBtn.type = "button";
   overrideBtn.className = "occurrence-btn";
@@ -290,7 +295,7 @@ function buildAddPanel(): void {
   clearOverrideBtn.textContent = "Clear override";
   clearOverrideBtn.addEventListener("click", () => clearException("override"));
 
-  occActions.append(skipCheckboxRow, endSeriesCheckboxRow, overrideRow, clearOverrideBtn);
+  occActions.append(skipCheckboxRow, endSeriesCheckboxRow, overrideRow, occurrencePreview, clearOverrideBtn);
   occurrenceSection.appendChild(occActions);
 
   const noteLabel = document.createElement("label");
@@ -430,6 +435,7 @@ function buildAddPanel(): void {
     endSeriesCheckboxRow,
     endSeriesCheckbox,
     occurrenceInput,
+    occurrencePreview,
     noteTextarea,
     clearOverrideBtn,
     clearNoteBtn,
@@ -925,6 +931,18 @@ function updateDateTimePreview(input: HTMLInputElement, preview: HTMLElement, fa
   preview.classList.toggle("is-visible", text !== "");
 }
 
+function updateOccurrencePreview(input: HTMLInputElement, preview: HTMLElement, fallbackDate?: string): void {
+  const trimmed = input.value.trim();
+  if (!trimmed || /^[+-]\d+[mhd]$/.test(trimmed)) {
+    preview.textContent = "";
+    preview.classList.remove("is-visible");
+    return;
+  }
+  const text = formatDateTimePreview(trimmed, fallbackDate);
+  preview.textContent = text;
+  preview.classList.toggle("is-visible", text !== "");
+}
+
 function splitDateTimeForPickers(raw: string): { date: string; time: string } {
   const parsed = parseDateTime(raw);
   if (!parsed?.date) return { date: "", time: "" };
@@ -1307,6 +1325,8 @@ function refreshOccurrenceSection(): void {
     refs.noteTextarea.value = note ?? "";
   }
   refs.occurrenceInput.value = "";
+  refs.occurrencePreview.textContent = "";
+  refs.occurrencePreview.classList.remove("is-visible");
 }
 
 async function toggleOccurrenceSkipped(): Promise<void> {
