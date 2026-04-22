@@ -8,6 +8,7 @@
 - [ ] Mobile notifications
 - [ ] ICS export
 - [ ] ICS subscribe endpoint
+- [ ] Subscribe to ICS URLs within Mediant
 
 ## This and future operations
 
