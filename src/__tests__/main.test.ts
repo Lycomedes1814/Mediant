@@ -91,6 +91,18 @@ describe("main.ts integration", () => {
     expect(Array.from(document.querySelectorAll<HTMLElement>(".item-title")).some(el => el.textContent?.includes("Yoga"))).toBe(true);
     expect(Array.from(document.querySelectorAll<HTMLElement>(".item-title")).some(el => el.textContent?.includes("Focus block"))).toBe(false);
 
+    keydownHandler!(makeKeydownEvent("x", document.body));
+    await flush();
+    expect(document.querySelector(".active-tag-filters")).toBeNull();
+    expect(Array.from(document.querySelectorAll<HTMLElement>(".item-title")).some(el => el.textContent?.includes("Inbox"))).toBe(true);
+    expect(Array.from(document.querySelectorAll<HTMLElement>(".item-title")).some(el => el.textContent?.includes("Focus block"))).toBe(true);
+
+    const workTagAfterClear = document.querySelector<HTMLElement>(".tag[data-tag='work']");
+    expect(workTagAfterClear).not.toBeNull();
+    workTagAfterClear!.click();
+    await flush();
+    expect(document.querySelector(".active-tag-filters .tag[data-tag='work']")).not.toBeNull();
+
     const clearFiltersBtn = document.querySelector<HTMLButtonElement>(".clear-tag-filters");
     expect(clearFiltersBtn).not.toBeNull();
     clearFiltersBtn!.click();
@@ -406,6 +418,7 @@ describe("main.ts integration", () => {
     keydownHandler!(makeKeydownEvent("n", typingTitleInput!));
     keydownHandler!(makeKeydownEvent("t", typingTitleInput!));
     keydownHandler!(makeKeydownEvent("a", typingTitleInput!));
+    keydownHandler!(makeKeydownEvent("x", typingTitleInput!));
     await flush();
     expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
     expect(document.querySelector(".add-panel.is-open")).not.toBeNull();
