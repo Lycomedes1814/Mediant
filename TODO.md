@@ -6,9 +6,9 @@
 - [ ] Month view
 - [ ] Toggle hiding empty days (useful with filters)
 - [ ] Mobile notifications
-- [ ] ICS export
-- [ ] ICS subscribe endpoint
-- [ ] Subscribe to ICS URLs within Mediant
+- [ ] ICS import/export
+- [ ] Subscribe to ICS URLs
+- [ ] Serve ICS endpoint
 - [ ] Time-grid view
 
 ## This and future operations
