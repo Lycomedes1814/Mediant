@@ -24,12 +24,10 @@ import type { RecurrenceException, RecurrenceOverride } from "./model.ts";
 // ── Types ────────────────────────────────────────────────────────────
 
 /**
- * A repeater attached to an Org timestamp, e.g. +1w, +1y.
- *
- * Only the cumulate (+) repeater type is supported in v1.
- * The .+ (catch-up) and ++ (restart) types are not parsed.
+ * A repeater attached to an Org timestamp, e.g. +1w, .+1w, ++1w.
  */
 export interface OrgRepeater {
+  readonly mark: "+" | ".+" | "++";
   readonly value: number;
   readonly unit: "d" | "w" | "m" | "y";
 }
@@ -62,22 +60,25 @@ export interface OrgTimestamp {
  *   1 — date "2026-04-07"
  *   2 — start time "15:15" (optional)
  *   3 — end time "16:00" (optional, from range like 15:15-16:00)
- *   4 — repeater "+1w" (optional)
+ *   4 — repeater "+1w" / ".+1w" / "++1w" (optional)
  *
  * Day names (ti., sø., Sat, etc.) are consumed by \S+ but not
  * captured — the date string is authoritative. We use \S+ rather
  * than \w+ because \w does not match non-ASCII characters like ø.
  */
 export const TIMESTAMP_RE =
-  /<(\d{4}-\d{2}-\d{2})\s+\S+\s*(?:(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?)?\s*(\+\d+[dwmy])?\s*>/g;
+  /<(\d{4}-\d{2}-\d{2})\s+\S+\s*(?:(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?)?\s*((?:\.\+|\+\+|\+)\d+[dwmy])?\s*>/g;
 
 // ── Parsing ──────────────────────────────────────────────────────────
 
 function parseRepeater(raw: string): OrgRepeater | null {
-  const value = parseInt(raw.slice(1, -1), 10);
+  const match = raw.match(/^(\.\+|\+\+|\+)(\d+)([dwmy])$/);
+  if (!match) return null;
+  const value = parseInt(match[2], 10);
   if (!Number.isFinite(value) || value <= 0) return null;
-  const unit = raw.slice(-1) as OrgRepeater["unit"];
-  return { value, unit };
+  const mark = match[1] as OrgRepeater["mark"];
+  const unit = match[3] as OrgRepeater["unit"];
+  return { mark, value, unit };
 }
 
 /**

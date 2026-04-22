@@ -44,32 +44,44 @@ describe("parseTimestamps", () => {
   it("parses a weekly repeater", () => {
     const results = parseTimestamps("<2026-04-07 ti. 13:15-14:00 +1w>");
     expect(results).toHaveLength(1);
-    expect(results[0].repeater).toEqual({ value: 1, unit: "w" });
+    expect(results[0].repeater).toEqual({ mark: "+", value: 1, unit: "w" });
   });
 
   it("parses a yearly repeater", () => {
     const results = parseTimestamps("<2026-04-06 ma. +1y>");
     expect(results).toHaveLength(1);
-    expect(results[0].repeater).toEqual({ value: 1, unit: "y" });
+    expect(results[0].repeater).toEqual({ mark: "+", value: 1, unit: "y" });
     expect(results[0].startTime).toBeNull();
   });
 
   it("parses a daily repeater", () => {
     const results = parseTimestamps("<2026-04-06 ma. 09:00 +1d>");
     expect(results).toHaveLength(1);
-    expect(results[0].repeater).toEqual({ value: 1, unit: "d" });
+    expect(results[0].repeater).toEqual({ mark: "+", value: 1, unit: "d" });
   });
 
   it("parses a monthly repeater", () => {
     const results = parseTimestamps("<2026-04-06 ma. +1m>");
     expect(results).toHaveLength(1);
-    expect(results[0].repeater).toEqual({ value: 1, unit: "m" });
+    expect(results[0].repeater).toEqual({ mark: "+", value: 1, unit: "m" });
   });
 
   it("parses a multi-value repeater", () => {
     const results = parseTimestamps("<2026-04-06 ma. +2w>");
     expect(results).toHaveLength(1);
-    expect(results[0].repeater).toEqual({ value: 2, unit: "w" });
+    expect(results[0].repeater).toEqual({ mark: "+", value: 2, unit: "w" });
+  });
+
+  it("parses a catch-up repeater", () => {
+    const results = parseTimestamps("<2026-04-06 ma. .+2w>");
+    expect(results).toHaveLength(1);
+    expect(results[0].repeater).toEqual({ mark: ".+", value: 2, unit: "w" });
+  });
+
+  it("parses a restart repeater", () => {
+    const results = parseTimestamps("<2026-04-06 ma. ++1m>");
+    expect(results).toHaveLength(1);
+    expect(results[0].repeater).toEqual({ mark: "++", value: 1, unit: "m" });
   });
 
   it("ignores zero-value repeaters", () => {

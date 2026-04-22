@@ -205,12 +205,12 @@ describe("active timestamps", () => {
   it("parses timestamp with repeater", () => {
     const entries = parseOrg("** Weekly\n<2026-04-07 ti. 13:15-14:00 +1w>\n");
     expect(entries[0].timestamps).toHaveLength(1);
-    expect(entries[0].timestamps[0].repeater).toEqual({ value: 1, unit: "w" });
+    expect(entries[0].timestamps[0].repeater).toEqual({ mark: "+", value: 1, unit: "w" });
   });
 
   it("parses yearly repeater", () => {
     const entries = parseOrg("** Birthday\n<2026-04-06 ma. +1y>\n");
-    expect(entries[0].timestamps[0].repeater).toEqual({ value: 1, unit: "y" });
+    expect(entries[0].timestamps[0].repeater).toEqual({ mark: "+", value: 1, unit: "y" });
   });
 
   it("timestamp with trailing whitespace", () => {
@@ -825,7 +825,7 @@ Meet at the main entrance.
     expect(event.tags).toEqual(["dance"]);
     expect(event.timestamps[0].startTime).toBe("20:00");
     expect(event.timestamps[0].endTime).toBe("21:30");
-    expect(event.timestamps[0].repeater).toEqual({ value: 1, unit: "w" });
+    expect(event.timestamps[0].repeater).toEqual({ mark: "+", value: 1, unit: "w" });
   });
 
   it("parses yearly repeater (birthday)", () => {
@@ -833,7 +833,7 @@ Meet at the main entrance.
     const event = entries[18]; // Annual reminder A
     expect(event.title).toBe("Annual reminder A");
     expect(event.tags).toEqual(["birthday"]);
-    expect(event.timestamps[0].repeater).toEqual({ value: 1, unit: "y" });
+    expect(event.timestamps[0].repeater).toEqual({ mark: "+", value: 1, unit: "y" });
   });
 
   it("preserves body text on Outdoor activity", () => {

@@ -8,6 +8,7 @@
 
 ## Follow-ups
 - [x] Expose cancelled occurrences' notes somewhere in the series/edit view
+- [ ] UI for `.+` and `++` repeaters
 
 ## This and future operations
 
