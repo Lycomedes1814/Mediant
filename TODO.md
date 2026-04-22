@@ -2,7 +2,6 @@
 
 ## General
 - [ ] Multilingual support
-- [ ] Filter by tags
 - [ ] Month view
 - [ ] Toggle hiding empty days (useful with filters)
 - [ ] Mobile notifications

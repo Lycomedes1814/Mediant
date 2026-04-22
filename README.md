@@ -144,6 +144,8 @@ index.html             — Minimal shell with #agenda container
   - All-day events (holidays, birthdays) in a subtle grouped section
   - Timed events with monospace time column, tag-colored left border, tag badges (colors auto-assigned from a palette, persisted in localStorage)
   - Scheduled tasks inline (time → TODO/DONE badge → title)
+- **Tag filtering** — clicking a tag filters the agenda, overdue, deadlines, and someday sections. Multiple selected tags use AND semantics: an item must contain every selected tag to remain visible. Active filters are shown in the header and can be cleared in one click.
+- **Tag color mode** — a `Color tags` toggle switches tag clicks from filtering to recoloring. `Alt`-clicking a tag opens its color picker directly without switching modes.
 - **Priority badges** — A/B/C priority cookies rendered as small colored badges (red/amber/blue) before the item title
 - **Progress badges** — `[2/3]` shown as a small badge next to the title (green when complete, gray otherwise)
 - **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under agenda items; toggleable in the edit panel
@@ -154,6 +156,7 @@ index.html             — Minimal shell with #agenda container
 - **Today** indicated by blue card border and small dot marker
 - **Empty days** always shown (subtle em dash)
 - **Week navigation** with prev/next/today buttons
+- **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open the add-item panel, `c` toggle tag color mode. Shortcuts are disabled while typing in form fields.
 - **Now line** on today's timed section
 - **Add-item panel** for creating TODO tasks and events from the UI
 - **Edit-item panel** for updating an existing entry in place (preserves body text). Clicking a recurring occurrence reveals a "This occurrence" section alongside the series fields, with Skip / Shift / Move / Note / Clear actions that write exception properties keyed on the unshifted base date.
