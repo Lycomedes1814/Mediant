@@ -116,6 +116,10 @@ const TODO_REPEAT_OPTIONS = [
   { value: ".+1y", label: "1 year from done (.+1y)" },
 ] as const;
 
+function hasParsedDate(input: HTMLInputElement): boolean {
+  return Boolean(parseDateTime(input.value.trim())?.date);
+}
+
 function buildAddPanel(): void {
   addOverlayEl = document.createElement("div");
   addOverlayEl.className = "add-overlay";
@@ -205,12 +209,14 @@ function buildAddPanel(): void {
   const typeRadios = typeGroup.container.querySelectorAll<HTMLInputElement>("input[name='add-type']");
   const syncVisibility = (): void => {
     const isTodo = (typeGroup.container.querySelector<HTMLInputElement>("input[name='add-type']:checked"))?.value === "todo";
+    const hasSchedDate = hasParsedDate(schedInput.input);
+    const hasDeadDate = hasParsedDate(deadInput.input);
     whenInput.container.style.display = isTodo ? "none" : "";
     repeatSelect.container.style.display = isTodo ? "none" : "";
     schedInput.container.style.display = isTodo ? "" : "none";
-    schedRepeatSelect.container.style.display = isTodo ? "" : "none";
+    schedRepeatSelect.container.style.display = isTodo && hasSchedDate ? "" : "none";
     deadInput.container.style.display = isTodo ? "" : "none";
-    deadRepeatSelect.container.style.display = isTodo ? "" : "none";
+    deadRepeatSelect.container.style.display = isTodo && hasDeadDate ? "" : "none";
     updateDateTimePreview(whenInput.input, whenInput.preview);
     updateDateTimePreview(schedInput.input, schedInput.preview);
     updateDateTimePreview(deadInput.input, deadInput.preview);
@@ -219,17 +225,35 @@ function buildAddPanel(): void {
   syncVisibility();
 
   whenInput.input.addEventListener("input", () => updateDateTimePreview(whenInput.input, whenInput.preview));
-  schedInput.input.addEventListener("input", () => updateDateTimePreview(schedInput.input, schedInput.preview));
-  deadInput.input.addEventListener("input", () => updateDateTimePreview(deadInput.input, deadInput.preview));
+  schedInput.input.addEventListener("input", () => {
+    updateDateTimePreview(schedInput.input, schedInput.preview);
+    syncVisibility();
+  });
+  deadInput.input.addEventListener("input", () => {
+    updateDateTimePreview(deadInput.input, deadInput.preview);
+    syncVisibility();
+  });
   whenInput.input.addEventListener("input", () => syncPickersFromText(whenInput.input, whenInput.datePicker, whenInput.timePicker));
   schedInput.input.addEventListener("input", () => syncPickersFromText(schedInput.input, schedInput.datePicker, schedInput.timePicker));
   deadInput.input.addEventListener("input", () => syncPickersFromText(deadInput.input, deadInput.datePicker, deadInput.timePicker));
   whenInput.datePicker.addEventListener("input", () => syncTextFromPickers(whenInput.input, whenInput.preview, whenInput.datePicker, whenInput.timePicker));
   whenInput.timePicker.addEventListener("input", () => syncTextFromPickers(whenInput.input, whenInput.preview, whenInput.datePicker, whenInput.timePicker));
-  schedInput.datePicker.addEventListener("input", () => syncTextFromPickers(schedInput.input, schedInput.preview, schedInput.datePicker, schedInput.timePicker));
-  schedInput.timePicker.addEventListener("input", () => syncTextFromPickers(schedInput.input, schedInput.preview, schedInput.datePicker, schedInput.timePicker));
-  deadInput.datePicker.addEventListener("input", () => syncTextFromPickers(deadInput.input, deadInput.preview, deadInput.datePicker, deadInput.timePicker));
-  deadInput.timePicker.addEventListener("input", () => syncTextFromPickers(deadInput.input, deadInput.preview, deadInput.datePicker, deadInput.timePicker));
+  schedInput.datePicker.addEventListener("input", () => {
+    syncTextFromPickers(schedInput.input, schedInput.preview, schedInput.datePicker, schedInput.timePicker);
+    syncVisibility();
+  });
+  schedInput.timePicker.addEventListener("input", () => {
+    syncTextFromPickers(schedInput.input, schedInput.preview, schedInput.datePicker, schedInput.timePicker);
+    syncVisibility();
+  });
+  deadInput.datePicker.addEventListener("input", () => {
+    syncTextFromPickers(deadInput.input, deadInput.preview, deadInput.datePicker, deadInput.timePicker);
+    syncVisibility();
+  });
+  deadInput.timePicker.addEventListener("input", () => {
+    syncTextFromPickers(deadInput.input, deadInput.preview, deadInput.datePicker, deadInput.timePicker);
+    syncVisibility();
+  });
 
   // Checkbox section
   const checkboxSection = document.createElement("div");
@@ -371,8 +395,8 @@ function buildAddPanel(): void {
         type: "todo", level: editingLevel, heading, tags: tagsVal,
         todoState: editingTodoState,
         priority: editingPriority, progress: editingProgress,
-        schedDate: s.date, schedTime: s.time, schedRepeater: schedRepeatSelect.select.value || null,
-        deadDate: d.date, deadTime: d.time, deadRepeater: deadRepeatSelect.select.value || null,
+        schedDate: s.date, schedTime: s.time, schedRepeater: s.date ? (schedRepeatSelect.select.value || null) : null,
+        deadDate: d.date, deadTime: d.time, deadRepeater: d.date ? (deadRepeatSelect.select.value || null) : null,
         checkboxItems: cbItems,
       });
     }

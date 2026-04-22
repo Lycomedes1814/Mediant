@@ -123,6 +123,8 @@ describe("main.ts integration", () => {
     expect(schedPickerToggle).not.toBeNull();
     expect(schedRepeatSelect?.value).toBe(".+1w");
     expect(deadRepeatSelect?.value).toBe("");
+    expect((schedRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
+    expect((deadRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
 
     titleInput!.value = "Yoga deluxe";
     schedInput!.value = "2";
@@ -133,6 +135,7 @@ describe("main.ts integration", () => {
     schedInput!.dispatchEvent(new Event("input", { bubbles: true }));
     expect(schedPreview?.textContent).toBe("");
     expect(schedPreview?.classList.contains("is-visible")).toBe(false);
+    expect((schedRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
 
     schedInput!.value = "+341374344";
     schedInput!.dispatchEvent(new Event("input", { bubbles: true }));
@@ -143,6 +146,7 @@ describe("main.ts integration", () => {
     schedInput!.dispatchEvent(new Event("input", { bubbles: true }));
     expect(schedPreview?.textContent).toBe("Tue 21 Apr 2026, 18:30");
     expect(schedPreview?.classList.contains("is-visible")).toBe(true);
+    expect((schedRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
 
     const schedDatePicker = schedField?.querySelector<HTMLInputElement>(".datetime-picker-popover input[type='date']");
     const schedTimePicker = schedField?.querySelector<HTMLInputElement>(".datetime-picker-popover input[type='time']");
@@ -160,6 +164,15 @@ describe("main.ts integration", () => {
     schedRepeatSelect!.dispatchEvent(new Event("change", { bubbles: true }));
     deadInput!.value = "23/04/2026 08:00";
     deadInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect((deadRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
+    deadRepeatSelect!.value = ".+1m";
+    deadRepeatSelect!.dispatchEvent(new Event("change", { bubbles: true }));
+    deadInput!.value = "";
+    deadInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect((deadRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
+    deadInput!.value = "23/04/2026 08:00";
+    deadInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect((deadRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
     deadRepeatSelect!.value = ".+1m";
     deadRepeatSelect!.dispatchEvent(new Event("change", { bubbles: true }));
     saveButton!.click();
