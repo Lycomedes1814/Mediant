@@ -988,10 +988,9 @@ function formatDateTimePreview(raw: string, fallbackDate?: string): string {
   const parsed = parseDateTime(trimmed, fallbackDate);
   if (!parsed?.date) return "";
 
-  const timeText = parsed.time ? `, ${parsed.time}` : ", all day";
   const dateText = formatPreviewDate(parsed.date);
   if (!dateText) return "";
-  return `${dateText}${timeText}`;
+  return parsed.time ? `${dateText}, ${parsed.time}` : dateText;
 }
 
 function updateDateTimePreview(input: HTMLInputElement, preview: HTMLElement, fallbackDate?: string): void {
