@@ -35,6 +35,15 @@ describe("main.ts integration", () => {
   });
 
   it("loads static mode, toggles DONE, edits the series, and saves a recurring occurrence exception", async () => {
+    const originalAddEventListener = document.addEventListener.bind(document);
+    let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+    document.addEventListener = ((type: string, listener: EventListenerOrEventListenerObject, options?: AddEventListenerOptions | boolean) => {
+      if (type === "keydown" && typeof listener === "function") {
+        keydownHandler = listener as (e: KeyboardEvent) => void;
+      }
+      return originalAddEventListener(type, listener, options);
+    }) as typeof document.addEventListener;
+
     localStorage.setItem(
       "mediant-org-source",
       [
@@ -47,6 +56,7 @@ describe("main.ts integration", () => {
 
     await import("../main.ts");
     await flush();
+    document.addEventListener = originalAddEventListener;
 
     await waitFor(() => document.querySelector(".input-load-btn") !== null);
     const loadButton = document.querySelector<HTMLButtonElement>(".input-load-btn");
@@ -59,6 +69,17 @@ describe("main.ts integration", () => {
     toggle!.click();
     await flush();
     expect(localStorage.getItem("mediant-org-source")).toContain("** DONE Yoga");
+
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
+    expect(keydownHandler).not.toBeNull();
+
+    keydownHandler!(makeKeydownEvent("n", document.body));
+    await flush();
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("27 April – 3 May 2026");
+
+    keydownHandler!(makeKeydownEvent("p", document.body));
+    await flush();
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
 
     const title = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-20']");
     expect(title).not.toBeNull();
@@ -202,6 +223,16 @@ describe("main.ts integration", () => {
     expect(skippedRow).not.toBeNull();
     const skippedChip = skippedTitle?.querySelector<HTMLElement>(".item-override-chip.override-cancelled");
     expect(skippedChip?.textContent).toBe("skipped");
+
+    document.querySelector<HTMLButtonElement>(".add-item-btn")!.click();
+    await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
+
+    const typingTitleInput = document.querySelector<HTMLInputElement>("#add-title");
+    expect(typingTitleInput).not.toBeNull();
+    typingTitleInput!.focus();
+    keydownHandler!(makeKeydownEvent("n", typingTitleInput!));
+    await flush();
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
   });
 
 });
@@ -218,4 +249,13 @@ async function flush(): Promise<void> {
   await Promise.resolve();
   vi.runOnlyPendingTimers();
   await Promise.resolve();
+}
+
+function makeKeydownEvent(key: string, target: EventTarget): KeyboardEvent {
+  const event = new Event("keydown", { bubbles: true, cancelable: true }) as KeyboardEvent;
+  Object.defineProperty(event, "key", { value: key });
+  Object.defineProperty(event, "code", { value: `Key${key.toUpperCase()}` });
+  Object.defineProperty(event, "target", { value: target });
+  Object.defineProperty(event, "preventDefault", { value: vi.fn() });
+  return event;
 }

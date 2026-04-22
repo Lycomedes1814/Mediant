@@ -1221,6 +1221,31 @@ function closeAddPanel(): void {
   addPanelEl.classList.remove("is-open");
 }
 
+function navigateWeek(direction: "prev" | "next" | "today"): void {
+  if (direction === "prev") {
+    currentStart.setDate(currentStart.getDate() - 7);
+  } else if (direction === "next") {
+    currentStart.setDate(currentStart.getDate() + 7);
+  } else {
+    currentStart = todayMidnight();
+  }
+  render();
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target instanceof HTMLElement ? target : null;
+  if (!el) return false;
+  if (el.isContentEditable) return true;
+  return Boolean(el.closest("input, textarea, select, [contenteditable='true']"));
+}
+
+function getNavigationKey(e: KeyboardEvent): "next" | "prev" | null {
+  const key = e.key.toLowerCase();
+  if (key === "n" || e.code === "KeyN" || e.keyCode === 78) return "next";
+  if (key === "p" || e.code === "KeyP" || e.keyCode === 80) return "prev";
+  return null;
+}
+
 // ── Bootstrap ────────────────────────────────────────────────────────
 
 async function init(): Promise<void> {
@@ -1231,6 +1256,16 @@ async function init(): Promise<void> {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (addPanelEl?.classList.contains("is-open")) closeAddPanel();
+      return;
+    }
+    if (e.altKey || e.ctrlKey || e.metaKey || isTypingTarget(e.target)) return;
+    const navKey = getNavigationKey(e);
+    if (navKey === "next") {
+      e.preventDefault();
+      navigateWeek("next");
+    } else if (navKey === "prev") {
+      e.preventDefault();
+      navigateWeek("prev");
     }
   });
 
@@ -1454,15 +1489,8 @@ function setupNavigation(): void {
     const action = btn.dataset.action;
     if (!action) return;
 
-    if (action === "prev") {
-      currentStart.setDate(currentStart.getDate() - 7);
-      render();
-    } else if (action === "next") {
-      currentStart.setDate(currentStart.getDate() + 7);
-      render();
-    } else if (action === "today") {
-      currentStart = todayMidnight();
-      render();
+    if (action === "prev" || action === "next" || action === "today") {
+      navigateWeek(action);
     } else if (action === "add") {
       openAddPanel();
     } else if (action === "edit") {
