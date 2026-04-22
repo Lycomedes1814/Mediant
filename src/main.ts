@@ -62,8 +62,11 @@ interface AddPanelRefs {
   priorityGroup: HTMLElement;
   titleInput: HTMLInputElement;
   whenInput: HTMLInputElement;
+  whenPreview: HTMLElement;
   schedInput: HTMLInputElement;
+  schedPreview: HTMLElement;
   deadInput: HTMLInputElement;
+  deadPreview: HTMLElement;
   tagPicker: TagPicker;
   repeatSelect: HTMLSelectElement;
   checkboxSection: HTMLElement;
@@ -178,9 +181,16 @@ function buildAddPanel(): void {
     repeatSelect.container.style.display = isTodo ? "none" : "";
     schedInput.container.style.display = isTodo ? "" : "none";
     deadInput.container.style.display = isTodo ? "" : "none";
+    updateDateTimePreview(whenInput.input, whenInput.preview);
+    updateDateTimePreview(schedInput.input, schedInput.preview);
+    updateDateTimePreview(deadInput.input, deadInput.preview);
   };
   typeRadios.forEach(r => r.addEventListener("change", syncVisibility));
   syncVisibility();
+
+  whenInput.input.addEventListener("input", () => updateDateTimePreview(whenInput.input, whenInput.preview));
+  schedInput.input.addEventListener("input", () => updateDateTimePreview(schedInput.input, schedInput.preview));
+  deadInput.input.addEventListener("input", () => updateDateTimePreview(deadInput.input, deadInput.preview));
 
   // Checkbox section
   const checkboxSection = document.createElement("div");
@@ -358,8 +368,11 @@ function buildAddPanel(): void {
     priorityGroup: priorityGroup.container,
     titleInput: titleInput.input,
     whenInput: whenInput.input,
+    whenPreview: whenInput.preview,
     schedInput: schedInput.input,
+    schedPreview: schedInput.preview,
     deadInput: deadInput.input,
+    deadPreview: deadInput.preview,
     tagPicker,
     repeatSelect: repeatSelect.select,
     checkboxSection,
@@ -693,8 +706,10 @@ function makeTextInput(label: string, id: string): { container: HTMLElement; inp
 function expandDate(raw: string): string {
   if (!raw) return "";
   const now = new Date();
-  const fmt = (d: Date): string =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const fmt = (d: Date): string => {
+    if (!Number.isFinite(d.getTime())) return "";
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
 
   const full = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (full) return `${full[3]}-${full[2].padStart(2, "0")}-${full[1].padStart(2, "0")}`;
@@ -722,7 +737,7 @@ function expandDate(raw: string): string {
   return "";
 }
 
-function makeDateTimeInput(label: string, id: string): { container: HTMLElement; input: HTMLInputElement } {
+function makeDateTimeInput(label: string, id: string): { container: HTMLElement; input: HTMLInputElement; preview: HTMLElement } {
   const container = document.createElement("div");
   container.className = "add-field";
 
@@ -737,8 +752,11 @@ function makeDateTimeInput(label: string, id: string): { container: HTMLElement;
   input.className = "add-input";
   input.placeholder = "DD[/MM[/YYYY]] | +N | mon-sun [HH:MM[-HH:MM]]";
 
-  container.append(lbl, input);
-  return { container, input };
+  const preview = document.createElement("div");
+  preview.className = "datetime-preview";
+
+  container.append(lbl, input, preview);
+  return { container, input, preview };
 }
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(-([01]\d|2[0-3]):[0-5]\d)?$/;
@@ -772,6 +790,34 @@ function parseDateTime(raw: string, fallbackDate?: string): { date: string; time
   const date = expandDate(dateRaw);
   if (!date) return null;
   return { date, time };
+}
+
+function formatPreviewDate(date: string): string {
+  const [year, month, day] = date.split("-").map(Number);
+  const dt = new Date(year, month - 1, day);
+  if (!Number.isFinite(dt.getTime())) return "";
+  const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()];
+  const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dt.getMonth()];
+  return `${dayName} ${day} ${monthName} ${year}`;
+}
+
+function formatDateTimePreview(raw: string, fallbackDate?: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+
+  const parsed = parseDateTime(trimmed, fallbackDate);
+  if (!parsed?.date) return "";
+
+  const timeText = parsed.time ? `, ${parsed.time}` : ", all day";
+  const dateText = formatPreviewDate(parsed.date);
+  if (!dateText) return "";
+  return `${dateText}${timeText}`;
+}
+
+function updateDateTimePreview(input: HTMLInputElement, preview: HTMLElement, fallbackDate?: string): void {
+  const text = formatDateTimePreview(input.value, fallbackDate);
+  preview.textContent = text;
+  preview.classList.toggle("is-visible", text !== "");
 }
 
 function parseOccurrenceOverrideInput(raw: string, baseDate: string | null): string | null {
@@ -885,6 +931,9 @@ function openAddPanel(): void {
   refs.whenInput.value = "";
   refs.schedInput.value = "";
   refs.deadInput.value = "";
+  updateDateTimePreview(refs.whenInput, refs.whenPreview);
+  updateDateTimePreview(refs.schedInput, refs.schedPreview);
+  updateDateTimePreview(refs.deadInput, refs.deadPreview);
   refs.tagPicker.setTags([]);
   refs.repeatSelect.value = "";
   rebuildCheckboxUI(refs.checkboxSection);
@@ -968,6 +1017,10 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
         ? `+${deadline.timestamp.repeater.value}${deadline.timestamp.repeater.unit}` : null;
     }
   }
+
+  updateDateTimePreview(refs.whenInput, refs.whenPreview);
+  updateDateTimePreview(refs.schedInput, refs.schedPreview);
+  updateDateTimePreview(refs.deadInput, refs.deadPreview);
 
   // Populate checkbox items
   editingCheckboxItems = entry.checkboxItems.map(ci => ({ text: ci.text, checked: ci.checked }));

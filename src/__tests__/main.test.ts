@@ -67,13 +67,32 @@ describe("main.ts integration", () => {
 
     const titleInput = document.querySelector<HTMLInputElement>("#add-title");
     const schedInput = document.querySelector<HTMLInputElement>("#add-sched");
+    const schedPreview = document.querySelector<HTMLElement>("#add-sched + .datetime-preview");
     const saveButton = document.querySelector<HTMLButtonElement>(".add-save-btn");
     expect(titleInput?.value).toBe("Yoga");
     expect(schedInput?.value).toBe("20/04/2026 17:00");
+    expect(schedPreview?.textContent).toBe("Mon 20 Apr 2026, 17:00");
     expect(saveButton?.textContent).toBe("Save");
 
     titleInput!.value = "Yoga deluxe";
+    schedInput!.value = "2";
+    schedInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(schedPreview?.textContent).toBe("Thu 2 Apr 2026, all day");
+
+    schedInput!.value = "21/";
+    schedInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(schedPreview?.textContent).toBe("");
+    expect(schedPreview?.classList.contains("is-visible")).toBe(false);
+
+    schedInput!.value = "+341374344";
+    schedInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(schedPreview?.textContent).toBe("");
+    expect(schedPreview?.classList.contains("is-visible")).toBe(false);
+
     schedInput!.value = "21/04/2026 18:30";
+    schedInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(schedPreview?.textContent).toBe("Tue 21 Apr 2026, 18:30");
+    expect(schedPreview?.classList.contains("is-visible")).toBe(true);
     saveButton!.click();
     await flush();
 
@@ -184,6 +203,7 @@ describe("main.ts integration", () => {
     const skippedChip = skippedTitle?.querySelector<HTMLElement>(".item-override-chip.override-cancelled");
     expect(skippedChip?.textContent).toBe("skipped");
   });
+
 });
 
 async function waitFor(predicate: () => boolean): Promise<void> {
