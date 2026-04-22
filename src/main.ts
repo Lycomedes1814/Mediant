@@ -277,11 +277,11 @@ function buildAddPanel(): void {
   const occurrencePreview = document.createElement("div");
   occurrencePreview.className = "datetime-preview occurrence-preview";
   occurrenceInput.addEventListener("input", () =>
-    updateOccurrencePreview(occurrenceInput, occurrencePreview, editingBaseDate ?? undefined));
+    updateDateTimePreview(occurrenceInput, occurrencePreview, editingBaseDate ?? undefined));
   const overrideBtn = document.createElement("button");
   overrideBtn.type = "button";
   overrideBtn.className = "occurrence-btn";
-  overrideBtn.textContent = "Apply";
+  overrideBtn.textContent = "Move";
   overrideBtn.addEventListener("click", () => {
     const value = parseOccurrenceOverrideInput(occurrenceInput.value, editingBaseDate);
     if (!value) { occurrenceInput.focus(); return; }
@@ -931,18 +931,6 @@ function updateDateTimePreview(input: HTMLInputElement, preview: HTMLElement, fa
   preview.classList.toggle("is-visible", text !== "");
 }
 
-function updateOccurrencePreview(input: HTMLInputElement, preview: HTMLElement, fallbackDate?: string): void {
-  const trimmed = input.value.trim();
-  if (!trimmed || /^[+-]\d+[mhd]$/.test(trimmed)) {
-    preview.textContent = "";
-    preview.classList.remove("is-visible");
-    return;
-  }
-  const text = formatDateTimePreview(trimmed, fallbackDate);
-  preview.textContent = text;
-  preview.classList.toggle("is-visible", text !== "");
-}
-
 function splitDateTimeForPickers(raw: string): { date: string; time: string } {
   const parsed = parseDateTime(raw);
   if (!parsed?.date) return { date: "", time: "" };
@@ -976,7 +964,6 @@ function syncTextFromPickers(
 
 function parseOccurrenceOverrideInput(raw: string, baseDate: string | null): string | null {
   const trimmed = raw.trim();
-  if (/^[+-]\d+[mhd]$/.test(trimmed)) return `shift ${trimmed}`;
   const parsed = parseDateTime(trimmed, baseDate ?? undefined);
   if (!parsed || !parsed.date) return null;
   const timePart = parsed.time ? ` ${parsed.time}` : "";
