@@ -235,7 +235,6 @@ function buildAddPanel(): void {
   const occurrenceInput = document.createElement("input");
   occurrenceInput.type = "text";
   occurrenceInput.className = "add-input occurrence-input";
-  occurrenceInput.placeholder = "+45m / -1h / +1d / DD/MM/YYYY [HH:MM[-HH:MM]]";
   const overrideBtn = document.createElement("button");
   overrideBtn.type = "button";
   overrideBtn.className = "occurrence-btn";
@@ -422,7 +421,6 @@ function rebuildCheckboxUI(container: HTMLElement): void {
     text.type = "text";
     text.className = "edit-checkbox-text";
     text.value = item.text;
-    text.placeholder = "Item text";
     if (item.checked) text.classList.add("edit-checkbox-done");
     text.addEventListener("input", () => {
       editingCheckboxItems[ci].text = text.value;
@@ -530,7 +528,6 @@ function makeTagPicker(label: string, id: string): TagPicker {
   input.type = "text";
   input.id = id;
   input.className = "tag-picker-input";
-  input.placeholder = "Type to add…";
   input.autocomplete = "off";
 
   const dropdown = document.createElement("div");
@@ -762,7 +759,6 @@ function makeDateTimeInput(label: string, id: string): { container: HTMLElement;
   input.type = "text";
   input.id = id;
   input.className = "add-input";
-  input.placeholder = "DD[/MM[/YYYY]] | +N | mon-sun [HH:MM[-HH:MM]]";
 
   const preview = document.createElement("div");
   preview.className = "datetime-preview";
@@ -1331,7 +1327,6 @@ function showInput(): void {
 
   const textarea = document.createElement("textarea");
   textarea.className = "input-textarea";
-  textarea.placeholder = "Paste your Org-mode content here\u2026";
   textarea.spellcheck = false;
   textarea.value = localStorage.getItem("mediant-org-source") ?? "";
 
