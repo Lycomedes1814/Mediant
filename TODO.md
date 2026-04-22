@@ -5,10 +5,9 @@
 - [ ] Filter by tags
 - [ ] Month view
 - [ ] Toggle hiding empty days (useful with filters)
-
-## Follow-ups
-- [x] Expose cancelled occurrences' notes somewhere in the series/edit view
-- [ ] UI for `.+` and `++` repeaters
+- [ ] Mobile notifications
+- [ ] ICS export
+- [ ] ICS subscribe endpoint
 
 ## This and future operations
 
