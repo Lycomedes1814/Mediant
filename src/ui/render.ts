@@ -165,6 +165,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     }
 
     const title = renderTitle(dl.entry);
+    if (dl.baseDate) title.dataset.baseDate = dl.baseDate;
 
     row.append(title, meta, renderTags(dl.entry.tags));
     section.appendChild(row);
@@ -193,6 +194,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
     meta.append(time, kind);
 
     const title = renderTitle(item.entry);
+    if (item.baseDate) title.dataset.baseDate = item.baseDate;
 
     row.append(title, meta, renderTags(item.entry.tags));
     section.appendChild(row);

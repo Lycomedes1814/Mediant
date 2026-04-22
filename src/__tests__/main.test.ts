@@ -50,6 +50,9 @@ describe("main.ts integration", () => {
         "** TODO Inbox",
         "SCHEDULED: <2026-04-20 Mon>",
         "",
+        "** TODO Rent",
+        "DEADLINE: <2026-04-01 Wed +1w>",
+        "",
         "** TODO Yoga",
         "SCHEDULED: <2026-04-21 Tue 17:00 .+1w>",
         "Body line.",
@@ -67,7 +70,9 @@ describe("main.ts integration", () => {
     loadButton!.click();
     await waitFor(() => document.querySelector(".days-card") !== null);
 
-    const toggle = document.querySelector<HTMLElement>(".item-state.is-toggleable");
+    const inboxTitle = Array.from(document.querySelectorAll<HTMLElement>(".item-title"))
+      .find(el => el.textContent?.includes("Inbox"));
+    const toggle = inboxTitle?.closest("div")?.querySelector<HTMLElement>(".item-state.is-toggleable");
     expect(toggle?.textContent).toBe("TODO");
     toggle!.click();
     await flush();
@@ -85,6 +90,15 @@ describe("main.ts integration", () => {
     keydownHandler!(makeKeydownEvent("p", document.body));
     await flush();
     expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
+
+    const deadlineTitle = document.querySelector<HTMLElement>(".deadlines-section .item-title[data-base-date='2026-04-22']");
+    expect(deadlineTitle).not.toBeNull();
+    deadlineTitle!.click();
+    await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
+    expect(document.querySelector(".add-panel")?.classList.contains("has-occurrence")).toBe(true);
+    expect(document.querySelector<HTMLElement>(".occurrence-meta")?.textContent).toContain("Wed 22 Apr 2026");
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await flush();
 
     const title = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-21']");
     expect(title).not.toBeNull();
@@ -156,7 +170,8 @@ describe("main.ts integration", () => {
     expect(editedSource).toContain("DEADLINE: <2026-04-23 Thu 08:00 .+1m> SCHEDULED: <2026-04-22 Wed 19:15 ++1w>");
     expect(editedSource).toContain("Body line.");
 
-    const updatedTitle = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-22']");
+    const updatedTitle = Array.from(document.querySelectorAll<HTMLElement>(".item-title[data-base-date='2026-04-22']"))
+      .find(el => el.textContent?.includes("Yoga deluxe")) ?? null;
     expect(updatedTitle).not.toBeNull();
     updatedTitle!.click();
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
@@ -185,31 +200,31 @@ describe("main.ts integration", () => {
     const occurrenceLabels = Array.from(document.querySelectorAll<HTMLElement>(".occurrence-toggle-label"))
       .map(label => label.textContent);
     const occurrenceInput = document.querySelector<HTMLInputElement>(".occurrence-input");
+    const occurrencePreview = document.querySelector<HTMLElement>(".occurrence-preview");
     const occurrenceButtons = Array.from(document.querySelectorAll<HTMLButtonElement>(".occurrence-btn"));
-    const applyOverrideButton = occurrenceButtons.find(button => button.textContent === "Apply");
+    const applyOverrideButton = occurrenceButtons.find(button => button.textContent === "Move");
     const clearOverrideButton = occurrenceButtons.find(button => button.textContent === "Clear override");
     expect(skipCheckbox).not.toBeUndefined();
     expect(endSeriesCheckbox).not.toBeNull();
     expect(occurrenceInput).not.toBeNull();
+    expect(occurrencePreview).not.toBeNull();
     expect(applyOverrideButton).not.toBeUndefined();
     expect(clearOverrideButton).not.toBeUndefined();
     expect(occurrenceLabels).toContain("Stop repeating after this occurrence");
     expect(endSeriesCheckbox?.checked).toBe(false);
 
+    const sourceBeforeInvalidOverride = localStorage.getItem("mediant-org-source") ?? "";
     occurrenceInput!.value = "+45m";
+    occurrenceInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(occurrencePreview?.textContent).toBe("");
     applyOverrideButton!.click();
     await flush();
 
-    let sourceWithShift = localStorage.getItem("mediant-org-source") ?? "";
-    expect(sourceWithShift).toContain(":EXCEPTION-2026-04-22: shift +45m");
-
-    clearOverrideButton!.click();
-    await flush();
-
-    sourceWithShift = localStorage.getItem("mediant-org-source") ?? "";
-    expect(sourceWithShift).not.toContain(":EXCEPTION-2026-04-22: shift +45m");
+    expect(localStorage.getItem("mediant-org-source") ?? "").toBe(sourceBeforeInvalidOverride);
 
     occurrenceInput!.value = "29/04/2026 18:00";
+    occurrenceInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(occurrencePreview?.textContent).toBe("Wed 29 Apr 2026, 18:00");
     applyOverrideButton!.click();
     await flush();
 
@@ -223,6 +238,8 @@ describe("main.ts integration", () => {
     expect(sourceWithMove).not.toContain(":EXCEPTION-2026-04-22: reschedule 2026-04-29 18:00");
 
     occurrenceInput!.value = "18:30-21:15";
+    occurrenceInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(occurrencePreview?.textContent).toBe("Wed 22 Apr 2026, 18:30-21:15");
     applyOverrideButton!.click();
     await flush();
 
@@ -268,7 +285,8 @@ describe("main.ts integration", () => {
 
     const finalSource = localStorage.getItem("mediant-org-source") ?? "";
     expect(finalSource).toContain(":PROPERTIES:\n:EXCEPTION-2026-04-22: cancelled\n:END:");
-    const skippedTitle = document.querySelector<HTMLElement>(".item-title[data-base-date='2026-04-22']");
+    const skippedTitle = Array.from(document.querySelectorAll<HTMLElement>(".item-title[data-base-date='2026-04-22']"))
+      .find(el => el.textContent?.includes("Yoga deluxe")) ?? null;
     expect(skippedTitle).not.toBeNull();
     expect(skippedTitle?.textContent).toContain("Yoga deluxe");
     const skippedRow = skippedTitle?.closest(".item-skipped");

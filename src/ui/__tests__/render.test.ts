@@ -68,12 +68,14 @@ describe("renderAgenda", () => {
       daysOverdue: 2,
       kind: "deadline",
       sourceTimestamp: makeTimestamp("2026-04-18"),
+      baseDate: "2026-04-18",
     }];
     const deadlines: DeadlineItem[] = [{
       entry: makeEntry({ title: "Upcoming", todo: "TODO", priority: "A" }),
       dueDate: new Date(2026, 3, 21),
       daysUntil: 1,
       sourceTimestamp: makeTimestamp("2026-04-21"),
+      baseDate: "2026-04-21",
     }];
     const someday: SomedayItem[] = [{
       entry: makeEntry({ title: "Someday", todo: "TODO", tags: ["music"] }),
@@ -93,6 +95,8 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".overdue-header")?.textContent).toBe("Overdue");
     expect(container.querySelector(".deadlines-header")?.textContent).toBe("Upcoming deadlines");
     expect(container.querySelector(".someday-header")?.textContent).toBe("Someday");
+    expect(container.querySelector(".overdue-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-18");
+    expect(container.querySelector(".deadlines-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-21");
   });
 
   it("inserts the now line before the first item that starts after the current time", () => {

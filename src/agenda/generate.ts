@@ -89,10 +89,16 @@ export function collectDeadlines(entries: OrgEntry[], referenceDate: Date): Dead
   for (const entry of entries) {
     for (const plan of entry.planning) {
       if (plan.kind !== "deadline") continue;
-      const dueDate = findNextPlanningOccurrence(entry, plan.timestamp, today);
-      if (dueDate === null) continue;
-      const daysUntil = diffCalendarDays(dueDate, today);
-      results.push({ entry, dueDate, daysUntil, sourceTimestamp: plan.timestamp });
+      const occurrence = findNextPlanningOccurrence(entry, plan.timestamp, today);
+      if (occurrence === null) continue;
+      const daysUntil = diffCalendarDays(occurrence.date, today);
+      results.push({
+        entry,
+        dueDate: occurrence.date,
+        daysUntil,
+        sourceTimestamp: plan.timestamp,
+        baseDate: plan.timestamp.repeater ? occurrence.baseDate : null,
+      });
     }
   }
 
@@ -113,10 +119,17 @@ export function collectOverdueItems(entries: OrgEntry[], referenceDate: Date): O
     if (entry.todo !== "TODO") continue;
 
     for (const plan of entry.planning) {
-      const dueDate = findLatestPastPlanningOccurrence(entry, plan.timestamp, today);
-      if (dueDate === null) continue;
-      const daysOverdue = diffCalendarDays(today, dueDate);
-      results.push({ entry, dueDate, daysOverdue, kind: plan.kind, sourceTimestamp: plan.timestamp });
+      const occurrence = findLatestPastPlanningOccurrence(entry, plan.timestamp, today);
+      if (occurrence === null) continue;
+      const daysOverdue = diffCalendarDays(today, occurrence.date);
+      results.push({
+        entry,
+        dueDate: occurrence.date,
+        daysOverdue,
+        kind: plan.kind,
+        sourceTimestamp: plan.timestamp,
+        baseDate: plan.timestamp.repeater ? occurrence.baseDate : null,
+      });
     }
   }
 
@@ -190,10 +203,12 @@ function findNextPlanningOccurrence(
   entry: OrgEntry,
   ts: OrgTimestamp,
   today: Date,
-): Date | null {
+): OccurrenceInstance | null {
   if (!ts.repeater) {
     const dueDate = toDate(ts);
-    return diffCalendarDays(dueDate, today) >= 0 ? dueDate : null;
+    return diffCalendarDays(dueDate, today) >= 0
+      ? { date: dueDate, startTime: ts.startTime, endTime: ts.endTime, baseDate: ts.date, baseStartMinutes: null, override: null, note: null }
+      : null;
   }
 
   let windowDays = PLANNING_SEARCH_INITIAL_DAYS;
@@ -207,7 +222,7 @@ function findNextPlanningOccurrence(
       entry.seriesUntil,
     );
     const visible = occurrences.filter((occ) => occ.override?.kind !== "cancelled");
-    if (visible.length > 0) return earliestOccurrence(visible).date;
+    if (visible.length > 0) return earliestOccurrence(visible);
     windowDays *= 2;
   }
 
@@ -218,12 +233,14 @@ function findLatestPastPlanningOccurrence(
   entry: OrgEntry,
   ts: OrgTimestamp,
   today: Date,
-): Date | null {
+): OccurrenceInstance | null {
   const yesterdayEnd = new Date(today.getTime() - 1);
 
   if (!ts.repeater) {
     const dueDate = toDate(ts);
-    return diffCalendarDays(dueDate, today) < 0 ? dueDate : null;
+    return diffCalendarDays(dueDate, today) < 0
+      ? { date: dueDate, startTime: ts.startTime, endTime: ts.endTime, baseDate: ts.date, baseStartMinutes: null, override: null, note: null }
+      : null;
   }
 
   let windowDays = PLANNING_SEARCH_INITIAL_DAYS;
@@ -237,7 +254,7 @@ function findLatestPastPlanningOccurrence(
       entry.seriesUntil,
     );
     const visible = occurrences.filter((occ) => occ.override?.kind !== "cancelled");
-    if (visible.length > 0) return latestOccurrence(visible).date;
+    if (visible.length > 0) return latestOccurrence(visible);
     windowDays *= 2;
   }
 

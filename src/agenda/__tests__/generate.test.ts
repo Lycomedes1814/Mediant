@@ -948,6 +948,7 @@ describe("collectDeadlines", () => {
     expect(items[0].dueDate.getMonth()).toBe(3);
     expect(items[0].dueDate.getDate()).toBe(15);
     expect(items[0].daysUntil).toBe(5);
+    expect(items[0].baseDate).toBe("2026-04-15");
   });
 
   it("skips cancelled recurring deadline occurrences and finds the next one", () => {
@@ -978,5 +979,6 @@ describe("collectDeadlines", () => {
     expect(items[0].dueDate.getHours()).toBe(9);
     expect(items[0].dueDate.getMinutes()).toBe(30);
     expect(items[0].daysUntil).toBe(8);
+    expect(items[0].baseDate).toBe("2026-04-15");
   });
 });
