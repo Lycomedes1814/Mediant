@@ -139,6 +139,17 @@ describe("toggleDoneInSource", () => {
     );
   });
 
+  it("advances ++ yearly repeaters until they land in the future", () => {
+    const source =
+      "** TODO Tax\n" +
+      "DEADLINE: <2024-04-01 Mon ++1y>\n";
+
+    expect(toggleDoneInSource(source, 1)).toBe(
+      "** TODO Tax\n" +
+      "DEADLINE: <2027-04-01 Thu ++1y>\n",
+    );
+  });
+
   it("advances .+ repeaters from today", () => {
     const source =
       "** TODO Batteries\n" +
@@ -147,6 +158,17 @@ describe("toggleDoneInSource", () => {
     expect(toggleDoneInSource(source, 1)).toBe(
       "** TODO Batteries\n" +
       "DEADLINE: <2026-05-22 Fri .+1m>\n",
+    );
+  });
+
+  it("advances .+ yearly repeaters from today", () => {
+    const source =
+      "** TODO Passport\n" +
+      "DEADLINE: <2024-04-01 Mon .+1y>\n";
+
+    expect(toggleDoneInSource(source, 1)).toBe(
+      "** TODO Passport\n" +
+      "DEADLINE: <2027-04-22 Thu .+1y>\n",
     );
   });
 

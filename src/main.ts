@@ -108,9 +108,11 @@ const TODO_REPEAT_OPTIONS = [
   { value: "++1d", label: "Next future day (++1d)" },
   { value: "++1w", label: "Next future week (++1w)" },
   { value: "++1m", label: "Next future month (++1m)" },
+  { value: "++1y", label: "Next future year (++1y)" },
   { value: ".+1d", label: "1 day from done (.+1d)" },
   { value: ".+1w", label: "1 week from done (.+1w)" },
   { value: ".+1m", label: "1 month from done (.+1m)" },
+  { value: ".+1y", label: "1 year from done (.+1y)" },
 ] as const;
 
 function buildAddPanel(): void {
