@@ -113,6 +113,7 @@ describe("main.ts integration", () => {
     const schedRepeatSelect = document.querySelector<HTMLSelectElement>("#add-sched-repeat");
     const deadRepeatSelect = document.querySelector<HTMLSelectElement>("#add-dead-repeat");
     const deadInput = document.querySelector<HTMLInputElement>("#add-dead");
+    const checkboxSection = document.querySelector<HTMLElement>(".edit-checkboxes");
     const saveButton = document.querySelector<HTMLButtonElement>(".add-save-btn");
     expect(titleInput?.value).toBe("Yoga");
     expect(schedInput?.value).toBe("21/04/2026 17:00");
@@ -125,6 +126,7 @@ describe("main.ts integration", () => {
     expect(deadRepeatSelect?.value).toBe("");
     expect((schedRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
     expect((deadRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
+    expect(checkboxSection?.style.display).toBe("none");
 
     titleInput!.value = "Yoga deluxe";
     schedInput!.value = "2";
@@ -177,6 +179,12 @@ describe("main.ts integration", () => {
     schedTimePicker!.dispatchEvent(new Event("input", { bubbles: true }));
     expect(schedInput!.value).toBe("22/04/2026 19:15");
     expect(schedPreview?.textContent).toBe("Wed 22 Apr 2026, 19:15");
+    schedRepeatSelect!.value = "++1w";
+    schedRepeatSelect!.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(checkboxSection?.style.display).toBe("none");
+    schedRepeatSelect!.value = "";
+    schedRepeatSelect!.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(checkboxSection?.style.display).toBe("");
     schedRepeatSelect!.value = "++1w";
     schedRepeatSelect!.dispatchEvent(new Event("change", { bubbles: true }));
     deadInput!.value = "23/04/2026 08:00";

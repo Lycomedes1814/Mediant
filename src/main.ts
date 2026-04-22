@@ -120,6 +120,20 @@ function hasParsedDate(input: HTMLInputElement): boolean {
   return Boolean(parseDateTime(input.value.trim())?.date);
 }
 
+function hasActiveRepeater(
+  isTodo: boolean,
+  whenInput: HTMLInputElement,
+  repeatSelect: HTMLSelectElement,
+  schedInput: HTMLInputElement,
+  schedRepeatSelect: HTMLSelectElement,
+  deadInput: HTMLInputElement,
+  deadRepeatSelect: HTMLSelectElement,
+): boolean {
+  if (!isTodo) return hasParsedDate(whenInput) && Boolean(repeatSelect.value);
+  return (hasParsedDate(schedInput) && Boolean(schedRepeatSelect.value))
+    || (hasParsedDate(deadInput) && Boolean(deadRepeatSelect.value));
+}
+
 function buildAddPanel(): void {
   addOverlayEl = document.createElement("div");
   addOverlayEl.className = "add-overlay";
@@ -211,18 +225,27 @@ function buildAddPanel(): void {
     const isTodo = (typeGroup.container.querySelector<HTMLInputElement>("input[name='add-type']:checked"))?.value === "todo";
     const hasSchedDate = hasParsedDate(schedInput.input);
     const hasDeadDate = hasParsedDate(deadInput.input);
+    const repeating = hasActiveRepeater(
+      isTodo,
+      whenInput.input,
+      repeatSelect.select,
+      schedInput.input,
+      schedRepeatSelect.select,
+      deadInput.input,
+      deadRepeatSelect.select,
+    );
     whenInput.container.style.display = isTodo ? "none" : "";
     repeatSelect.container.style.display = isTodo ? "none" : "";
     schedInput.container.style.display = isTodo ? "" : "none";
     schedRepeatSelect.container.style.display = isTodo && hasSchedDate ? "" : "none";
     deadInput.container.style.display = isTodo ? "" : "none";
     deadRepeatSelect.container.style.display = isTodo && hasDeadDate ? "" : "none";
+    checkboxSection.style.display = repeating ? "none" : "";
     updateDateTimePreview(whenInput.input, whenInput.preview);
     updateDateTimePreview(schedInput.input, schedInput.preview);
     updateDateTimePreview(deadInput.input, deadInput.preview);
   };
   typeRadios.forEach(r => r.addEventListener("change", syncVisibility));
-  syncVisibility();
 
   whenInput.input.addEventListener("input", () => updateDateTimePreview(whenInput.input, whenInput.preview));
   schedInput.input.addEventListener("input", () => {
@@ -254,11 +277,15 @@ function buildAddPanel(): void {
     syncTextFromPickers(deadInput.input, deadInput.preview, deadInput.datePicker, deadInput.timePicker);
     syncVisibility();
   });
+  repeatSelect.select.addEventListener("change", syncVisibility);
+  schedRepeatSelect.select.addEventListener("change", syncVisibility);
+  deadRepeatSelect.select.addEventListener("change", syncVisibility);
 
   // Checkbox section
   const checkboxSection = document.createElement("div");
   checkboxSection.className = "add-field edit-checkboxes";
   form.appendChild(checkboxSection);
+  syncVisibility();
 
   const occurrenceMeta = document.createElement("div");
   occurrenceMeta.className = "occurrence-meta";
