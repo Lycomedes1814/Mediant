@@ -143,6 +143,11 @@ describe("main.ts integration", () => {
     expect(document.querySelector<HTMLElement>("#add-dead")?.closest(".add-field")?.querySelector(".datetime-preview")?.textContent)
       .toBe("Fri 5 Mar 2027, all day");
 
+    deadInput!.value = "5/3/28";
+    deadInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(document.querySelector<HTMLElement>("#add-dead")?.closest(".add-field")?.querySelector(".datetime-preview")?.textContent)
+      .toBe("Sun 5 Mar 2028, all day");
+
     schedInput!.value = "21/";
     schedInput!.dispatchEvent(new Event("input", { bubbles: true }));
     expect(schedPreview?.textContent).toBe("");

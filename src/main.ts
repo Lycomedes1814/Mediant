@@ -797,8 +797,12 @@ function expandDate(raw: string): string {
   };
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const full = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (full) return validateDateParts(Number(full[3]), Number(full[2]), Number(full[1]));
+  const full = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (full) {
+    const yearRaw = Number(full[3]);
+    const year = full[3].length === 2 ? 2000 + yearRaw : yearRaw;
+    return validateDateParts(year, Number(full[2]), Number(full[1]));
+  }
   const dm = raw.match(/^(\d{1,2})\/(\d{1,2})$/);
   if (dm) {
     const day = Number(dm[1]);
