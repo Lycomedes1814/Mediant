@@ -63,7 +63,7 @@ describe("renderAgenda", () => {
       [],
     ]);
     const overdue: OverdueItem[] = [{
-      entry: makeEntry({ title: "Late task", todo: "TODO", priority: "B", sourceLineNumber: 7 }),
+      entry: makeEntry({ title: "Late task", todo: "TODO", priority: "B", tags: ["work"], sourceLineNumber: 7 }),
       dueDate: new Date(2026, 3, 18),
       daysOverdue: 2,
       kind: "deadline",
@@ -80,7 +80,7 @@ describe("renderAgenda", () => {
       instanceNote: null,
     }];
     const deadlines: DeadlineItem[] = [{
-      entry: makeEntry({ title: "Upcoming", todo: "TODO", priority: "A" }),
+      entry: makeEntry({ title: "Upcoming", todo: "TODO", priority: "A", tags: ["music"] }),
       dueDate: new Date(2026, 3, 21),
       daysUntil: 1,
       sourceTimestamp: makeTimestamp("2026-04-21"),
@@ -119,6 +119,8 @@ describe("renderAgenda", () => {
     const overdueNote = container.querySelector(".overdue-section .item-instance-note") as HTMLElement | null;
     expect(overdueNote?.textContent).toBe("Call before paying");
     expect(overdueNote?.classList.contains("overdue-note-with-priority")).toBe(true);
+    const firstOverdueRow = container.querySelectorAll<HTMLElement>(".overdue-section .overdue-item")[0];
+    expect(firstOverdueRow?.style.borderLeftColor).toBe("#3366ff");
     const secondOverdueRow = container.querySelectorAll<HTMLElement>(".overdue-section .overdue-item")[1];
     expect(secondOverdueRow?.classList.contains("has-priority")).toBe(false);
     expect(secondOverdueRow?.querySelector(".overdue-meta-priority")).toBeNull();
@@ -132,6 +134,7 @@ describe("renderAgenda", () => {
     expect(deadlineNote?.classList.contains("deadline-note-with-priority")).toBe(true);
     const firstDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[0];
     expect(firstDeadlineRow?.classList.contains("has-priority")).toBe(true);
+    expect(firstDeadlineRow?.style.borderLeftColor).toBe("#00aa88");
     const secondDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[1];
     expect(secondDeadlineRow?.classList.contains("has-priority")).toBe(false);
     expect(secondDeadlineRow?.querySelector(".deadline-meta-priority")).toBeNull();
