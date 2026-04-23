@@ -63,7 +63,7 @@ describe("renderAgenda", () => {
       [],
     ]);
     const overdue: OverdueItem[] = [{
-      entry: makeEntry({ title: "Late task", todo: "TODO", sourceLineNumber: 7 }),
+      entry: makeEntry({ title: "Late task", todo: "TODO", priority: "B", sourceLineNumber: 7 }),
       dueDate: new Date(2026, 3, 18),
       daysOverdue: 2,
       kind: "deadline",
@@ -97,6 +97,8 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".someday-header")?.textContent).toBe("Someday");
     expect(container.querySelector(".overdue-section .item-time")?.textContent).toBe("-2d");
     expect(container.querySelector(".overdue-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-18");
+    expect(container.querySelector(".overdue-section .overdue-meta-priority")?.textContent).toBe("B");
+    expect(container.querySelector(".overdue-section .item-title .item-priority")).toBeNull();
     expect(container.querySelector(".deadlines-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-21");
     expect(container.querySelector(".deadlines-section .item-time")?.textContent).toBe("1d");
     expect(container.querySelector(".deadlines-section .deadline-item")?.classList.contains("deadline-urgency-critical")).toBe(true);

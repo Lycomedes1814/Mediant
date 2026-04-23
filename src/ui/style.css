@@ -293,12 +293,12 @@ body {
 
 .overdue-item {
   display: grid;
-  grid-template-columns: var(--time-col) auto auto 1fr auto;
+  grid-template-columns: 4.1ch 4.35rem 2.35rem 0.9rem 1fr auto;
   align-items: baseline;
-  padding: 0.6rem var(--section-padding-x);
+  padding: 0.78rem var(--section-padding-x);
   font-size: 0.875rem;
   border-left: 3px solid var(--accent-deadline);
-  gap: 0 0.55rem;
+  gap: 0 0.5rem;
 }
 
 .overdue-meta {
@@ -313,32 +313,58 @@ body {
   font-weight: 700;
   color: var(--accent-deadline);
   letter-spacing: -0.01em;
+  min-width: 0;
 }
 
 .overdue-item .item-kind {
   grid-column: 2;
   grid-row: 1;
-  font-size: 0.6875rem;
+  display: inline-flex;
+  justify-content: center;
+  min-width: 0;
+  font-size: 0.6625rem;
   font-weight: 500;
   color: var(--accent-deadline);
   border-radius: 0.25rem;
-  padding: 0 0.25rem;
+  padding: 0 0.2rem;
   line-height: 1.4;
+  opacity: 0.82;
 }
 
 .overdue-item .item-title {
-  grid-column: 4;
+  grid-column: 5;
   grid-row: 1;
   min-width: 0;
+  font-weight: 500;
 }
 
 .overdue-item .item-state {
   grid-column: 3;
   grid-row: 1;
+  display: inline-flex;
+  justify-content: center;
+  min-width: 0;
+  font-size: 0.6625rem;
+  opacity: 0.76;
+  padding-inline: 0.08rem;
+}
+
+.overdue-item .overdue-meta-priority {
+  grid-column: 4;
+  grid-row: 1;
+  display: inline-flex;
+  justify-content: center;
+  width: 0.9rem;
+  min-width: 0;
+  padding-inline: 0;
+  opacity: 0.72;
+  font-size: 0.64rem;
 }
 
 .overdue-item .tag-badges {
   grid-row: 1;
+  grid-column: 6;
+  justify-self: end;
 }
 
 /* ── Upcoming Deadlines section (top of agenda) ───────────────────── */

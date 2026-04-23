@@ -240,8 +240,13 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
     kind.textContent = item.kind === "deadline" ? "DEADLINE" : "SCHEDULED";
     const state = renderStateBadge(item.entry);
     meta.append(time, kind, state);
+    if (item.entry.priority) {
+      const pri = el("span", `item-priority priority-${item.entry.priority} overdue-meta-priority`);
+      pri.textContent = item.entry.priority;
+      meta.appendChild(pri);
+    }
 
-    const title = renderTitle(item.entry);
+    const title = renderTitle(item.entry, { showPriority: false });
     if (item.baseDate) title.dataset.baseDate = item.baseDate;
 
     row.append(title, meta, renderTags(item.entry.tags, optionsForTags()));
