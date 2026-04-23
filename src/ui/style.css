@@ -208,7 +208,7 @@ body {
   grid-template-columns: 1fr auto;
   align-items: center;
   padding: 0.18rem var(--section-padding-x);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   border-left: 3px solid transparent;
   gap: 0 0.75rem;
 }
