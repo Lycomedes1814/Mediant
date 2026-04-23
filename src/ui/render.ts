@@ -201,7 +201,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     if (dl.instanceNote) row.classList.add("has-instance-note");
     row.classList.add(getDeadlineUrgencyClass(dl.daysUntil));
     if (dl.entry.todo === "DONE") row.classList.add("item-done");
-    applyPrimaryTagFringe(row, dl.entry.tags);
+    applyPrimaryTagFringe(row, dl.entry.tags, "compact");
 
     const meta = el("span", "deadline-meta");
     const time = el("span", "item-time");
@@ -240,7 +240,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
     const row = el("div", "overdue-item");
     if (item.entry.priority) row.classList.add("has-priority");
     if (item.instanceNote) row.classList.add("has-instance-note");
-    applyPrimaryTagFringe(row, item.entry.tags);
+    applyPrimaryTagFringe(row, item.entry.tags, "compact");
 
     const meta = el("span", "overdue-meta");
     const time = el("span", "item-time");
@@ -521,9 +521,16 @@ function renderDayDeadlineItem(item: AgendaItem): HTMLElement {
   return renderItem(item, "day-deadline-item", [kind, renderStateBadge(item.entry, "TODO")], "optional");
 }
 
-function applyPrimaryTagFringe(row: HTMLElement, tags: readonly string[]): void {
+function applyPrimaryTagFringe(row: HTMLElement, tags: readonly string[], mode: "border" | "compact" = "border"): void {
   const primaryTag = tags[0];
-  if (primaryTag) row.style.borderLeftColor = getTagColor(primaryTag);
+  if (!primaryTag) return;
+
+  const color = getTagColor(primaryTag);
+  if (mode === "compact") {
+    row.style.setProperty("--global-row-fringe-color", color);
+    return;
+  }
+  row.style.borderLeftColor = color;
 }
 
 // ── State badge ─────────────────────────────────────────────────────

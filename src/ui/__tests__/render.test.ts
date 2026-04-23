@@ -120,7 +120,7 @@ describe("renderAgenda", () => {
     expect(overdueNote?.textContent).toBe("Call before paying");
     expect(overdueNote?.classList.contains("overdue-note-with-priority")).toBe(true);
     const firstOverdueRow = container.querySelectorAll<HTMLElement>(".overdue-section .overdue-item")[0];
-    expect(firstOverdueRow?.style.borderLeftColor).toBe("#3366ff");
+    expect(firstOverdueRow?.style.getPropertyValue("--global-row-fringe-color")).toBe("#3366ff");
     const secondOverdueRow = container.querySelectorAll<HTMLElement>(".overdue-section .overdue-item")[1];
     expect(secondOverdueRow?.classList.contains("has-priority")).toBe(false);
     expect(secondOverdueRow?.querySelector(".overdue-meta-priority")).toBeNull();
@@ -134,7 +134,7 @@ describe("renderAgenda", () => {
     expect(deadlineNote?.classList.contains("deadline-note-with-priority")).toBe(true);
     const firstDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[0];
     expect(firstDeadlineRow?.classList.contains("has-priority")).toBe(true);
-    expect(firstDeadlineRow?.style.borderLeftColor).toBe("#00aa88");
+    expect(firstDeadlineRow?.style.getPropertyValue("--global-row-fringe-color")).toBe("#00aa88");
     const secondDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[1];
     expect(secondDeadlineRow?.classList.contains("has-priority")).toBe(false);
     expect(secondDeadlineRow?.querySelector(".deadline-meta-priority")).toBeNull();
