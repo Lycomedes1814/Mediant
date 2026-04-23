@@ -354,7 +354,7 @@ body {
 
 .deadline-item {
   display: grid;
-  grid-template-columns: var(--time-col) auto 1fr auto;
+  grid-template-columns: max-content auto 1fr auto;
   align-items: baseline;
   padding: 0.6rem var(--section-padding-x);
   font-size: 0.875rem;
