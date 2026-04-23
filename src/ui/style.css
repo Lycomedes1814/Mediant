@@ -374,7 +374,6 @@ body {
   align-items: baseline;
   padding: 0.78rem var(--section-padding-x);
   font-size: 0.875rem;
-  border-left: 3px solid var(--deadline-urgency, var(--accent-deadline));
   gap: 0 0.5rem;
 }
 
