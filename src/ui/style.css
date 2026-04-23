@@ -309,9 +309,10 @@ body {
   grid-column: 1;
   grid-row: 1;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 700;
   color: var(--accent-deadline);
+  letter-spacing: -0.01em;
 }
 
 .overdue-item .item-kind {

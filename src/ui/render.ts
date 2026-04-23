@@ -235,7 +235,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
 
     const meta = el("span", "overdue-meta");
     const time = el("span", "item-time");
-    time.textContent = `${item.daysOverdue} days overdue`;
+    time.textContent = `${item.daysOverdue}d`;
     const kind = el("span", "item-kind");
     kind.textContent = item.kind === "deadline" ? "DEADLINE" : "SCHEDULED";
     const state = renderStateBadge(item.entry);
