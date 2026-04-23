@@ -215,6 +215,7 @@ body {
 
 .allday-item.has-state {
   grid-template-columns: auto 1fr auto;
+  font-size: 0.90625rem;
 }
 
 .item-state {
