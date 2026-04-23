@@ -1539,9 +1539,9 @@ function refreshOccurrenceSection(opts: { resetOccurrenceInput?: boolean } = {})
   refs.endSeriesCheckbox.disabled = nextBaseKey === null;
   refs.clearOverrideBtn.style.display = override ? "" : "none";
 
-  // Only rewrite textarea when it doesn't match the stored note, so
-  // in-progress typing doesn't get clobbered by refresh calls.
-  if (refs.noteTextarea.value !== (note ?? "")) {
+  // Autosave stores parsed notes trimmed, so avoid normalizing a focused
+  // textarea while the user is typing a space before the next word.
+  if (document.activeElement !== refs.noteTextarea && refs.noteTextarea.value !== (note ?? "")) {
     refs.noteTextarea.value = note ?? "";
   }
   if (opts.resetOccurrenceInput) {

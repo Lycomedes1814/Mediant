@@ -328,15 +328,39 @@ describe("main.ts integration", () => {
       .map(label => label.textContent);
     const occurrenceInput = document.querySelector<HTMLInputElement>(".occurrence-input");
     const occurrencePreview = document.querySelector<HTMLElement>(".occurrence-preview");
+    const occurrenceNote = document.querySelector<HTMLTextAreaElement>(".occurrence-note");
     const occurrenceButtons = Array.from(document.querySelectorAll<HTMLButtonElement>(".occurrence-btn"));
     const clearOverrideButton = occurrenceButtons.find(button => button.textContent === "Clear override");
     expect(skipCheckbox).not.toBeUndefined();
     expect(endSeriesCheckbox).not.toBeNull();
     expect(occurrenceInput).not.toBeNull();
     expect(occurrencePreview).not.toBeNull();
+    expect(occurrenceNote).not.toBeNull();
     expect(clearOverrideButton).not.toBeUndefined();
     expect(occurrenceLabels).toContain("Stop repeating after this occurrence");
     expect(endSeriesCheckbox?.checked).toBe(false);
+
+    occurrenceNote!.focus();
+    occurrenceNote!.value = "Bring";
+    occurrenceNote!.dispatchEvent(new Event("input", { bubbles: true }));
+    await flush();
+    occurrenceNote!.value += " ";
+    occurrenceNote!.dispatchEvent(new Event("input", { bubbles: true }));
+    await flush();
+    expect(occurrenceNote!.value).toBe("Bring ");
+    occurrenceNote!.value += "water";
+    occurrenceNote!.dispatchEvent(new Event("input", { bubbles: true }));
+    await flush();
+
+    let sourceWithNote = localStorage.getItem("mediant-org-source") ?? "";
+    expect(occurrenceNote!.value).toBe("Bring water");
+    expect(sourceWithNote).toContain(":EXCEPTION-NOTE-2026-04-22: Bring water");
+
+    occurrenceNote!.value = "";
+    occurrenceNote!.dispatchEvent(new Event("input", { bubbles: true }));
+    await flush();
+    sourceWithNote = localStorage.getItem("mediant-org-source") ?? "";
+    expect(sourceWithNote).not.toContain(":EXCEPTION-NOTE-2026-04-22:");
 
     const sourceBeforeInvalidOverride = localStorage.getItem("mediant-org-source") ?? "";
     occurrenceInput!.value = "+45m";
