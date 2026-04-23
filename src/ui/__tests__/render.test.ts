@@ -69,6 +69,13 @@ describe("renderAgenda", () => {
       kind: "deadline",
       sourceTimestamp: makeTimestamp("2026-04-18"),
       baseDate: "2026-04-18",
+    }, {
+      entry: makeEntry({ title: "Late follow-up", todo: "TODO", sourceLineNumber: 8 }),
+      dueDate: new Date(2026, 3, 17),
+      daysOverdue: 3,
+      kind: "scheduled",
+      sourceTimestamp: makeTimestamp("2026-04-17"),
+      baseDate: "2026-04-17",
     }];
     const deadlines: DeadlineItem[] = [{
       entry: makeEntry({ title: "Upcoming", todo: "TODO", priority: "A" }),
@@ -99,6 +106,9 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".overdue-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-18");
     expect(container.querySelector(".overdue-section .overdue-meta-priority")?.textContent).toBe("B");
     expect(container.querySelector(".overdue-section .item-title .item-priority")).toBeNull();
+    const secondOverdueRow = container.querySelectorAll<HTMLElement>(".overdue-section .overdue-item")[1];
+    expect(secondOverdueRow?.classList.contains("has-priority")).toBe(false);
+    expect(secondOverdueRow?.querySelector(".overdue-meta-priority")).toBeNull();
     expect(container.querySelector(".deadlines-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-21");
     expect(container.querySelector(".deadlines-section .item-time")?.textContent).toBe("1d");
     expect(container.querySelector(".deadlines-section .deadline-item")?.classList.contains("deadline-urgency-critical")).toBe(true);

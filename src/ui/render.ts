@@ -232,6 +232,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
 
   for (const item of items) {
     const row = el("div", "overdue-item");
+    if (item.entry.priority) row.classList.add("has-priority");
 
     const meta = el("span", "overdue-meta");
     const time = el("span", "item-time");
