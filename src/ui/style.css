@@ -1779,6 +1779,7 @@ body {
 .occurrence-input {
   flex: 1;
   min-width: 0;
+  background: var(--bg-card);
 }
 
 .occurrence-preview {
