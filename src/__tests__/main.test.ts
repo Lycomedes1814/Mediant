@@ -82,6 +82,11 @@ describe("main.ts integration", () => {
     expect(document.querySelector(".hide-empty-days-toggle")?.classList.contains("is-on")).toBe(true);
     expect(document.querySelectorAll(".day-block").length).toBeLessThan(7);
     expect(document.querySelector(".day-empty")).toBeNull();
+    keydownHandler!(makeKeydownEvent("h", document.body));
+    await flush();
+    expect(localStorage.getItem("mediant-hide-empty-days")).toBe("false");
+    expect(document.querySelector(".hide-empty-days-toggle")?.classList.contains("is-on")).toBe(false);
+    expect(document.querySelectorAll(".day-block")).toHaveLength(7);
 
     const workTag = document.querySelector<HTMLElement>(".tag[data-tag='work']");
     expect(workTag).not.toBeNull();

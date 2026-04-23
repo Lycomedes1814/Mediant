@@ -3,7 +3,7 @@
 ## General
 - [ ] Multilingual support
 - [ ] Month view
-- [ ] Toggle hiding empty days (useful with filters)
+- [x] Toggle hiding empty days (useful with filters)
 - [ ] Mobile notifications
 - [ ] ICS import/export
 - [ ] Subscribe to ICS URLs

@@ -155,9 +155,9 @@ index.html             — Minimal shell with #agenda container
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE)
 - **DONE items** rendered at reduced opacity with line-through
 - **Today** indicated by blue card border and small dot marker
-- **Empty days** always shown (subtle em dash)
+- **Hide empty days** — the `Hide empty days` toggle removes days with no visible agenda items from the rolling week view. This is useful with tag filters; if every day is hidden, the day-card container is hidden too. The preference is stored in `localStorage`.
 - **Week navigation** with prev/next/today buttons
-- **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open the add-item panel, `c` toggle tag color mode, `x` clear active tag filters. Shortcuts are disabled while typing in form fields.
+- **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open the add-item panel, `c` toggle tag color mode, `h` toggle hide empty days, `x` clear active tag filters. Shortcuts are disabled while typing in form fields.
 - **Now line** on today's timed section
 - **Add-item panel** for creating TODO tasks and events from the UI
 - **Edit-item panel** for updating an existing entry in place (preserves body text). Clicking a recurring occurrence reveals a "This occurrence" section alongside the series fields, with Skip / Shift / Move / Note / Clear actions that write exception properties keyed on the unshifted base date.
@@ -192,6 +192,7 @@ Mediant uses your browser's `localStorage` for the following:
 |---|---|
 | `mediant-org-source` | Pasted Org content (static mode only — ignored in server mode) |
 | `mediant-tag-colors` | Tag-to-color assignments, so tag colors stay consistent |
+| `mediant-hide-empty-days` | Whether empty days are hidden in the agenda view |
 | `theme` | Light/dark mode preference |
 
 In static mode all data stays in the browser. In server mode the Org source lives in the file you passed to the CLI; tag colors and theme are still browser-local.

@@ -1580,13 +1580,14 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return Boolean(el.closest("input, textarea, select, [contenteditable='true']"));
 }
 
-function getShortcutAction(e: KeyboardEvent): "next" | "prev" | "today" | "add" | "color-mode" | "clear-filters" | null {
+function getShortcutAction(e: KeyboardEvent): "next" | "prev" | "today" | "add" | "color-mode" | "hide-empty-days" | "clear-filters" | null {
   const key = e.key.toLowerCase();
   if (key === "n" || e.code === "KeyN" || e.keyCode === 78) return "next";
   if (key === "p" || e.code === "KeyP" || e.keyCode === 80) return "prev";
   if (key === "t" || e.code === "KeyT" || e.keyCode === 84) return "today";
   if (key === "a" || e.code === "KeyA" || e.keyCode === 65) return "add";
   if (key === "c" || e.code === "KeyC" || e.keyCode === 67) return "color-mode";
+  if (key === "h" || e.code === "KeyH" || e.keyCode === 72) return "hide-empty-days";
   if (key === "x" || e.code === "KeyX" || e.keyCode === 88) return "clear-filters";
   return null;
 }
@@ -1626,6 +1627,9 @@ async function init(): Promise<void> {
     } else if (action === "color-mode") {
       e.preventDefault();
       toggleTagColorMode();
+    } else if (action === "hide-empty-days") {
+      e.preventDefault();
+      toggleHideEmptyDays();
     } else if (action === "clear-filters") {
       e.preventDefault();
       clearTagFilters();
