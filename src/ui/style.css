@@ -638,6 +638,7 @@ body {
 }
 
 .tag-color-mode-toggle,
+.hide-empty-days-toggle,
 .clear-tag-filters {
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -649,7 +650,8 @@ body {
   cursor: pointer;
 }
 
-.tag-color-mode-toggle.is-on {
+.tag-color-mode-toggle.is-on,
+.hide-empty-days-toggle.is-on {
   border-color: var(--border-today);
   background: color-mix(in srgb, var(--bg-card) 78%, var(--border-today) 22%);
 }

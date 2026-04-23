@@ -12,6 +12,7 @@ import { notificationsEnabled, setNotificationsEnabled, requestPermission, clear
 export interface RenderAgendaOptions {
   readonly activeTagFilters?: readonly string[];
   readonly tagColorEditMode?: boolean;
+  readonly hideEmptyDays?: boolean;
 }
 
 export function createThemeToggle(): HTMLButtonElement {
@@ -96,10 +97,15 @@ function renderAgendaBase(
 
   // Days card (all 7 days in one container, divided by thin rules)
   const daysCard = el("section", "days-card");
-  for (let i = 0; i < 7; i++) {
-    daysCard.appendChild(renderDay(week[i], i, today));
+  const visibleDays = options.hideEmptyDays
+    ? week.filter(day => day.items.length > 0)
+    : week;
+  if (visibleDays.length > 0) {
+    for (const day of visibleDays) {
+      daysCard.appendChild(renderDay(day, today));
+    }
+    container.appendChild(daysCard);
   }
-  container.appendChild(daysCard);
 
   // Someday section
   if (someday.length > 0) {
@@ -147,7 +153,13 @@ function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptio
   colorModeBtn.setAttribute("aria-pressed", options.tagColorEditMode ? "true" : "false");
   if (options.tagColorEditMode) colorModeBtn.classList.add("is-on");
 
-  actions.append(todayBtn, addBtn, colorModeBtn, createNotificationToggle(), createThemeToggle());
+  const hideEmptyDaysBtn = el("button", "hide-empty-days-toggle");
+  hideEmptyDaysBtn.textContent = options.hideEmptyDays ? "Empty days: hidden" : "Hide empty days";
+  hideEmptyDaysBtn.dataset.action = "toggle-hide-empty-days";
+  hideEmptyDaysBtn.setAttribute("aria-pressed", options.hideEmptyDays ? "true" : "false");
+  if (options.hideEmptyDays) hideEmptyDaysBtn.classList.add("is-on");
+
+  actions.append(todayBtn, addBtn, colorModeBtn, hideEmptyDaysBtn, createNotificationToggle(), createThemeToggle());
   header.append(nav, actions);
 
   if ((options.activeTagFilters?.length ?? 0) > 0) {
@@ -262,7 +274,7 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
 
 // ── Day card ─────────────────────────────────────────────────────────
 
-function renderDay(day: AgendaDay, dayIndex: number, today: Date): HTMLElement {
+function renderDay(day: AgendaDay, today: Date): HTMLElement {
   const card = el("article", "day-block");
 
   const isToday = isSameDate(day.date, today);

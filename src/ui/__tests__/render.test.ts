@@ -99,6 +99,45 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".deadlines-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-21");
   });
 
+  it("hides empty day blocks when requested", () => {
+    const container = document.createElement("div");
+    const week = makeWeek([
+      [makeItem({ title: "Today event", date: new Date(2026, 3, 20, 14, 0), startTime: "14:00" })],
+      [],
+      [],
+      [makeItem({ title: "Thursday event", date: new Date(2026, 3, 23, 9, 0), startTime: "09:00" })],
+      [],
+      [],
+      [],
+    ]);
+
+    renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 12, 30), {
+      hideEmptyDays: true,
+    });
+
+    const days = Array.from(container.querySelectorAll<HTMLElement>(".day-block"));
+    expect(days).toHaveLength(2);
+    expect(days.map(day => day.querySelector(".date-label")?.textContent)).toEqual([
+      "Monday 20 April (W17)",
+      "Thursday 23 April",
+    ]);
+    const toggle = container.querySelector<HTMLButtonElement>(".hide-empty-days-toggle");
+    expect(toggle?.textContent).toBe("Empty days: hidden");
+    expect(toggle?.getAttribute("aria-pressed")).toBe("true");
+    expect(toggle?.classList.contains("is-on")).toBe(true);
+  });
+
+  it("hides the days card when every day is hidden", () => {
+    const container = document.createElement("div");
+
+    renderAgenda(container, makeWeek([]), [], [], [], new Date(2026, 3, 20, 12, 30), {
+      hideEmptyDays: true,
+    });
+
+    expect(container.querySelector(".days-card")).toBeNull();
+    expect(container.querySelector(".day-block")).toBeNull();
+  });
+
   it("inserts the now line before the first item that starts after the current time", () => {
     const container = document.createElement("div");
     const today = new Date(2026, 3, 20, 12, 30);

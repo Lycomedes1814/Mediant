@@ -28,6 +28,7 @@ let serverVersion: string | null = null;
 let agendaLoaded = false;
 let activeTagFilters = new Set<string>();
 let tagColorEditMode = false;
+let hideEmptyDays = localStorage.getItem("mediant-hide-empty-days") === "true";
 
 /** Collect every unique tag from the current parsed entries. */
 function collectAllTags(): string[] {
@@ -1566,6 +1567,12 @@ function toggleTagColorMode(): void {
   render();
 }
 
+function toggleHideEmptyDays(): void {
+  hideEmptyDays = !hideEmptyDays;
+  localStorage.setItem("mediant-hide-empty-days", hideEmptyDays ? "true" : "false");
+  render();
+}
+
 function isTypingTarget(target: EventTarget | null): boolean {
   const el = target instanceof HTMLElement ? target : null;
   if (!el) return false;
@@ -1823,6 +1830,7 @@ function render(): void {
   renderAgenda(container, filteredWeek, filteredDeadlines, filteredOverdue, filteredSomeday, today, {
     activeTagFilters: [...activeTagFilters].sort(),
     tagColorEditMode,
+    hideEmptyDays,
   });
 
   // Schedule notifications for today's timed events
@@ -1869,6 +1877,8 @@ function setupNavigation(): void {
       openAddPanel();
     } else if (action === "toggle-tag-color-mode") {
       toggleTagColorMode();
+    } else if (action === "toggle-hide-empty-days") {
+      toggleHideEmptyDays();
     } else if (action === "toggle-tag-filter") {
       const tag = btn.dataset.tag;
       if (tag) toggleTagFilter(tag);
