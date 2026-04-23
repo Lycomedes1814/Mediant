@@ -237,7 +237,8 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
     time.textContent = `${item.daysOverdue} days overdue`;
     const kind = el("span", "item-kind");
     kind.textContent = item.kind === "deadline" ? "DEADLINE" : "SCHEDULED";
-    meta.append(time, kind);
+    const state = renderStateBadge(item.entry);
+    meta.append(time, kind, state);
 
     const title = renderTitle(item.entry);
     if (item.baseDate) title.dataset.baseDate = item.baseDate;

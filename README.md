@@ -138,7 +138,7 @@ index.html             — Minimal shell with #agenda container
 
 ## UI overview
 
-- **Overdue section** at the top — TODO items past their DEADLINE or SCHEDULED date, sorted most overdue first
+- **Overdue section** at the top — TODO items past their DEADLINE or SCHEDULED date, sorted most overdue first, with a clickable TODO badge before each title
 - **Upcoming deadlines** section below overdue (global, sorted by due date)
 - **Day cards** (7 consecutive days starting from today) each containing:
   - All-day events (holidays, birthdays) in a subtle grouped section

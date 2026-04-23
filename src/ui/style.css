@@ -285,7 +285,7 @@ body {
 
 .overdue-item {
   display: grid;
-  grid-template-columns: var(--time-col) auto 1fr auto;
+  grid-template-columns: var(--time-col) auto auto 1fr auto;
   align-items: baseline;
   padding: 0.6rem var(--section-padding-x);
   font-size: 0.875rem;
@@ -318,9 +318,14 @@ body {
 }
 
 .overdue-item .item-title {
-  grid-column: 3;
+  grid-column: 4;
   grid-row: 1;
   min-width: 0;
+}
+
+.overdue-item .item-state {
+  grid-column: 3;
+  grid-row: 1;
 }
 
 .overdue-item .tag-badges {

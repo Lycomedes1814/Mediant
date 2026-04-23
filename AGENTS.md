@@ -87,7 +87,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 
 ## UI structure
 
-- **Overdue section** at the very top — TODO items past their DEADLINE or SCHEDULED date, sorted most overdue first. Shows days overdue + kind badge (DEADLINE/SCHEDULED). Red-accented border and labels.
+- **Overdue section** at the very top — TODO items past their DEADLINE or SCHEDULED date, sorted most overdue first. Shows days overdue + kind badge (DEADLINE/SCHEDULED) + clickable TODO badge before the title. Red-accented border and labels.
 - **Upcoming deadlines section** below overdue (global, not per-day)
 - **Day cards** (7 consecutive days starting from today), each containing:
   - All-day section (holidays, birthdays — no label, title flush left)
