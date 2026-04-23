@@ -394,7 +394,7 @@ body {
   grid-column: 1;
   grid-row: 1;
   font-family: var(--font-mono);
-  font-size: 0.77rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--deadline-urgency, var(--accent-deadline));
   letter-spacing: -0.01em;
