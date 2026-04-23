@@ -920,6 +920,20 @@ describe("collectOverdueItems", () => {
     expect(items[0].dueDate.getDate()).toBe(1);
     expect(items[0].daysOverdue).toBe(9);
   });
+
+  it("threads occurrence notes onto overdue items", () => {
+    const entries = parseOrg(
+      "** TODO Water plants\n" +
+      "SCHEDULED: <2026-04-01 on. +1w>\n" +
+      ":PROPERTIES:\n" +
+      ":EXCEPTION-NOTE-2026-04-08: Check the balcony pots\n" +
+      ":END:\n",
+    );
+    const items = collectOverdueItems(entries, new Date(2026, 3, 10, 12, 0));
+    expect(items).toHaveLength(1);
+    expect(items[0].baseDate).toBe("2026-04-08");
+    expect(items[0].instanceNote).toBe("Check the balcony pots");
+  });
 });
 
 // ── Upcoming deadlines ──────────────────────────────────────────────
@@ -980,5 +994,19 @@ describe("collectDeadlines", () => {
     expect(items[0].dueDate.getMinutes()).toBe(30);
     expect(items[0].daysUntil).toBe(8);
     expect(items[0].baseDate).toBe("2026-04-15");
+  });
+
+  it("threads occurrence notes onto upcoming deadlines", () => {
+    const entries = parseOrg(
+      "** TODO Pay rent\n" +
+      "DEADLINE: <2026-04-01 on. +1w>\n" +
+      ":PROPERTIES:\n" +
+      ":EXCEPTION-NOTE-2026-04-15: Confirm autopay\n" +
+      ":END:\n",
+    );
+    const items = collectDeadlines(entries, new Date(2026, 3, 10, 9, 0));
+    expect(items).toHaveLength(1);
+    expect(items[0].baseDate).toBe("2026-04-15");
+    expect(items[0].instanceNote).toBe("Confirm autopay");
   });
 });

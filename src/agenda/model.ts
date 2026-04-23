@@ -60,6 +60,7 @@ export interface DeadlineItem {
   readonly daysUntil: number;
   readonly sourceTimestamp: OrgTimestamp;
   readonly baseDate: string | null;
+  readonly instanceNote: string | null;
 }
 
 /**
@@ -73,6 +74,7 @@ export interface OverdueItem {
   readonly kind: "deadline" | "scheduled";
   readonly sourceTimestamp: OrgTimestamp;
   readonly baseDate: string | null;
+  readonly instanceNote: string | null;
 }
 
 /**

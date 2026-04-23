@@ -217,6 +217,9 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
 
     row.append(meta, title, renderTags(dl.entry.tags, optionsForTags()));
     section.appendChild(row);
+    if (dl.instanceNote) {
+      section.appendChild(renderGlobalInstanceNote(dl.instanceNote, dl.entry.priority ? "deadline-note-with-priority" : "deadline-note"));
+    }
   }
 
   return section;
@@ -253,6 +256,9 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
 
     row.append(title, meta, renderTags(item.entry.tags, optionsForTags()));
     section.appendChild(row);
+    if (item.instanceNote) {
+      section.appendChild(renderGlobalInstanceNote(item.instanceNote, item.entry.priority ? "overdue-note-with-priority" : "overdue-note"));
+    }
   }
 
   return section;
@@ -456,6 +462,14 @@ function renderInstanceNote(item: AgendaItem): HTMLElement {
   const row = el("div", buildInstanceNoteClassName(item));
   const text = el("div", "item-instance-note-text");
   text.textContent = item.instanceNote ?? "";
+  row.appendChild(text);
+  return row;
+}
+
+function renderGlobalInstanceNote(note: string, layoutClass: string): HTMLElement {
+  const row = el("div", `item-instance-note ${layoutClass}`);
+  const text = el("div", "item-instance-note-text");
+  text.textContent = note;
   row.appendChild(text);
   return row;
 }

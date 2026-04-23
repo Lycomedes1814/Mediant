@@ -69,6 +69,7 @@ describe("renderAgenda", () => {
       kind: "deadline",
       sourceTimestamp: makeTimestamp("2026-04-18"),
       baseDate: "2026-04-18",
+      instanceNote: "Call before paying",
     }, {
       entry: makeEntry({ title: "Late follow-up", todo: "TODO", sourceLineNumber: 8 }),
       dueDate: new Date(2026, 3, 17),
@@ -76,6 +77,7 @@ describe("renderAgenda", () => {
       kind: "scheduled",
       sourceTimestamp: makeTimestamp("2026-04-17"),
       baseDate: "2026-04-17",
+      instanceNote: null,
     }];
     const deadlines: DeadlineItem[] = [{
       entry: makeEntry({ title: "Upcoming", todo: "TODO", priority: "A" }),
@@ -83,12 +85,14 @@ describe("renderAgenda", () => {
       daysUntil: 1,
       sourceTimestamp: makeTimestamp("2026-04-21"),
       baseDate: "2026-04-21",
+      instanceNote: "Bring receipt",
     }, {
       entry: makeEntry({ title: "Upcoming no priority", todo: "TODO", sourceLineNumber: 9 }),
       dueDate: new Date(2026, 3, 22),
       daysUntil: 2,
       sourceTimestamp: makeTimestamp("2026-04-22"),
       baseDate: "2026-04-22",
+      instanceNote: null,
     }];
     const someday: SomedayItem[] = [{
       entry: makeEntry({ title: "Someday", todo: "TODO", tags: ["music"] }),
@@ -112,6 +116,9 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".overdue-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-18");
     expect(container.querySelector(".overdue-section .overdue-meta-priority")?.textContent).toBe("B");
     expect(container.querySelector(".overdue-section .item-title .item-priority")).toBeNull();
+    const overdueNote = container.querySelector(".overdue-section .item-instance-note") as HTMLElement | null;
+    expect(overdueNote?.textContent).toBe("Call before paying");
+    expect(overdueNote?.classList.contains("overdue-note-with-priority")).toBe(true);
     const secondOverdueRow = container.querySelectorAll<HTMLElement>(".overdue-section .overdue-item")[1];
     expect(secondOverdueRow?.classList.contains("has-priority")).toBe(false);
     expect(secondOverdueRow?.querySelector(".overdue-meta-priority")).toBeNull();
@@ -120,6 +127,9 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".deadlines-section .deadline-item")?.classList.contains("deadline-urgency-critical")).toBe(true);
     expect(container.querySelector(".deadlines-section .deadline-meta-priority")?.textContent).toBe("A");
     expect(container.querySelector(".deadlines-section .item-title .item-priority")).toBeNull();
+    const deadlineNote = container.querySelector(".deadlines-section .item-instance-note") as HTMLElement | null;
+    expect(deadlineNote?.textContent).toBe("Bring receipt");
+    expect(deadlineNote?.classList.contains("deadline-note-with-priority")).toBe(true);
     const firstDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[0];
     expect(firstDeadlineRow?.classList.contains("has-priority")).toBe(true);
     const secondDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[1];

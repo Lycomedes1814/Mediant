@@ -429,6 +429,24 @@ body {
   grid-column: 6;
 }
 
+.overdue-note {
+  grid-template-columns: 4.1ch 4.35rem 2.35rem 1fr auto;
+  column-gap: 0.5rem;
+}
+
+.overdue-note-with-priority {
+  grid-template-columns: 4.1ch 4.35rem 2.35rem 0.9rem 1fr auto;
+  column-gap: 0.5rem;
+}
+
+.overdue-note .item-instance-note-text {
+  grid-column: 4;
+}
+
+.overdue-note-with-priority .item-instance-note-text {
+  grid-column: 5;
+}
+
 /* ── Upcoming Deadlines section (top of agenda) ───────────────────── */
 
 .deadlines-section {
@@ -534,6 +552,24 @@ body {
 
 .deadline-item.has-priority .tag-badges {
   grid-column: 5;
+}
+
+.deadline-note {
+  grid-template-columns: 4.1ch 2.35rem 1fr auto;
+  column-gap: 0.5rem;
+}
+
+.deadline-note-with-priority {
+  grid-template-columns: 4.1ch 2.35rem 0.9rem 1fr auto;
+  column-gap: 0.5rem;
+}
+
+.deadline-note .item-instance-note-text {
+  grid-column: 3;
+}
+
+.deadline-note-with-priority .item-instance-note-text {
+  grid-column: 4;
 }
 
 /* ── Scheduled items ──────────────────────────────────────────────── */

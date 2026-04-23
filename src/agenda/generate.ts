@@ -98,6 +98,7 @@ export function collectDeadlines(entries: OrgEntry[], referenceDate: Date): Dead
         daysUntil,
         sourceTimestamp: plan.timestamp,
         baseDate: plan.timestamp.repeater ? occurrence.baseDate : null,
+        instanceNote: occurrence.note,
       });
     }
   }
@@ -129,6 +130,7 @@ export function collectOverdueItems(entries: OrgEntry[], referenceDate: Date): O
         kind: plan.kind,
         sourceTimestamp: plan.timestamp,
         baseDate: plan.timestamp.repeater ? occurrence.baseDate : null,
+        instanceNote: occurrence.note,
       });
     }
   }
