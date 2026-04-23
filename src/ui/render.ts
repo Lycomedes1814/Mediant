@@ -197,6 +197,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
 
   for (const dl of deadlines) {
     const row = el("div", "deadline-item");
+    if (dl.entry.priority) row.classList.add("has-priority");
     row.classList.add(getDeadlineUrgencyClass(dl.daysUntil));
     if (dl.entry.todo === "DONE") row.classList.add("item-done");
 
