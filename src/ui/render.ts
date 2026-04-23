@@ -204,11 +204,16 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     time.textContent = formatDeadlineDueText(dl.daysUntil);
     const state = renderStateBadge(dl.entry);
     meta.append(time, state);
+    if (dl.entry.priority) {
+      const pri = el("span", `item-priority priority-${dl.entry.priority} deadline-meta-priority`);
+      pri.textContent = dl.entry.priority;
+      meta.appendChild(pri);
+    }
 
-    const title = renderTitle(dl.entry);
+    const title = renderTitle(dl.entry, { showPriority: false });
     if (dl.baseDate) title.dataset.baseDate = dl.baseDate;
 
-    row.append(title, meta, renderTags(dl.entry.tags, optionsForTags()));
+    row.append(meta, title, renderTags(dl.entry.tags, optionsForTags()));
     section.appendChild(row);
   }
 
@@ -515,13 +520,16 @@ function renderNowLine(today: Date): HTMLElement {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function renderTitle(entry: { title: string; priority: "A" | "B" | "C" | null; progress?: { done: number; total: number } | null; sourceLineNumber: number }): HTMLElement {
+function renderTitle(
+  entry: { title: string; priority: "A" | "B" | "C" | null; progress?: { done: number; total: number } | null; sourceLineNumber: number },
+  options: { showPriority?: boolean } = {},
+): HTMLElement {
   const title = el("span", "item-title");
   title.dataset.action = "edit";
   title.dataset.line = String(entry.sourceLineNumber);
   title.setAttribute("role", "button");
   title.setAttribute("tabindex", "0");
-  if (entry.priority) {
+  if (entry.priority && options.showPriority !== false) {
     const badge = el("span", `item-priority priority-${entry.priority}`);
     badge.textContent = entry.priority;
     title.appendChild(badge);
