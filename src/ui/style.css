@@ -1023,6 +1023,16 @@ body {
   column-gap: 0.8rem;
 }
 
+.note-layout-allday {
+  grid-template-columns: 1fr auto;
+  column-gap: 0.75rem;
+}
+
+.note-layout-allday-with-state {
+  grid-template-columns: auto 1fr auto;
+  column-gap: 0.75rem;
+}
+
 .note-layout-with-time {
   grid-template-columns: var(--time-col) auto 1fr auto;
   column-gap: 0.8rem;
@@ -1031,6 +1041,10 @@ body {
 .note-layout-compact {
   grid-template-columns: auto 1fr auto;
   column-gap: 0.8rem;
+}
+
+.note-title-col-1 .item-instance-note-text {
+  grid-column: 1;
 }
 
 .note-title-col-2 .item-instance-note-text {

@@ -314,6 +314,9 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
     const section = el("div", "allday-section");
     for (const item of allDay) {
       section.appendChild(renderAllDayItem(item));
+      if (item.instanceNote) {
+        section.appendChild(renderInstanceNote(item));
+      }
     }
     card.appendChild(section);
   }
@@ -459,6 +462,11 @@ function renderInstanceNote(item: AgendaItem): HTMLElement {
 
 function buildInstanceNoteClassName(item: AgendaItem): string {
   const classes = ["item-instance-note"];
+  if (item.category === "all-day") {
+    classes.push(item.entry.todo ? "note-layout-allday-with-state" : "note-layout-allday");
+    classes.push(item.entry.todo ? "note-title-col-2" : "note-title-col-1");
+    return classes.join(" ");
+  }
   if (item.category === "timed") {
     classes.push("note-layout-timed");
     classes.push(item.entry.todo ? "note-title-col-3" : "note-title-col-2");

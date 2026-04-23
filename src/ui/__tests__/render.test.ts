@@ -292,6 +292,43 @@ describe("renderAgenda", () => {
     expect(chip?.classList.contains("override-cancelled")).toBe(true);
   });
 
+  it("renders occurrence notes for all-day items", () => {
+    const container = document.createElement("div");
+    const week = makeWeek([
+      [
+        makeItem({
+          title: "Holiday",
+          date: new Date(2026, 3, 20),
+          category: "all-day",
+          instanceNote: "Pack sunscreen",
+        }),
+        makeItem({
+          title: "Review",
+          date: new Date(2026, 3, 20),
+          category: "all-day",
+          entry: makeEntry({ title: "Review", todo: "TODO" }),
+          instanceNote: "Use printed notes",
+        }),
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+    ]);
+
+    renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 9, 0));
+
+    const notes = Array.from(container.querySelectorAll<HTMLElement>(".allday-section .item-instance-note"));
+    expect(notes).toHaveLength(2);
+    expect(notes.map(note => note.textContent)).toEqual(["Pack sunscreen", "Use printed notes"]);
+    expect(notes[0].classList.contains("note-layout-allday")).toBe(true);
+    expect(notes[0].classList.contains("note-title-col-1")).toBe(true);
+    expect(notes[1].classList.contains("note-layout-allday-with-state")).toBe(true);
+    expect(notes[1].classList.contains("note-title-col-2")).toBe(true);
+  });
+
   it("renders in-calendar deadlines with a clickable todo badge before the title", () => {
     const container = document.createElement("div");
     const week = makeWeek([
