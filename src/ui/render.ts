@@ -197,6 +197,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
 
   for (const dl of deadlines) {
     const row = el("div", "deadline-item");
+    row.classList.add(getDeadlineUrgencyClass(dl.daysUntil));
     if (dl.entry.todo === "DONE") row.classList.add("item-done");
 
     const meta = el("span", "deadline-meta");
@@ -647,6 +648,13 @@ function formatTimeRange(start: string | null, end: string | null): string {
 function formatDeadlineDueText(daysUntil: number): string {
   if (daysUntil === 0) return "Today";
   return `${daysUntil}d`;
+}
+
+function getDeadlineUrgencyClass(daysUntil: number): string {
+  if (daysUntil <= 3) return "deadline-urgency-critical";
+  if (daysUntil <= 7) return "deadline-urgency-warning";
+  if (daysUntil <= 14) return "deadline-urgency-caution";
+  return "deadline-urgency-calm";
 }
 
 function timeToMinutes(time: string): number {

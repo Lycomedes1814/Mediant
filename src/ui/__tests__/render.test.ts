@@ -98,6 +98,7 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".overdue-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-18");
     expect(container.querySelector(".deadlines-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-21");
     expect(container.querySelector(".deadlines-section .item-time")?.textContent).toBe("1d");
+    expect(container.querySelector(".deadlines-section .deadline-item")?.classList.contains("deadline-urgency-critical")).toBe(true);
     expect(container.querySelector(".deadlines-section .deadline-meta-priority")?.textContent).toBe("A");
     expect(container.querySelector(".deadlines-section .item-title .item-priority")).toBeNull();
     const overdueState = container.querySelector(".overdue-section .item-state");
