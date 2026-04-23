@@ -198,6 +198,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
   for (const dl of deadlines) {
     const row = el("div", "deadline-item");
     if (dl.entry.priority) row.classList.add("has-priority");
+    if (dl.instanceNote) row.classList.add("has-instance-note");
     row.classList.add(getDeadlineUrgencyClass(dl.daysUntil));
     if (dl.entry.todo === "DONE") row.classList.add("item-done");
 
@@ -237,6 +238,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
   for (const item of items) {
     const row = el("div", "overdue-item");
     if (item.entry.priority) row.classList.add("has-priority");
+    if (item.instanceNote) row.classList.add("has-instance-note");
 
     const meta = el("span", "overdue-meta");
     const time = el("span", "item-time");

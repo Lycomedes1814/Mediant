@@ -429,6 +429,10 @@ body {
   grid-column: 6;
 }
 
+.overdue-item.has-instance-note {
+  padding-bottom: 0.18rem;
+}
+
 .overdue-note {
   grid-template-columns: 4.1ch 4.35rem 2.35rem 1fr auto;
   column-gap: 0.5rem;
@@ -437,6 +441,12 @@ body {
 .overdue-note-with-priority {
   grid-template-columns: 4.1ch 4.35rem 2.35rem 0.9rem 1fr auto;
   column-gap: 0.5rem;
+}
+
+.item-instance-note.overdue-note,
+.item-instance-note.overdue-note-with-priority {
+  padding-top: 0;
+  padding-bottom: 0.78rem;
 }
 
 .overdue-note .item-instance-note-text {
@@ -554,6 +564,10 @@ body {
   grid-column: 5;
 }
 
+.deadline-item.has-instance-note {
+  padding-bottom: 0.18rem;
+}
+
 .deadline-note {
   grid-template-columns: 4.1ch 2.35rem 1fr auto;
   column-gap: 0.5rem;
@@ -562,6 +576,12 @@ body {
 .deadline-note-with-priority {
   grid-template-columns: 4.1ch 2.35rem 0.9rem 1fr auto;
   column-gap: 0.5rem;
+}
+
+.item-instance-note.deadline-note,
+.item-instance-note.deadline-note-with-priority {
+  padding-top: 0;
+  padding-bottom: 0.78rem;
 }
 
 .deadline-note .item-instance-note-text {
