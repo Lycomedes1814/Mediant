@@ -12,16 +12,16 @@
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "SF Mono", "Cascadia Code", "Fira Code", monospace;
 
-  --bg: #f3f0ea;
-  --bg-card: #fbfaf7;
+  --bg: #f4efe7;
+  --bg-card: #fbf8f3;
   --bg-today: #eef2fb;
 
   --text: #1a1a1a;
   --text-dim: #6b7280;
   --text-done: #b8b8b8;
 
-  --border: #e7e2db;
-  --border-light: #efebe4;
+  --border: #e4ddd4;
+  --border-light: #ede7df;
   --border-today: #4f7df5;
 
   --time-col: 7rem;
