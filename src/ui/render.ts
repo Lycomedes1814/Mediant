@@ -388,6 +388,7 @@ function renderItem(
   className: string,
   badge?: HTMLElement | HTMLElement[],
   showTime?: "always" | "optional",
+  showPriority: boolean = true,
 ): HTMLElement {
   const row = el("div", className);
   if (item.entry.todo === "DONE") row.classList.add("item-done");
@@ -414,7 +415,14 @@ function renderItem(
     children.push(renderStateBadge(item.entry));
   }
 
-  const title = renderTitle(item.entry);
+  if (!showPriority && item.entry.priority) {
+    row.classList.add("has-priority");
+    const pri = el("span", `item-priority priority-${item.entry.priority}`);
+    pri.textContent = item.entry.priority;
+    children.push(pri);
+  }
+
+  const title = renderTitle(item.entry, { showPriority });
   if (item.baseDate) title.dataset.baseDate = item.baseDate;
   if (item.override) {
     title.appendChild(document.createTextNode(" "));
@@ -475,11 +483,11 @@ function renderAllDayItem(item: AgendaItem): HTMLElement {
 }
 
 function renderTimedItem(item: AgendaItem): HTMLElement {
-  return renderItem(item, "timed-item", undefined, "always");
+  return renderItem(item, "timed-item", undefined, "always", false);
 }
 
 function renderScheduledItem(item: AgendaItem): HTMLElement {
-  return renderItem(item, "scheduled-item", renderStateBadge(item.entry, "TODO"), "optional");
+  return renderItem(item, "scheduled-item", renderStateBadge(item.entry, "TODO"), "optional", false);
 }
 
 function renderDayDeadlineItem(item: AgendaItem): HTMLElement {

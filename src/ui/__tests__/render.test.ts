@@ -204,6 +204,7 @@ describe("renderAgenda", () => {
           date: new Date(2026, 3, 20, 18, 0),
           startTime: "18:00",
           endTime: "19:00",
+          priority: "B",
           tags: ["music"],
           baseDate: "2026-04-19",
           override: { kind: "reschedule", detail: "from 2026-04-19 17:00-18:00" },
@@ -214,6 +215,12 @@ describe("renderAgenda", () => {
             { text: "Bottle", checked: false },
           ],
           sourceLineNumber: 42,
+        }),
+        makeItem({
+          title: "Stretch",
+          date: new Date(2026, 3, 20, 19, 30),
+          startTime: "19:30",
+          sourceLineNumber: 43,
         }),
       ],
       [],
@@ -245,6 +252,12 @@ describe("renderAgenda", () => {
     expect(checkboxes).toHaveLength(2);
     expect(checkboxes[0].classList.contains("checkbox-checked")).toBe(true);
     expect(container.querySelector(".tag")?.textContent).toContain("music");
+    const timedRows = container.querySelectorAll<HTMLElement>(".timed-item");
+    expect(timedRows[0]?.classList.contains("has-priority")).toBe(true);
+    expect(timedRows[0]?.querySelector(".item-priority")?.textContent).toBe("B");
+    expect(timedRows[0]?.querySelector(".item-title .item-priority")).toBeNull();
+    expect(timedRows[1]?.classList.contains("has-priority")).toBe(false);
+    expect(timedRows[1]?.querySelector(".item-priority")).toBeNull();
   });
 
   it("renders skipped occurrences with marker and strikethrough class", () => {
@@ -443,6 +456,7 @@ function makeItem(overrides: Partial<AgendaItem> & {
   title?: string;
   date: Date;
   entry?: AgendaItem["entry"];
+  priority?: AgendaItem["entry"]["priority"];
   tags?: string[];
   sourceLineNumber?: number;
   progress?: { done: number; total: number } | null;
@@ -450,6 +464,7 @@ function makeItem(overrides: Partial<AgendaItem> & {
 }): AgendaItem {
   const entry = overrides.entry ?? makeEntry({
     title: overrides.title ?? "Item",
+    priority: overrides.priority ?? null,
     tags: overrides.tags ?? [],
     sourceLineNumber: overrides.sourceLineNumber ?? 1,
     progress: overrides.progress ?? null,

@@ -252,6 +252,14 @@ body {
   grid-template-columns: var(--time-col) auto 1fr auto;
 }
 
+.timed-item.has-priority {
+  grid-template-columns: var(--time-col) 0.9rem 1fr auto;
+}
+
+.timed-item.has-state.has-priority {
+  grid-template-columns: var(--time-col) auto 0.9rem 1fr auto;
+}
+
 .timed-item + .timed-item,
 .timed-item + .scheduled-item,
 .scheduled-item + .timed-item,
@@ -267,9 +275,51 @@ body {
   letter-spacing: -0.01em;
 }
 
+.timed-item .item-state {
+  grid-column: 2;
+}
+
+.timed-item .item-priority {
+  grid-column: 2;
+  display: inline-flex;
+  justify-content: center;
+  min-width: 0;
+  font-size: 0.64rem;
+  opacity: 0.78;
+  padding-inline: 0;
+}
+
+.timed-item.has-state .item-priority {
+  grid-column: 3;
+}
+
 .timed-item .item-title {
+  grid-column: 2;
   min-width: 0;
   font-weight: 500;
+}
+
+.timed-item.has-state .item-title,
+.timed-item.has-priority .item-title {
+  grid-column: 3;
+}
+
+.timed-item.has-state.has-priority .item-title {
+  grid-column: 4;
+}
+
+.timed-item .tag-badges {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.timed-item.has-state .tag-badges,
+.timed-item.has-priority .tag-badges {
+  grid-column: 4;
+}
+
+.timed-item.has-state.has-priority .tag-badges {
+  grid-column: 5;
 }
 
 
@@ -490,7 +540,7 @@ body {
 
 .scheduled-item {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto;
   align-items: baseline;
   padding: 0.2rem var(--section-padding-x);
   font-size: 0.875rem;
@@ -499,7 +549,31 @@ body {
 }
 
 .scheduled-item.has-time {
+  grid-template-columns: var(--time-col) 1fr auto;
+}
+
+.scheduled-item.has-state {
+  grid-template-columns: auto 1fr auto;
+}
+
+.scheduled-item.has-priority {
+  grid-template-columns: 0.9rem 1fr auto;
+}
+
+.scheduled-item.has-time.has-state {
   grid-template-columns: var(--time-col) auto 1fr auto;
+}
+
+.scheduled-item.has-time.has-priority {
+  grid-template-columns: var(--time-col) 0.9rem 1fr auto;
+}
+
+.scheduled-item.has-state.has-priority {
+  grid-template-columns: auto 0.9rem 1fr auto;
+}
+
+.scheduled-item.has-time.has-state.has-priority {
+  grid-template-columns: var(--time-col) auto 0.9rem 1fr auto;
 }
 
 .scheduled-item .item-time {
@@ -511,11 +585,73 @@ body {
 }
 
 .scheduled-item .item-state {
+  grid-column: 1;
+}
+
+.scheduled-item.has-time .item-state {
+  grid-column: 2;
+}
+
+.scheduled-item .item-priority {
+  grid-column: 1;
+  display: inline-flex;
+  justify-content: center;
+  min-width: 0;
+  font-size: 0.64rem;
+  opacity: 0.78;
+  padding-inline: 0;
+}
+
+.scheduled-item.has-time .item-priority,
+.scheduled-item.has-state .item-priority {
+  grid-column: 2;
+}
+
+.scheduled-item.has-time.has-state .item-priority {
+  grid-column: 3;
 }
 
 .scheduled-item .item-title {
+  grid-column: 1;
   min-width: 0;
   font-weight: 500;
+}
+
+.scheduled-item.has-time .item-title,
+.scheduled-item.has-state .item-title,
+.scheduled-item.has-priority .item-title {
+  grid-column: 2;
+}
+
+.scheduled-item.has-time.has-state .item-title,
+.scheduled-item.has-time.has-priority .item-title,
+.scheduled-item.has-state.has-priority .item-title {
+  grid-column: 3;
+}
+
+.scheduled-item.has-time.has-state.has-priority .item-title {
+  grid-column: 4;
+}
+
+.scheduled-item .tag-badges {
+  grid-column: 2;
+  justify-self: end;
+}
+
+.scheduled-item.has-time .tag-badges,
+.scheduled-item.has-state .tag-badges,
+.scheduled-item.has-priority .tag-badges {
+  grid-column: 3;
+}
+
+.scheduled-item.has-time.has-state .tag-badges,
+.scheduled-item.has-time.has-priority .tag-badges,
+.scheduled-item.has-state.has-priority .tag-badges {
+  grid-column: 4;
+}
+
+.scheduled-item.has-time.has-state.has-priority .tag-badges {
+  grid-column: 5;
 }
 
 /* ── Day deadline items (deadlines within day cards) ─────────────── */
