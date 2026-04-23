@@ -59,6 +59,7 @@ interface TagPicker {
   container: HTMLElement;
   getTags: () => string[];
   setTags: (tags: string[]) => void;
+  onChange: (callback: (() => void) | null) => void;
 }
 
 interface AddPanelRefs {
@@ -96,6 +97,9 @@ interface AddPanelRefs {
   clearOverrideBtn: HTMLButtonElement;
 }
 let addPanelRefs: AddPanelRefs | null = null;
+let queuedEditSource: string | null = null;
+let editSaveInFlight = false;
+let editSavePromise: Promise<boolean> | null = null;
 
 const DAY_ABBREVS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const EVENT_REPEAT_OPTIONS = [
@@ -191,6 +195,7 @@ function buildAddPanel(): void {
   const priorityRadios = priorityGroup.container.querySelectorAll<HTMLInputElement>("input[name='add-priority']");
   priorityRadios.forEach(r => r.addEventListener("change", () => {
     editingPriority = (r.value === "A" || r.value === "B" || r.value === "C") ? r.value : null;
+    scheduleEditAutosave();
   }));
 
   // Title
@@ -248,41 +253,66 @@ function buildAddPanel(): void {
     updateDateTimePreview(schedInput.input, schedInput.preview);
     updateDateTimePreview(deadInput.input, deadInput.preview);
   };
-  typeRadios.forEach(r => r.addEventListener("change", syncVisibility));
+  typeRadios.forEach(r => r.addEventListener("change", () => {
+    syncVisibility();
+    scheduleEditAutosave();
+  }));
 
-  whenInput.input.addEventListener("input", () => updateDateTimePreview(whenInput.input, whenInput.preview));
+  titleInput.input.addEventListener("input", scheduleEditAutosave);
+  whenInput.input.addEventListener("input", () => {
+    updateDateTimePreview(whenInput.input, whenInput.preview);
+    scheduleEditAutosave();
+  });
   schedInput.input.addEventListener("input", () => {
     updateDateTimePreview(schedInput.input, schedInput.preview);
     syncVisibility();
+    scheduleEditAutosave();
   });
   deadInput.input.addEventListener("input", () => {
     updateDateTimePreview(deadInput.input, deadInput.preview);
     syncVisibility();
+    scheduleEditAutosave();
   });
   whenInput.input.addEventListener("input", () => syncPickersFromText(whenInput.input, whenInput.datePicker, whenInput.timePicker));
   schedInput.input.addEventListener("input", () => syncPickersFromText(schedInput.input, schedInput.datePicker, schedInput.timePicker));
   deadInput.input.addEventListener("input", () => syncPickersFromText(deadInput.input, deadInput.datePicker, deadInput.timePicker));
   whenInput.datePicker.addEventListener("input", () => syncTextFromPickers(whenInput.input, whenInput.preview, whenInput.datePicker, whenInput.timePicker));
+  whenInput.datePicker.addEventListener("input", scheduleEditAutosave);
   whenInput.timePicker.addEventListener("input", () => syncTextFromPickers(whenInput.input, whenInput.preview, whenInput.datePicker, whenInput.timePicker));
+  whenInput.timePicker.addEventListener("input", scheduleEditAutosave);
   schedInput.datePicker.addEventListener("input", () => {
     syncTextFromPickers(schedInput.input, schedInput.preview, schedInput.datePicker, schedInput.timePicker);
     syncVisibility();
+    scheduleEditAutosave();
   });
   schedInput.timePicker.addEventListener("input", () => {
     syncTextFromPickers(schedInput.input, schedInput.preview, schedInput.datePicker, schedInput.timePicker);
     syncVisibility();
+    scheduleEditAutosave();
   });
   deadInput.datePicker.addEventListener("input", () => {
     syncTextFromPickers(deadInput.input, deadInput.preview, deadInput.datePicker, deadInput.timePicker);
     syncVisibility();
+    scheduleEditAutosave();
   });
   deadInput.timePicker.addEventListener("input", () => {
     syncTextFromPickers(deadInput.input, deadInput.preview, deadInput.datePicker, deadInput.timePicker);
     syncVisibility();
+    scheduleEditAutosave();
   });
-  repeatSelect.select.addEventListener("change", syncVisibility);
-  schedRepeatSelect.select.addEventListener("change", syncVisibility);
-  deadRepeatSelect.select.addEventListener("change", syncVisibility);
+  repeatSelect.select.addEventListener("change", () => {
+    syncVisibility();
+    scheduleEditAutosave();
+  });
+  schedRepeatSelect.select.addEventListener("change", () => {
+    syncVisibility();
+    scheduleEditAutosave();
+  });
+  deadRepeatSelect.select.addEventListener("change", () => {
+    syncVisibility();
+    scheduleEditAutosave();
+  });
+  tagPicker.onChange(scheduleEditAutosave);
 
   // Checkbox section
   const checkboxSection = document.createElement("div");
@@ -328,20 +358,15 @@ function buildAddPanel(): void {
   const occurrenceInput = document.createElement("input");
   occurrenceInput.type = "text";
   occurrenceInput.className = "add-input occurrence-input";
+  occurrenceInput.placeholder = "Move to date/time";
   const occurrencePreview = document.createElement("div");
   occurrencePreview.className = "datetime-preview occurrence-preview";
-  occurrenceInput.addEventListener("input", () =>
-    updateDateTimePreview(occurrenceInput, occurrencePreview, editingBaseDate ?? undefined));
-  const overrideBtn = document.createElement("button");
-  overrideBtn.type = "button";
-  overrideBtn.className = "occurrence-btn";
-  overrideBtn.textContent = "Move";
-  overrideBtn.addEventListener("click", () => {
+  occurrenceInput.addEventListener("input", () => {
+    updateDateTimePreview(occurrenceInput, occurrencePreview, editingBaseDate ?? undefined);
     const value = parseOccurrenceOverrideInput(occurrenceInput.value, editingBaseDate);
-    if (!value) { occurrenceInput.focus(); return; }
-    applyOverride(value);
+    if (value) void applyOverride(value, { resetInput: false });
   });
-  overrideRow.append(occurrenceInput, overrideBtn);
+  overrideRow.append(occurrenceInput);
 
   const clearOverrideBtn = document.createElement("button");
   clearOverrideBtn.type = "button";
@@ -360,71 +385,20 @@ function buildAddPanel(): void {
   const noteTextarea = document.createElement("textarea");
   noteTextarea.className = "occurrence-note";
   noteTextarea.rows = 2;
-  occurrenceSection.appendChild(noteTextarea);
-
-  const noteRow = document.createElement("div");
-  noteRow.className = "occurrence-row occurrence-note-row";
-  const saveNoteBtn = document.createElement("button");
-  saveNoteBtn.type = "button";
-  saveNoteBtn.className = "occurrence-btn";
-  saveNoteBtn.textContent = "Save note";
-  saveNoteBtn.addEventListener("click", () => {
+  noteTextarea.addEventListener("input", () => {
     const text = noteTextarea.value.trim();
-    if (text) applyNote(text); else clearException("note");
+    if (text) void applyNote(text);
+    else void clearException("note");
   });
-  noteRow.append(saveNoteBtn);
-  occurrenceSection.appendChild(noteRow);
+  occurrenceSection.appendChild(noteTextarea);
 
   // Save button
   const saveBtn = document.createElement("button");
   saveBtn.className = "add-save-btn";
   saveBtn.textContent = "Save";
   saveBtn.addEventListener("click", () => {
-    const type = (typeGroup.container.querySelector<HTMLInputElement>("input[name='add-type']:checked"))?.value ?? "todo";
-    const heading = titleInput.input.value.trim();
-    if (!heading) { titleInput.input.focus(); return; }
-    const tagsVal = tagPicker.getTags().join(", ");
-
-    const readDT = (inp: HTMLInputElement): { date: string; time: string } | null => {
-      const raw = inp.value.trim();
-      if (!raw) return { date: "", time: "" };
-      const parsed = parseDateTime(raw);
-      if (!parsed) { inp.focus(); return null; }
-      return parsed;
-    };
-
-    // Strip empty checkbox items and sync progress before save
-    const cbItems = editingCheckboxItems.filter(ci => ci.text.trim() !== "");
-    if (cbItems.length > 0) {
-      const done = cbItems.filter(ci => ci.checked).length;
-      editingProgress = { done, total: cbItems.length };
-    } else if (editingProgress && editingCheckboxItems.length === 0) {
-      editingProgress = null;
-    }
-
-    let orgText: string;
-    if (type === "event") {
-      const dt = readDT(whenInput.input); if (dt === null) return;
-      if (!dt.date) { whenInput.input.focus(); return; }
-      const repeaterVal = repeatSelect.select.value || null;
-      orgText = buildOrgText({
-        type: "event", level: editingLevel, heading, tags: tagsVal,
-        priority: editingPriority, progress: editingProgress,
-        date: dt.date, time: dt.time, repeater: repeaterVal,
-        checkboxItems: cbItems,
-      });
-    } else {
-      const s = readDT(schedInput.input); if (s === null) return;
-      const d = readDT(deadInput.input); if (d === null) return;
-      orgText = buildOrgText({
-        type: "todo", level: editingLevel, heading, tags: tagsVal,
-        todoState: editingTodoState,
-        priority: editingPriority, progress: editingProgress,
-        schedDate: s.date, schedTime: s.time, schedRepeater: s.date ? (schedRepeatSelect.select.value || null) : null,
-        deadDate: d.date, deadTime: d.time, deadRepeater: d.date ? (deadRepeatSelect.select.value || null) : null,
-        checkboxItems: cbItems,
-      });
-    }
+    const orgText = buildPanelOrgText({ focusInvalid: true });
+    if (orgText === null) return;
 
     if (editingLine !== null) {
       replaceOrgBlock(editingLine, orgText);
@@ -524,6 +498,7 @@ function rebuildCheckboxUI(container: HTMLElement): void {
     if (item.checked) text.classList.add("edit-checkbox-done");
     text.addEventListener("input", () => {
       editingCheckboxItems[ci].text = text.value;
+      scheduleEditAutosave();
     });
     text.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
@@ -583,6 +558,7 @@ function rebuildCheckboxUI(container: HTMLElement): void {
       const done = editingCheckboxItems.filter(i => i.checked).length;
       editingProgress = { done, total: editingCheckboxItems.length };
     }
+    scheduleEditAutosave();
   }
 }
 
@@ -640,6 +616,11 @@ function makeTagPicker(label: string, id: string): TagPicker {
   let selected: string[] = [];
   let activeOptionIndex = -1;
   let selectActiveOption: (() => void) | null = null;
+  let onChange: (() => void) | null = null;
+
+  const notifyChange = (): void => {
+    onChange?.();
+  };
 
   function updateActiveOption(nextIndex: number): void {
     const options = Array.from(dropdown.querySelectorAll<HTMLElement>(".tag-picker-option"));
@@ -679,6 +660,7 @@ function makeTagPicker(label: string, id: string): TagPicker {
         selected = selected.filter(t => t !== tag);
         renderPills();
         showDropdown();
+        notifyChange();
       });
 
       pill.append(text, remove);
@@ -708,6 +690,7 @@ function makeTagPicker(label: string, id: string): TagPicker {
         input.value = "";
         renderPills();
         showDropdown();
+        notifyChange();
       };
       opt.dataset.selectIndex = String(optionActions.push(select) - 1);
       opt.addEventListener("mousedown", (e) => {
@@ -727,6 +710,7 @@ function makeTagPicker(label: string, id: string): TagPicker {
         input.value = "";
         renderPills();
         showDropdown();
+        notifyChange();
       };
       addOpt.dataset.selectIndex = String(optionActions.push(select) - 1);
       addOpt.addEventListener("mousedown", (e) => {
@@ -760,6 +744,7 @@ function makeTagPicker(label: string, id: string): TagPicker {
       selected.pop();
       renderPills();
       showDropdown();
+      notifyChange();
       return;
     }
     if (e.key === "ArrowDown") {
@@ -790,6 +775,7 @@ function makeTagPicker(label: string, id: string): TagPicker {
         input.value = "";
         renderPills();
         showDropdown();
+        notifyChange();
       }
     }
   });
@@ -802,6 +788,9 @@ function makeTagPicker(label: string, id: string): TagPicker {
       input.value = "";
       renderPills();
       dropdown.style.display = "none";
+    },
+    onChange: (callback: (() => void) | null) => {
+      onChange = callback;
     },
   };
 }
@@ -1167,6 +1156,117 @@ function buildOrgText(opts: BuildOrgOpts): string {
   return lines.join("\n");
 }
 
+function buildPanelOrgText(opts: { focusInvalid: boolean }): string | null {
+  if (!addPanelRefs) return null;
+  const refs = addPanelRefs;
+  const type = (refs.typeGroup.querySelector<HTMLInputElement>("input[name='add-type']:checked"))?.value ?? "todo";
+  const heading = refs.titleInput.value.trim();
+  if (!heading) {
+    if (opts.focusInvalid) refs.titleInput.focus();
+    return null;
+  }
+  const tagsVal = refs.tagPicker.getTags().join(", ");
+
+  const readDateTime = (input: HTMLInputElement): { date: string; time: string } | null => {
+    const raw = input.value.trim();
+    if (!raw) return { date: "", time: "" };
+    const parsed = parseDateTime(raw);
+    if (!parsed) {
+      if (opts.focusInvalid) input.focus();
+      return null;
+    }
+    return parsed;
+  };
+
+  const checkboxItems = editingCheckboxItems.filter(ci => ci.text.trim() !== "");
+  editingProgress = checkboxItems.length > 0
+    ? { done: checkboxItems.filter(ci => ci.checked).length, total: checkboxItems.length }
+    : null;
+
+  if (type === "event") {
+    const dt = readDateTime(refs.whenInput);
+    if (dt === null) return null;
+    if (!dt.date) {
+      if (opts.focusInvalid) refs.whenInput.focus();
+      return null;
+    }
+    return buildOrgText({
+      type: "event",
+      level: editingLevel,
+      heading,
+      tags: tagsVal,
+      priority: editingPriority,
+      progress: editingProgress,
+      date: dt.date,
+      time: dt.time,
+      repeater: refs.repeatSelect.value || null,
+      checkboxItems,
+    });
+  }
+
+  const scheduled = readDateTime(refs.schedInput);
+  if (scheduled === null) return null;
+  const deadline = readDateTime(refs.deadInput);
+  if (deadline === null) return null;
+  return buildOrgText({
+    type: "todo",
+    level: editingLevel,
+    heading,
+    tags: tagsVal,
+    todoState: editingTodoState,
+    priority: editingPriority,
+    progress: editingProgress,
+    schedDate: scheduled.date,
+    schedTime: scheduled.time,
+    schedRepeater: scheduled.date ? (refs.schedRepeatSelect.value || null) : null,
+    deadDate: deadline.date,
+    deadTime: deadline.time,
+    deadRepeater: deadline.date ? (refs.deadRepeatSelect.value || null) : null,
+    checkboxItems,
+  });
+}
+
+function editSaveBaseSource(): string {
+  return queuedEditSource ?? currentSource;
+}
+
+function queueEditSourceSave(updated: string): Promise<boolean> {
+  if (updated === editSaveBaseSource()) return editSavePromise ?? Promise.resolve(true);
+  queuedEditSource = updated;
+  if (editSaveInFlight && editSavePromise) return editSavePromise;
+  editSavePromise = drainEditSourceSaves();
+  return editSavePromise;
+}
+
+async function drainEditSourceSaves(): Promise<boolean> {
+  editSaveInFlight = true;
+  let ok = true;
+  try {
+    while (queuedEditSource !== null) {
+      const next = queuedEditSource;
+      queuedEditSource = null;
+      if (next === currentSource) continue;
+      ok = await persistSource(next);
+      if (!ok) {
+        queuedEditSource = null;
+        break;
+      }
+    }
+    return ok;
+  } finally {
+    editSaveInFlight = false;
+    editSavePromise = null;
+  }
+}
+
+function scheduleEditAutosave(): void {
+  if (editingLine === null || !addPanelEl?.classList.contains("is-editing")) return;
+  const orgText = buildPanelOrgText({ focusInvalid: false });
+  if (orgText === null) return;
+  const updated = replaceOrgBlockInSource(editSaveBaseSource(), editingLine, orgText);
+  void queueEditSourceSave(updated);
+}
+
 function formatRepeaterValue(
   repeater: { mark: "+" | ".+" | "++"; value: number; unit: "d" | "w" | "m" | "y" } | null | undefined,
 ): string {
@@ -1261,7 +1361,7 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   if (addPanelSaveBtnEl) addPanelSaveBtnEl.textContent = "Save";
   addPanelEl.classList.add("is-editing");
   addPanelEl.classList.toggle("has-occurrence", baseDate !== null && entryHasRepeater(entry));
-  refreshOccurrenceSection();
+  refreshOccurrenceSection({ resetOccurrenceInput: true });
 
   const refs = addPanelRefs;
 
@@ -1410,7 +1510,7 @@ function describeOverride(override: RecurrenceOverride, baseDate: string | null 
   return out;
 }
 
-function refreshOccurrenceSection(): void {
+function refreshOccurrenceSection(opts: { resetOccurrenceInput?: boolean } = {}): void {
   if (!addPanelRefs) return;
   const refs = addPanelRefs;
   if (editingLine === null || editingBaseDate === null) return;
@@ -1444,23 +1544,23 @@ function refreshOccurrenceSection(): void {
   if (refs.noteTextarea.value !== (note ?? "")) {
     refs.noteTextarea.value = note ?? "";
   }
-  refs.occurrenceInput.value = "";
-  refs.occurrencePreview.textContent = "";
-  refs.occurrencePreview.classList.remove("is-visible");
+  if (opts.resetOccurrenceInput) {
+    refs.occurrenceInput.value = "";
+    refs.occurrencePreview.textContent = "";
+    refs.occurrencePreview.classList.remove("is-visible");
+  }
 }
 
 async function toggleOccurrenceSkipped(): Promise<void> {
   if (editingLine === null || editingBaseDate === null || !addPanelRefs) return;
   const entry = entries.find(e => e.sourceLineNumber === editingLine);
   if (!entry) return;
+  const baseSource = editSaveBaseSource();
   const updated = addPanelRefs.skipCheckbox.checked
-    ? upsertProperty(currentSource, entry, `EXCEPTION-${editingBaseDate}`, "cancelled")
-    : entry.exceptions.get(editingBaseDate)?.override?.kind === "cancelled"
-      ? removeProperty(currentSource, entry, `EXCEPTION-${editingBaseDate}`)
-      : currentSource;
-  const ok = await persistSource(updated);
-  if (ok) refreshOccurrenceSection();
-  else refreshOccurrenceSection();
+    ? upsertProperty(baseSource, entry, `EXCEPTION-${editingBaseDate}`, "cancelled")
+    : removeProperty(baseSource, entry, `EXCEPTION-${editingBaseDate}`);
+  await queueEditSourceSave(updated);
+  refreshOccurrenceSection({ resetOccurrenceInput: true });
 }
 
 async function toggleOccurrenceIsLast(): Promise<void> {
@@ -1469,32 +1569,30 @@ async function toggleOccurrenceIsLast(): Promise<void> {
   if (!entry) return;
   const nextBaseKey = nextOccurrenceBoundary(pickBaseTimestamp(entry), editingBaseDate);
   if (nextBaseKey === null) return;
+  const baseSource = editSaveBaseSource();
   const updated = addPanelRefs?.endSeriesCheckbox.checked
-    ? upsertProperty(currentSource, entry, "SERIES-UNTIL", nextBaseKey)
-    : entry.seriesUntil === nextBaseKey
-      ? removeProperty(currentSource, entry, "SERIES-UNTIL")
-      : currentSource;
-  const ok = await persistSource(updated);
-  if (ok) refreshOccurrenceSection();
-  else if (addPanelRefs) refreshOccurrenceSection();
+    ? upsertProperty(baseSource, entry, "SERIES-UNTIL", nextBaseKey)
+    : removeProperty(baseSource, entry, "SERIES-UNTIL");
+  await queueEditSourceSave(updated);
+  refreshOccurrenceSection({ resetOccurrenceInput: true });
 }
 
-async function applyOverride(value: string): Promise<void> {
+async function applyOverride(value: string, opts: { resetInput?: boolean } = {}): Promise<void> {
   if (editingLine === null || editingBaseDate === null) return;
   const entry = entries.find(e => e.sourceLineNumber === editingLine);
   if (!entry) return;
-  const updated = upsertProperty(currentSource, entry, `EXCEPTION-${editingBaseDate}`, value);
-  const ok = await persistSource(updated);
-  if (ok) refreshOccurrenceSection();
+  const updated = upsertProperty(editSaveBaseSource(), entry, `EXCEPTION-${editingBaseDate}`, value);
+  await queueEditSourceSave(updated);
+  refreshOccurrenceSection({ resetOccurrenceInput: opts.resetInput ?? true });
 }
 
 async function applyNote(text: string): Promise<void> {
   if (editingLine === null || editingBaseDate === null) return;
   const entry = entries.find(e => e.sourceLineNumber === editingLine);
   if (!entry) return;
-  const updated = upsertProperty(currentSource, entry, `EXCEPTION-NOTE-${editingBaseDate}`, text);
-  const ok = await persistSource(updated);
-  if (ok) refreshOccurrenceSection();
+  const updated = upsertProperty(editSaveBaseSource(), entry, `EXCEPTION-NOTE-${editingBaseDate}`, text);
+  await queueEditSourceSave(updated);
+  refreshOccurrenceSection();
 }
 
 async function clearException(which: "override" | "note"): Promise<void> {
@@ -1504,9 +1602,9 @@ async function clearException(which: "override" | "note"): Promise<void> {
   const key = which === "override"
     ? `EXCEPTION-${editingBaseDate}`
     : `EXCEPTION-NOTE-${editingBaseDate}`;
-  const updated = removeProperty(currentSource, entry, key);
-  const ok = await persistSource(updated);
-  if (ok) refreshOccurrenceSection();
+  const updated = removeProperty(editSaveBaseSource(), entry, key);
+  await queueEditSourceSave(updated);
+  refreshOccurrenceSection({ resetOccurrenceInput: which === "override" });
 }
 
 function closeAddPanel(): void {

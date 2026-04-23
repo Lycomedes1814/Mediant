@@ -121,7 +121,7 @@ DEADLINE: <2026-05-05 ti.>
 - Parsed into `checkboxItems` on the entry (array of `{ text, checked }`), not included in body text.
 - Indented checkbox items are supported.
 - Rendered in the agenda as a mini checklist under the item.
-- In the edit panel, checkboxes are interactive toggles that update the Org source.
+- In the edit panel, checkboxes are interactive toggles that update the Org source immediately.
 
 ### Progress cookies
 
@@ -134,7 +134,7 @@ DEADLINE: <2026-05-05 ti.>
 - Parsed into `progress` on the entry (`{ done, total }` or `null`). For percentage form, stored as `{ done: N, total: 100 }`.
 - Stripped from the title.
 - Rendered as a small badge next to the title (green when complete, gray otherwise).
-- Toggling a checkbox in the edit panel recalculates the progress cookie in the source.
+- Toggling a checkbox in the edit panel recalculates the progress cookie in the source immediately.
 
 ### Body text
 
@@ -189,7 +189,7 @@ SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>
 - All other property keys inside the drawer are still gracefully ignored — only `EXCEPTION-…` and `EXCEPTION-NOTE-…` keys are read. Exception properties inside other drawers (e.g. `:LOGBOOK:`) are not parsed.
 - Exceptions on a non-repeating timestamp are parsed but **inert**: expansion never runs, so they never apply. Don't rely on this as a way to rewrite a one-off; edit the timestamp instead.
 - Each `:EXCEPTION-<date>:` value is validated against the grammar above on parse. An unrecognized value is silently dropped (the occurrence renders as normal); a matching `:EXCEPTION-NOTE-<date>:` on the same date is still honoured.
-- The edit panel's "This occurrence" controls (Skip / Shift / Move / Save note / Clear) are the UI surface for these properties and always write the unshifted base date, so property values round-trip cleanly.
+- The edit panel's "This occurrence" controls are the UI surface for these properties and always write the unshifted base date, so property values round-trip cleanly. The skip and stop-repeat toggles, move date/time field, note field, and Clear override action persist immediately; there is no separate Move or Save note step.
 
 **Interop with Emacs:** the file remains valid Org. Emacs will show `:EXCEPTION-2026-05-04:` as just another property and give the entry its normal repeating-timestamp agenda behaviour — the cancelled/shifted/rescheduled occurrence will appear at its original slot in Emacs's agenda. Edit the base timestamp in Emacs, not the exception properties, if you want Emacs's view to agree with Mediant's.
 

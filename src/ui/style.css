@@ -1638,6 +1638,10 @@ body {
   display: inline-block;
 }
 
+.add-panel.is-editing .add-save-btn {
+  display: none;
+}
+
 /* ── Occurrence section ─────────────────────────────────────────── */
 
 .occurrence-section {

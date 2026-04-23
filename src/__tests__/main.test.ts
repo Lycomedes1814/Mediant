@@ -192,12 +192,11 @@ describe("main.ts integration", () => {
     const deadRepeatSelect = document.querySelector<HTMLSelectElement>("#add-dead-repeat");
     const deadInput = document.querySelector<HTMLInputElement>("#add-dead");
     const checkboxSection = document.querySelector<HTMLElement>(".edit-checkboxes");
-    const saveButton = document.querySelector<HTMLButtonElement>(".add-save-btn");
     expect(titleInput?.value).toBe("Yoga");
     expect(tagInput).not.toBeNull();
     expect(schedInput?.value).toBe("21/04/2026 17:00");
     expect(schedPreview?.textContent).toBe("Tue 21 Apr 2026, 17:00");
-    expect(saveButton?.textContent).toBe("Save");
+    expect(document.querySelector(".add-panel")?.classList.contains("is-editing")).toBe(true);
     expect(schedField?.querySelector<HTMLInputElement>(".datetime-picker-popover input[type='date']")?.value).toBe("2026-04-21");
     expect(schedField?.querySelector<HTMLInputElement>(".datetime-picker-popover input[type='time']")?.value).toBe("17:00");
     expect(schedPickerToggle).not.toBeNull();
@@ -291,7 +290,6 @@ describe("main.ts integration", () => {
     expect((deadRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
     deadRepeatSelect!.value = ".+1m";
     deadRepeatSelect!.dispatchEvent(new Event("change", { bubbles: true }));
-    saveButton!.click();
     await flush();
 
     const editedSource = localStorage.getItem("mediant-org-source") ?? "";
@@ -319,7 +317,6 @@ describe("main.ts integration", () => {
     invalidSchedInput!.value = "31/0";
     invalidSchedInput!.dispatchEvent(new Event("input", { bubbles: true }));
     expect(invalidSchedPreview?.textContent).toBe("");
-    saveButton!.click();
     await flush();
 
     expect(localStorage.getItem("mediant-org-source")).toBe(sourceBeforeInvalidSave);
@@ -332,13 +329,11 @@ describe("main.ts integration", () => {
     const occurrenceInput = document.querySelector<HTMLInputElement>(".occurrence-input");
     const occurrencePreview = document.querySelector<HTMLElement>(".occurrence-preview");
     const occurrenceButtons = Array.from(document.querySelectorAll<HTMLButtonElement>(".occurrence-btn"));
-    const applyOverrideButton = occurrenceButtons.find(button => button.textContent === "Move");
     const clearOverrideButton = occurrenceButtons.find(button => button.textContent === "Clear override");
     expect(skipCheckbox).not.toBeUndefined();
     expect(endSeriesCheckbox).not.toBeNull();
     expect(occurrenceInput).not.toBeNull();
     expect(occurrencePreview).not.toBeNull();
-    expect(applyOverrideButton).not.toBeUndefined();
     expect(clearOverrideButton).not.toBeUndefined();
     expect(occurrenceLabels).toContain("Stop repeating after this occurrence");
     expect(endSeriesCheckbox?.checked).toBe(false);
@@ -347,7 +342,6 @@ describe("main.ts integration", () => {
     occurrenceInput!.value = "+45m";
     occurrenceInput!.dispatchEvent(new Event("input", { bubbles: true }));
     expect(occurrencePreview?.textContent).toBe("");
-    applyOverrideButton!.click();
     await flush();
 
     expect(localStorage.getItem("mediant-org-source") ?? "").toBe(sourceBeforeInvalidOverride);
@@ -355,7 +349,6 @@ describe("main.ts integration", () => {
     occurrenceInput!.value = "29/04/2026 18:00";
     occurrenceInput!.dispatchEvent(new Event("input", { bubbles: true }));
     expect(occurrencePreview?.textContent).toBe("Wed 29 Apr 2026, 18:00");
-    applyOverrideButton!.click();
     await flush();
 
     let sourceWithMove = localStorage.getItem("mediant-org-source") ?? "";
@@ -370,7 +363,6 @@ describe("main.ts integration", () => {
     occurrenceInput!.value = "18:30-21:15";
     occurrenceInput!.dispatchEvent(new Event("input", { bubbles: true }));
     expect(occurrencePreview?.textContent).toBe("Wed 22 Apr 2026, 18:30-21:15");
-    applyOverrideButton!.click();
     await flush();
 
     const sourceWithSameDayTimeRange = localStorage.getItem("mediant-org-source") ?? "";

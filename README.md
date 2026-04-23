@@ -160,7 +160,7 @@ index.html             — Minimal shell with #agenda container
 - **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open the add-item panel, `c` toggle tag color mode, `h` toggle hide empty days, `x` clear active tag filters. Shortcuts are disabled while typing in form fields.
 - **Now line** on today's timed section
 - **Add-item panel** for creating TODO tasks and events from the UI
-- **Edit-item panel** for updating an existing entry in place (preserves body text). Clicking a recurring occurrence reveals a "This occurrence" section alongside the series fields, with Skip / Shift / Move / Note / Clear actions that write exception properties keyed on the unshifted base date.
+- **Edit-item panel** for updating an existing entry in place (preserves body text). Edits autosave as fields change; there is no separate Save step. Clicking a recurring occurrence reveals a "This occurrence" section alongside the series fields, where skip/stop-repeat toggles, the move date/time field, the note field, and Clear override write exception properties keyed on the unshifted base date.
 - **Shorthand date input** — add/edit date fields accept `DD`, `DD/MM`, `DD/MM/YY`, `DD/MM/YYYY`, `+N`, and weekday names like `mon`..`sun`. Ambiguous numeric forms resolve to the next future occurrence, and 2-digit years are interpreted in the current century.
 - Responsive: sticky day headers and adjusted spacing on mobile
 
