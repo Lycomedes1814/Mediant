@@ -48,7 +48,9 @@ npm start <file.org>  # build + start the local server against a file
 
 ## Change workflow
 
-- After each code change, update the relevant documentation in the same turn.
+- Update docs only for meaningful behavior, workflow, architecture, persistence, or data-model changes.
+- Keep small spacing/styling polish out of high-level docs unless it changes an explicit documented UI contract.
+- Mention minor visual polish in the commit message instead of README/AGENTS.
 - Commit completed changes with a verbose commit message that explains the behavior change, persistence or data-model impact, and test coverage.
 
 ## Server mode
