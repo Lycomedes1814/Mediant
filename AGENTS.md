@@ -88,7 +88,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 ## UI structure
 
 - **Overdue section** at the very top — TODO items past their DEADLINE or SCHEDULED date, sorted most overdue first. Shows days overdue + kind badge (DEADLINE/SCHEDULED) + clickable TODO badge before the title. Red-accented border and labels.
-- **Upcoming deadlines section** below overdue (global, not per-day)
+- **Upcoming deadlines section** below overdue (global, not per-day). Due text is rendered as `Due today` or `Due in N days`.
 - **Day cards** (7 consecutive days starting from today), each containing:
   - All-day section (holidays, birthdays — no label, title flush left)
   - Deadline items (DEADLINE badge + title, time shown if present)
@@ -101,7 +101,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Tag filtering** — clicking a tag toggles it in the active filter set. Filtering applies to the 7-day agenda, overdue section, upcoming deadlines, and someday section. Multiple selected tags use AND semantics: an item must contain every selected tag to remain visible.
 - **Tag color mode** — explicit toolbar toggle that repurposes tag clicks from filtering to recoloring. `Alt`-click on a tag opens its color picker directly without changing mode.
 - **Tag picker keyboard support** — in the add/edit panel, `ArrowUp`/`ArrowDown` move through tag suggestions, `Enter` selects the highlighted suggestion, and `Backspace` on an empty tag field removes the last selected pill.
-- **Priority badges** — `[#A]`/`[#B]`/`[#C]` rendered as small colored badges (red/amber/blue) nested inside the item title so the row grid templates stay fixed
+- **Priority badges** — `[#A]`/`[#B]`/`[#C]` rendered as small colored badges (red/amber/blue) nested inside the item title so the row grid templates stay fixed. Do not duplicate priority in metadata rows; it should appear before the title everywhere.
 - **Progress badges** — `[2/3]` rendered as a small badge next to the title (green when complete, gray otherwise)
 - **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under the agenda item; checked items dimmed with strikethrough. The checklist editor is hidden in the add/edit panel whenever a repeater is active, because checklist state is not modeled per occurrence.
 - **Recurrence-exception chip** — shifted, rescheduled, or cancelled occurrences show a small muted chip (`shifted` / `moved` / `skipped`) nested in the title, with detail such as `+45m`, `from 2026-05-11 17:00-18:00`, or `Skipped occurrence` in the tooltip.

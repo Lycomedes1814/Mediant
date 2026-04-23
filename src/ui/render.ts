@@ -201,14 +201,9 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
 
     const meta = el("span", "deadline-meta");
     const time = el("span", "item-time");
-    time.textContent = dl.daysUntil === 0 ? "Today" : `In ${dl.daysUntil} days`;
+    time.textContent = formatDeadlineDueText(dl.daysUntil);
     const state = renderStateBadge(dl.entry);
     meta.append(time, state);
-    if (dl.entry.priority) {
-      const pri = el("span", `item-priority priority-${dl.entry.priority} deadline-meta-priority`);
-      pri.textContent = dl.entry.priority;
-      meta.appendChild(pri);
-    }
 
     const title = renderTitle(dl.entry);
     if (dl.baseDate) title.dataset.baseDate = dl.baseDate;
@@ -639,6 +634,11 @@ function formatTimeRange(start: string | null, end: string | null): string {
   if (!start) return "";
   if (!end) return start;
   return `${start}–${end}`;
+}
+
+function formatDeadlineDueText(daysUntil: number): string {
+  if (daysUntil === 0) return "Due today";
+  return `Due in ${daysUntil} ${daysUntil === 1 ? "day" : "days"}`;
 }
 
 function timeToMinutes(time: string): number {

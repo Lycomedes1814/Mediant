@@ -390,10 +390,6 @@ body {
   grid-row: 1;
 }
 
-.deadline-item .deadline-meta-priority {
-  display: none;
-}
-
 /* ── Scheduled items ──────────────────────────────────────────────── */
 
 .scheduled-item {
@@ -1629,31 +1625,19 @@ body {
     font-size: 0.75rem;
   }
 
-  .deadline-meta .item-state,
-  .deadline-meta .deadline-meta-priority {
+  .deadline-meta .item-state {
     margin-left: 0.375rem;
   }
 
-  .deadline-meta .item-state::before,
-  .deadline-meta .deadline-meta-priority::before {
+  .deadline-meta .item-state::before {
     content: "·";
     position: absolute;
     right: calc(100% + 0.0625rem);
     color: var(--text-dim);
   }
 
-  .deadline-meta .item-state,
-  .deadline-meta .deadline-meta-priority {
+  .deadline-meta .item-state {
     position: relative;
-  }
-
-  .deadline-item .deadline-meta-priority {
-    display: inline;
-  }
-
-
-  .deadline-item .item-title .item-priority {
-    display: none;
   }
 
   /* ── Day-card micro-cards ──────────────────────────────────────── */

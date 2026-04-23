@@ -139,7 +139,7 @@ index.html             — Minimal shell with #agenda container
 ## UI overview
 
 - **Overdue section** at the top — TODO items past their DEADLINE or SCHEDULED date, sorted most overdue first, with a clickable TODO badge before each title
-- **Upcoming deadlines** section below overdue (global, sorted by due date)
+- **Upcoming deadlines** section below overdue (global, sorted by due date), labeled as `Due today` or `Due in N days`
 - **Day cards** (7 consecutive days starting from today) each containing:
   - All-day events (holidays, birthdays) in a subtle grouped section
   - Timed events with monospace time column, tag-colored left border, tag badges (colors auto-assigned from a palette, persisted in localStorage)
@@ -147,7 +147,7 @@ index.html             — Minimal shell with #agenda container
 - **Tag filtering** — clicking a tag filters the agenda, overdue, deadlines, and someday sections. Multiple selected tags use AND semantics: an item must contain every selected tag to remain visible. Active filters are shown in the header and can be cleared in one click.
 - **Tag color mode** — a `Color tags` toggle switches tag clicks from filtering to recoloring. `Alt`-clicking a tag opens its color picker directly without switching modes.
 - **Tag picker keyboard support** — in the add/edit panel, `ArrowUp`/`ArrowDown` move through tag suggestions, `Enter` selects the highlighted suggestion, and `Backspace` on an empty tag field removes the last selected tag pill.
-- **Priority badges** — A/B/C priority cookies rendered as small colored badges (red/amber/blue) before the item title
+- **Priority badges** — A/B/C priority cookies rendered as small colored badges (red/amber/blue) before the item title, including overdue and upcoming deadline rows
 - **Progress badges** — `[2/3]` shown as a small badge next to the title (green when complete, gray otherwise)
 - **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under agenda items; toggleable in the edit panel for non-repeating entries. The checklist editor is hidden when a repeater is active because checklist state is not tracked per occurrence.
 - **Recurrence exceptions** — per-occurrence deviations on a repeating entry (skip, shift by `±N(m|h|d)`, reschedule to another date/time, attach a one-off note). Shifted/moved/skipped occurrences show a muted chip with detail in the tooltip; notes render as an italic line under the item. Exceptions are stored in the entry's `:PROPERTIES:` drawer keyed by the unshifted base date (e.g. `:EXCEPTION-2026-05-04: shift +45m`), so they round-trip cleanly.
