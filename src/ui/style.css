@@ -32,6 +32,10 @@
   --accent-deadline: #ef4444;
   --accent-scheduled: #6b7280;
   --now-line: #f97316;
+  --deadline-urgency-critical: #d94841;
+  --deadline-urgency-warning: #cf6a1b;
+  --deadline-urgency-caution: #c58a2d;
+  --deadline-urgency-calm: #647b92;
   --section-padding-x: 1.125rem;
   --item-gap-y: 0.875rem;
 }
@@ -50,6 +54,10 @@
   --border-today: #5b8def;
   --bg-state: rgba(91, 141, 239, 0.12);
   --card-shadow: 0 16px 36px rgba(0, 0, 0, 0.28), 0 2px 10px rgba(0, 0, 0, 0.16);
+  --deadline-urgency-critical: #ef4444;
+  --deadline-urgency-warning: #f97316;
+  --deadline-urgency-caution: #f4c15c;
+  --deadline-urgency-calm: #7086a1;
 }
 
 body {
@@ -351,19 +359,19 @@ body {
 }
 
 .deadline-urgency-critical {
-  --deadline-urgency: #ef4444;
+  --deadline-urgency: var(--deadline-urgency-critical);
 }
 
 .deadline-urgency-warning {
-  --deadline-urgency: #f97316;
+  --deadline-urgency: var(--deadline-urgency-warning);
 }
 
 .deadline-urgency-caution {
-  --deadline-urgency: #f4c15c;
+  --deadline-urgency: var(--deadline-urgency-caution);
 }
 
 .deadline-urgency-calm {
-  --deadline-urgency: #7086a1;
+  --deadline-urgency: var(--deadline-urgency-calm);
 }
 
 /* ── Deadline items ───────────────────────────────────────────────── */
