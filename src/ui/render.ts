@@ -637,8 +637,8 @@ function formatTimeRange(start: string | null, end: string | null): string {
 }
 
 function formatDeadlineDueText(daysUntil: number): string {
-  if (daysUntil === 0) return "Due today";
-  return `Due in ${daysUntil} ${daysUntil === 1 ? "day" : "days"}`;
+  if (daysUntil === 0) return "Today";
+  return `${daysUntil}d`;
 }
 
 function timeToMinutes(time: string): number {
