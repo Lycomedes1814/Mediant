@@ -1068,7 +1068,7 @@ body {
 
 .item-instance-note {
   display: grid;
-  padding: 0.2rem var(--section-padding-x) 0;
+  padding: 0.2rem var(--section-padding-x) 0.18rem;
   font-size: 0.8125rem;
   font-style: italic;
   line-height: 1.35;
