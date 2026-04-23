@@ -718,7 +718,7 @@ body {
   grid-template-columns: auto auto 1fr auto;
   align-items: baseline;
   padding: 0.2rem var(--section-padding-x);
-  font-size: 0.875rem;
+  font-size: 0.90625rem;
   border-left: 3px solid transparent;
   gap: 0 0.8rem;
 }
