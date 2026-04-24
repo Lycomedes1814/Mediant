@@ -660,8 +660,8 @@ function renderTag(
 
   picker.addEventListener("input", () => {
     setTagColor(tag, picker.value);
-    document.querySelectorAll<HTMLElement>(`.tag[data-tag="${tag}"]`).forEach((el) => {
-      el.style.background = picker.value;
+    document.querySelectorAll<HTMLElement>(".tag[data-tag]").forEach((el) => {
+      if (el.dataset.tag === tag) el.style.background = picker.value;
     });
   });
 

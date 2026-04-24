@@ -409,6 +409,37 @@ describe("renderAgenda", () => {
     expect(afterValues[0]).not.toBe(beforeValues[0]);
   });
 
+  it("recolors selector-unfriendly tag names without throwing", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const oddTag = 'quote"tag';
+    const sharedEntry = makeEntry({ title: "Shared odd tag", tags: [oddTag] });
+    const week = makeWeek([
+      [makeItem({ entry: sharedEntry, date: new Date(2026, 3, 20, 9, 0), startTime: "09:00", tags: [oddTag] })],
+      [makeItem({ entry: sharedEntry, date: new Date(2026, 3, 21, 10, 0), startTime: "10:00", tags: [oddTag] })],
+      [],
+      [],
+      [],
+      [],
+      [],
+    ]);
+
+    renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 8, 0));
+
+    const pickers = Array.from(container.querySelectorAll<HTMLInputElement>(".tag-color-picker"));
+    expect(pickers.length).toBeGreaterThan(1);
+    expect(() => {
+      pickers[0].value = "#654321";
+      pickers[0].dispatchEvent(new Event("input", { bubbles: true }));
+    }).not.toThrow();
+
+    expect(tagFns.setTagColor).toHaveBeenCalledWith(oddTag, "#654321");
+    const tags = Array.from(container.querySelectorAll<HTMLElement>(".tag"))
+      .filter(tag => tag.dataset.tag === oddTag);
+    expect(tags.length).toBeGreaterThan(1);
+    expect(new Set(tags.map(tag => tag.style.background)).size).toBe(1);
+  });
+
   it("renders active tag filters and color-edit mode state in the header", () => {
     const container = document.createElement("div");
     const week = makeWeek([

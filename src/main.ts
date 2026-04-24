@@ -98,8 +98,12 @@ interface AddPanelRefs {
 }
 let addPanelRefs: AddPanelRefs | null = null;
 let queuedEditSource: string | null = null;
+let queuedEditEpoch: number | null = null;
+let inFlightEditSource: string | null = null;
+let inFlightEditEpoch: number | null = null;
 let editSaveInFlight = false;
 let editSavePromise: Promise<boolean> | null = null;
+let sourceEpoch = 0;
 
 const DAY_ABBREVS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const EVENT_REPEAT_OPTIONS = [
@@ -1227,12 +1231,19 @@ function buildPanelOrgText(opts: { focusInvalid: boolean }): string | null {
 }
 
 function editSaveBaseSource(): string {
-  return queuedEditSource ?? currentSource;
+  if (queuedEditSource !== null && queuedEditEpoch === sourceEpoch) return queuedEditSource;
+  if (inFlightEditSource !== null && inFlightEditEpoch === sourceEpoch) return inFlightEditSource;
+  return currentSource;
+}
+
+function editSaveBaseEpoch(): number {
+  return sourceEpoch;
 }
 
 function queueEditSourceSave(updated: string): Promise<boolean> {
   if (updated === editSaveBaseSource()) return editSavePromise ?? Promise.resolve(true);
   queuedEditSource = updated;
+  queuedEditEpoch = editSaveBaseEpoch();
   if (editSaveInFlight && editSavePromise) return editSavePromise;
   editSavePromise = drainEditSourceSaves();
   return editSavePromise;
@@ -1244,13 +1255,30 @@ async function drainEditSourceSaves(): Promise<boolean> {
   try {
     while (queuedEditSource !== null) {
       const next = queuedEditSource;
+      const nextEpoch = queuedEditEpoch ?? sourceEpoch;
       queuedEditSource = null;
+      queuedEditEpoch = null;
       if (next === currentSource) continue;
-      ok = await persistSource(next);
-      if (!ok) {
+      if (nextEpoch !== sourceEpoch) {
+        ok = false;
+        continue;
+      }
+      inFlightEditSource = next;
+      inFlightEditEpoch = nextEpoch;
+      let result: "saved" | "stale" | "failed";
+      try {
+        result = await persistSource(next, { expectedEpoch: nextEpoch });
+      } finally {
+        inFlightEditSource = null;
+        inFlightEditEpoch = null;
+      }
+      if (result === "failed") {
         queuedEditSource = null;
+        queuedEditEpoch = null;
+        ok = false;
         break;
       }
+      if (result !== "saved") ok = false;
     }
     return ok;
   } finally {
@@ -1564,13 +1592,13 @@ async function toggleOccurrenceSkipped(): Promise<void> {
 }
 
 async function toggleOccurrenceIsLast(): Promise<void> {
-  if (editingLine === null || editingBaseDate === null) return;
+  if (editingLine === null || editingBaseDate === null || !addPanelRefs) return;
   const entry = entries.find(e => e.sourceLineNumber === editingLine);
   if (!entry) return;
   const nextBaseKey = nextOccurrenceBoundary(pickBaseTimestamp(entry), editingBaseDate);
   if (nextBaseKey === null) return;
   const baseSource = editSaveBaseSource();
-  const updated = addPanelRefs?.endSeriesCheckbox.checked
+  const updated = addPanelRefs.endSeriesCheckbox.checked
     ? upsertProperty(baseSource, entry, "SERIES-UNTIL", nextBaseKey)
     : removeProperty(baseSource, entry, "SERIES-UNTIL");
   await queueEditSourceSave(updated);
@@ -1842,13 +1870,17 @@ async function probeServer(): Promise<boolean> {
  * then refresh entries and re-render. On a server version mismatch
  * (409), reload the file from disk — the on-disk copy wins.
  */
-async function persistSource(updated: string): Promise<boolean> {
+async function persistSource(
+  updated: string,
+  opts: { expectedEpoch?: number } = {},
+): Promise<"saved" | "stale" | "failed"> {
   if (exceedsLimit(updated)) {
     alert("Source exceeds the 4 MB limit.");
-    return false;
+    return "failed";
   }
 
   if (serverMode) {
+    const expectedEpoch = opts.expectedEpoch ?? sourceEpoch;
     try {
       const headers: Record<string, string> = { "Content-Type": "text/plain; charset=utf-8" };
       if (serverVersion) headers["If-Match"] = serverVersion;
@@ -1856,37 +1888,44 @@ async function persistSource(updated: string): Promise<boolean> {
       if (r.status === 409) {
         alert("File was modified externally; reloading from disk.");
         await reloadFromServer();
-        return false;
+        return "stale";
       }
       if (!r.ok) {
         alert(`Failed to save: ${r.status} ${r.statusText}`);
-        return false;
+        return "failed";
+      }
+      if (sourceEpoch !== expectedEpoch) {
+        await reloadFromServer();
+        return "stale";
       }
       serverVersion = r.headers.get("X-Version");
-      currentSource = updated;
-      entries = parseOrg(updated);
+      applyParsedSource(updated);
       render();
-      return true;
+      return "saved";
     } catch (e) {
       alert(`Save failed: ${(e as Error).message}`);
-      return false;
+      return "failed";
     }
   }
 
   localStorage.setItem("mediant-org-source", updated);
-  currentSource = updated;
-  entries = parseOrg(updated);
+  applyParsedSource(updated);
   render();
-  return true;
+  return "saved";
 }
 
 async function reloadFromServer(): Promise<void> {
   try {
     const r = await fetch("/api/source");
     if (!r.ok) return;
-    serverVersion = r.headers.get("X-Version");
-    currentSource = await r.text();
-    entries = parseOrg(currentSource);
+    const nextVersion = r.headers.get("X-Version");
+    const nextSource = await r.text();
+    if (nextVersion === serverVersion && nextSource === currentSource) return;
+    serverVersion = nextVersion;
+    queuedEditSource = null;
+    queuedEditEpoch = null;
+    sourceEpoch++;
+    applyParsedSource(nextSource);
     render();
   } catch {
     // swallow — next SSE event or user action will retry
@@ -1910,6 +1949,11 @@ function subscribeToServerChanges(): void {
 async function loadFromTextarea(source: string): Promise<void> {
   currentStart = todayMidnight();
   await persistSource(source);
+}
+
+function applyParsedSource(source: string): void {
+  currentSource = source;
+  entries = parseOrg(source);
 }
 
 // ── Render ───────────────────────────────────────────────────────────

@@ -181,7 +181,7 @@ function readBody(req) {
 }
 
 const server = http.createServer(async (req, res) => {
-  const url = req.url.split("?")[0];
+  const url = (req.url ?? "/").split("?")[0];
 
   if (url === "/api/source" && req.method === "GET") {
     try {

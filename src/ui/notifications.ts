@@ -8,6 +8,10 @@ const LEAD_MS = 60 * 60 * 1000; // 1 hour
 
 let activeTimers: ReturnType<typeof setTimeout>[] = [];
 
+function formatLocalDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export function notificationsEnabled(): boolean {
   return localStorage.getItem(STORAGE_KEY) === "on";
 }
@@ -51,7 +55,7 @@ export function scheduleNotifications(
   if (Notification.permission !== "granted") return;
 
   const now = Date.now();
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = formatLocalDateKey(new Date());
 
   for (const item of items) {
     if (item.dateStr !== todayStr) continue;

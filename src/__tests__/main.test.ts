@@ -20,6 +20,7 @@ vi.mock("../ui/notifications.ts", () => ({
 describe("main.ts integration", () => {
   beforeEach(() => {
     vi.resetModules();
+    vi.unstubAllGlobals();
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 3, 20, 10, 0, 0));
     document.body.innerHTML = '<div id="agenda"></div>';
@@ -455,6 +456,103 @@ describe("main.ts integration", () => {
     expect(document.querySelector(".add-panel.is-open")).not.toBeNull();
   });
 
+  it("drops queued edit saves after an authoritative server reload", async () => {
+    let serverSource = [
+      "** TODO Yoga",
+      "SCHEDULED: <2026-04-20 Mon 11:00>",
+      "",
+    ].join("\n");
+    let serverVersion = "v1";
+    const putCalls: Array<{ body: string; ifMatch: string | null }> = [];
+    let resolveFirstPut: (() => void) | null = null;
+
+    const eventSources: Array<{ emit: (data: string) => void }> = [];
+    class FakeEventSource {
+      onmessage: ((event: { data: string }) => void) | null = null;
+
+      constructor(readonly url: string) {
+        eventSources.push(this);
+      }
+
+      emit(data: string): void {
+        this.onmessage?.({ data });
+      }
+
+      close(): void {}
+    }
+
+    vi.stubGlobal("EventSource", FakeEventSource as unknown as typeof EventSource);
+    vi.stubGlobal("alert", vi.fn());
+    vi.stubGlobal("fetch", vi.fn((input: string, init?: RequestInit) => {
+      if (input !== "/api/source") throw new Error(`unexpected fetch: ${input}`);
+      const method = init?.method ?? "GET";
+      if (method === "GET") {
+        return Promise.resolve(makeMockResponse(200, serverSource, serverVersion));
+      }
+      if (method !== "PUT") throw new Error(`unexpected method: ${method}`);
+
+      const headers = (init?.headers ?? {}) as Record<string, string>;
+      putCalls.push({
+        body: String(init?.body ?? ""),
+        ifMatch: headers["If-Match"] ?? null,
+      });
+      if (putCalls.length === 1) {
+        return new Promise((resolve) => {
+          resolveFirstPut = () => resolve(makeMockResponse(200, "", "v1a"));
+        });
+      }
+      return Promise.resolve(makeMockResponse(200, "", `v${putCalls.length + 1}`));
+    }));
+
+    await import("../main.ts");
+    await waitFor(() => document.querySelector(".scheduled-item .item-title") !== null);
+    expect(eventSources).toHaveLength(1);
+
+    const title = document.querySelector<HTMLElement>(".scheduled-item .item-title");
+    expect(title).not.toBeNull();
+    title!.click();
+    await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
+
+    const titleInput = document.querySelector<HTMLInputElement>("#add-title");
+    expect(titleInput).not.toBeNull();
+
+    titleInput!.value = "Yoga one";
+    titleInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    await flush();
+    expect(putCalls).toHaveLength(1);
+    expect(putCalls[0].body).toContain("** TODO Yoga one");
+    expect(putCalls[0].ifMatch).toBe("v1");
+
+    titleInput!.value = "Yoga two";
+    titleInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    await flush();
+    expect(putCalls).toHaveLength(1);
+
+    serverSource = [
+      "** TODO External edit",
+      "SCHEDULED: <2026-04-20 Mon 11:00>",
+      "",
+    ].join("\n");
+    serverVersion = "v2";
+    eventSources[0].emit("v2");
+    await flush();
+
+    expect(Array.from(document.querySelectorAll<HTMLElement>(".scheduled-item .item-title")).some(
+      el => el.textContent?.includes("External edit"),
+    )).toBe(true);
+
+    expect(resolveFirstPut).not.toBeNull();
+    resolveFirstPut!();
+    await flush();
+
+    expect(putCalls).toHaveLength(1);
+    const titles = Array.from(document.querySelectorAll<HTMLElement>(".scheduled-item .item-title"))
+      .map(el => el.textContent ?? "");
+    expect(titles.some(text => text.includes("External edit"))).toBe(true);
+    expect(titles.some(text => text.includes("Yoga one"))).toBe(false);
+    expect(titles.some(text => text.includes("Yoga two"))).toBe(false);
+  });
+
 });
 
 async function waitFor(predicate: () => boolean): Promise<void> {
@@ -478,4 +576,19 @@ function makeKeydownEvent(key: string, target: EventTarget): KeyboardEvent {
   Object.defineProperty(event, "target", { value: target });
   Object.defineProperty(event, "preventDefault", { value: vi.fn() });
   return event;
+}
+
+function makeMockResponse(status: number, body = "", version: string | null = null) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: status === 200 ? "OK" : "Error",
+    headers: {
+      get(name: string): string | null {
+        if (name.toLowerCase() === "x-version") return version;
+        return null;
+      },
+    },
+    text: async (): Promise<string> => body,
+  };
 }
