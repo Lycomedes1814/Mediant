@@ -45,6 +45,7 @@ let addPanelEl: HTMLElement | null = null;
 let addOverlayEl: HTMLElement | null = null;
 let addPanelTitleEl: HTMLElement | null = null;
 let addPanelSaveBtnEl: HTMLButtonElement | null = null;
+let lastPanelFocusEl: HTMLElement | null = null;
 let editingLine: number | null = null;
 let editingBaseDate: string | null = null;
 let editingLevel: number = 1;
@@ -1240,6 +1241,29 @@ function editSaveBaseEpoch(): number {
   return sourceEpoch;
 }
 
+function rememberFocusBeforePanelOpen(): void {
+  const active = document.activeElement;
+  lastPanelFocusEl = active instanceof HTMLElement && !addPanelEl?.contains(active) ? active : null;
+}
+
+function restoreFocusAfterPanelClose(): void {
+  const active = document.activeElement;
+  if (active instanceof HTMLElement && addPanelEl?.contains(active)) {
+    active.blur();
+  }
+  const target = lastPanelFocusEl;
+  lastPanelFocusEl = null;
+  if (target && target.isConnected) {
+    target.focus();
+    return;
+  }
+  const agendaRoot = document.getElementById("agenda");
+  if (agendaRoot instanceof HTMLElement) {
+    if (!agendaRoot.hasAttribute("tabindex")) agendaRoot.tabIndex = -1;
+    agendaRoot.focus();
+  }
+}
+
 function queueEditSourceSave(updated: string): Promise<boolean> {
   if (updated === editSaveBaseSource()) return editSavePromise ?? Promise.resolve(true);
   queuedEditSource = updated;
@@ -1320,6 +1344,7 @@ function appendOrgText(orgText: string): void {
 
 function openAddPanel(): void {
   if (!addPanelEl || !addOverlayEl || !addPanelRefs) return;
+  rememberFocusBeforePanelOpen();
 
   editingLine = null;
   editingBaseDate = null;
@@ -1375,6 +1400,7 @@ function tsToDateTimeDisplay(ts: { date: string; startTime: string | null; endTi
 
 function openEditPanel(sourceLine: number, baseDate: string | null = null): void {
   if (!addPanelEl || !addOverlayEl || !addPanelRefs) return;
+  rememberFocusBeforePanelOpen();
 
   const entry = entries.find(e => e.sourceLineNumber === sourceLine);
   if (!entry) return;
@@ -1639,6 +1665,7 @@ function closeAddPanel(): void {
   if (!addPanelEl || !addOverlayEl) return;
   addOverlayEl.classList.remove("is-open");
   addPanelEl.classList.remove("is-open");
+  restoreFocusAfterPanelClose();
 }
 
 function navigateWeek(direction: "prev" | "next" | "today"): void {

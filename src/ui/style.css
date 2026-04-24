@@ -253,14 +253,6 @@ body {
   grid-template-columns: var(--time-col) auto 1fr auto;
 }
 
-.timed-item.has-priority {
-  grid-template-columns: var(--time-col) 0.9rem 1fr auto;
-}
-
-.timed-item.has-state.has-priority {
-  grid-template-columns: var(--time-col) auto 0.9rem 1fr auto;
-}
-
 .timed-item + .timed-item,
 .timed-item + .scheduled-item,
 .scheduled-item + .timed-item,
@@ -280,33 +272,14 @@ body {
   grid-column: 2;
 }
 
-.timed-item .item-priority {
-  grid-column: 2;
-  display: inline-flex;
-  justify-content: center;
-  min-width: 0;
-  font-size: 0.64rem;
-  opacity: 0.78;
-  padding-inline: 0;
-}
-
-.timed-item.has-state .item-priority {
-  grid-column: 3;
-}
-
 .timed-item .item-title {
   grid-column: 2;
   min-width: 0;
   font-weight: 500;
 }
 
-.timed-item.has-state .item-title,
-.timed-item.has-priority .item-title {
+.timed-item.has-state .item-title {
   grid-column: 3;
-}
-
-.timed-item.has-state.has-priority .item-title {
-  grid-column: 4;
 }
 
 .timed-item .tag-badges {
@@ -314,13 +287,8 @@ body {
   justify-self: end;
 }
 
-.timed-item.has-state .tag-badges,
-.timed-item.has-priority .tag-badges {
+.timed-item.has-state .tag-badges {
   grid-column: 4;
-}
-
-.timed-item.has-state.has-priority .tag-badges {
-  grid-column: 5;
 }
 
 
@@ -360,11 +328,10 @@ body {
   content: "";
   position: absolute;
   left: 0;
-  top: 50%;
+  top: 0.4rem;
+  bottom: 0.4rem;
   width: var(--global-row-fringe-width);
-  height: 1.75rem;
   background: var(--global-row-fringe-color);
-  transform: translateY(-50%);
 }
 
 .overdue-item.has-priority {
@@ -522,10 +489,6 @@ body {
   gap: 0 0.5rem;
 }
 
-.deadline-item.has-priority {
-  grid-template-columns: 4.1ch 2.35rem 0.9rem 1fr auto;
-}
-
 .deadline-meta {
   display: contents;
 }
@@ -552,17 +515,6 @@ body {
   font-size: 0.6625rem;
 }
 
-.deadline-item .deadline-meta-priority {
-  grid-column: 3;
-  grid-row: 1;
-  display: inline-flex;
-  width: 0.9rem;
-  justify-content: center;
-  padding-inline: 0;
-  opacity: 0.72;
-  font-size: 0.64rem;
-}
-
 .deadline-item .item-title {
   grid-column: 3;
   grid-row: 1;
@@ -576,14 +528,6 @@ body {
   justify-self: end;
 }
 
-.deadline-item.has-priority .item-title {
-  grid-column: 4;
-}
-
-.deadline-item.has-priority .tag-badges {
-  grid-column: 5;
-}
-
 .deadline-item.has-instance-note {
   padding-bottom: 0.18rem;
 }
@@ -593,23 +537,14 @@ body {
   column-gap: 0.5rem;
 }
 
-.deadline-note-with-priority {
-  grid-template-columns: 4.1ch 2.35rem 0.9rem 1fr auto;
-  column-gap: 0.5rem;
-}
-
 .item-instance-note.deadline-note,
-.item-instance-note.deadline-note-with-priority {
+.item-instance-note.deadline-note {
   padding-top: 0;
   padding-bottom: 0.78rem;
 }
 
 .deadline-note .item-instance-note-text {
   grid-column: 3;
-}
-
-.deadline-note-with-priority .item-instance-note-text {
-  grid-column: 4;
 }
 
 /* ── Scheduled items ──────────────────────────────────────────────── */
@@ -637,24 +572,8 @@ body {
   font-weight: 530;
 }
 
-.scheduled-item.has-priority {
-  grid-template-columns: 0.9rem 1fr auto;
-}
-
 .scheduled-item.has-time.has-state {
   grid-template-columns: var(--time-col) auto 1fr auto;
-}
-
-.scheduled-item.has-time.has-priority {
-  grid-template-columns: var(--time-col) 0.9rem 1fr auto;
-}
-
-.scheduled-item.has-state.has-priority {
-  grid-template-columns: auto 0.9rem 1fr auto;
-}
-
-.scheduled-item.has-time.has-state.has-priority {
-  grid-template-columns: var(--time-col) auto 0.9rem 1fr auto;
 }
 
 .scheduled-item .item-time {
@@ -673,25 +592,6 @@ body {
   grid-column: 2;
 }
 
-.scheduled-item .item-priority {
-  grid-column: 1;
-  display: inline-flex;
-  justify-content: center;
-  min-width: 0;
-  font-size: 0.64rem;
-  opacity: 0.78;
-  padding-inline: 0;
-}
-
-.scheduled-item.has-time .item-priority,
-.scheduled-item.has-state .item-priority {
-  grid-column: 2;
-}
-
-.scheduled-item.has-time.has-state .item-priority {
-  grid-column: 3;
-}
-
 .scheduled-item .item-title {
   grid-column: 1;
   min-width: 0;
@@ -699,19 +599,12 @@ body {
 }
 
 .scheduled-item.has-time .item-title,
-.scheduled-item.has-state .item-title,
-.scheduled-item.has-priority .item-title {
+.scheduled-item.has-state .item-title {
   grid-column: 2;
 }
 
-.scheduled-item.has-time.has-state .item-title,
-.scheduled-item.has-time.has-priority .item-title,
-.scheduled-item.has-state.has-priority .item-title {
+.scheduled-item.has-time.has-state .item-title {
   grid-column: 3;
-}
-
-.scheduled-item.has-time.has-state.has-priority .item-title {
-  grid-column: 4;
 }
 
 .scheduled-item .tag-badges {
@@ -720,19 +613,12 @@ body {
 }
 
 .scheduled-item.has-time .tag-badges,
-.scheduled-item.has-state .tag-badges,
-.scheduled-item.has-priority .tag-badges {
+.scheduled-item.has-state .tag-badges {
   grid-column: 3;
 }
 
-.scheduled-item.has-time.has-state .tag-badges,
-.scheduled-item.has-time.has-priority .tag-badges,
-.scheduled-item.has-state.has-priority .tag-badges {
+.scheduled-item.has-time.has-state .tag-badges {
   grid-column: 4;
-}
-
-.scheduled-item.has-time.has-state.has-priority .tag-badges {
-  grid-column: 5;
 }
 
 /* ── Day deadline items (deadlines within day cards) ─────────────── */
@@ -757,6 +643,41 @@ body {
   color: var(--text);
   opacity: 0.54;
   letter-spacing: -0.01em;
+}
+
+.day-deadline-item .item-kind {
+  grid-column: 1;
+}
+
+.day-deadline-item .item-state {
+  grid-column: 2;
+}
+
+.day-deadline-item .item-title {
+  grid-column: 3;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.day-deadline-item .tag-badges {
+  grid-column: 4;
+  justify-self: end;
+}
+
+.day-deadline-item.has-time .item-kind {
+  grid-column: 2;
+}
+
+.day-deadline-item.has-time .item-state {
+  grid-column: 3;
+}
+
+.day-deadline-item.has-time .item-title {
+  grid-column: 4;
+}
+
+.day-deadline-item.has-time .tag-badges {
+  grid-column: 5;
 }
 
 .day-deadline-item .item-title {
@@ -1981,13 +1902,55 @@ body {
 
   /* ── Day-card micro-cards ──────────────────────────────────────── */
 
-  .timed-item,
-  .timed-item.has-state,
+  .timed-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    column-gap: 0.375rem;
+    row-gap: 0.125rem;
+  }
+
+  .timed-item.has-state {
+    grid-template-columns: auto 1fr auto;
+  }
+
   .day-deadline-item,
   .day-deadline-item.has-time {
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
+  }
+
+  .timed-item .item-time {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .timed-item .item-title {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .timed-item .tag-badges {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: start;
+    justify-content: flex-start;
+  }
+
+  .timed-item.has-state .item-state {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .timed-item.has-state .item-title {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .timed-item.has-state .tag-badges {
+    grid-column: 1 / -1;
+    grid-row: 3;
   }
 
   .scheduled-item,
@@ -1996,6 +1959,27 @@ body {
     grid-template-columns: auto 1fr auto;
     align-items: baseline;
     column-gap: 0.375rem;
+  }
+
+  .scheduled-item.has-state:not(.has-time) {
+    grid-template-columns: 1fr auto;
+    row-gap: 0.125rem;
+  }
+
+  .scheduled-item.has-state:not(.has-time) .item-state {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .scheduled-item.has-state:not(.has-time) .item-title {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .scheduled-item.has-state:not(.has-time) .tag-badges {
+    grid-column: 2;
+    grid-row: 2;
   }
 
   .scheduled-item.has-time {
@@ -2020,6 +2004,58 @@ body {
   .scheduled-item.has-time .tag-badges {
     grid-column: 3;
     grid-row: 2;
+  }
+
+  .scheduled-item.has-time.has-state {
+    grid-template-columns: 1fr auto;
+  }
+
+  .scheduled-item.has-time.has-state .item-state {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .scheduled-item.has-time.has-state .item-title {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .scheduled-item.has-time.has-state .tag-badges {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .day-deadline-item:not(.has-time) {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: baseline;
+    column-gap: 0.375rem;
+    row-gap: 0.125rem;
+  }
+
+  .day-deadline-item:not(.has-time) .item-kind {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .day-deadline-item:not(.has-time) .item-state {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .day-deadline-item:not(.has-time) .item-title {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .day-deadline-item:not(.has-time) .tag-badges {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: start;
+    justify-content: flex-start;
   }
 
   .day-deadline-item.has-time {

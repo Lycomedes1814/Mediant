@@ -197,7 +197,6 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
 
   for (const dl of deadlines) {
     const row = el("div", "deadline-item");
-    if (dl.entry.priority) row.classList.add("has-priority");
     if (dl.instanceNote) row.classList.add("has-instance-note");
     row.classList.add(getDeadlineUrgencyClass(dl.daysUntil));
     if (dl.entry.todo === "DONE") row.classList.add("item-done");
@@ -208,19 +207,14 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     time.textContent = formatDeadlineDueText(dl.daysUntil);
     const state = renderStateBadge(dl.entry);
     meta.append(time, state);
-    if (dl.entry.priority) {
-      const pri = el("span", `item-priority priority-${dl.entry.priority} deadline-meta-priority`);
-      pri.textContent = dl.entry.priority;
-      meta.appendChild(pri);
-    }
 
-    const title = renderTitle(dl.entry, { showPriority: false });
+    const title = renderTitle(dl.entry);
     if (dl.baseDate) title.dataset.baseDate = dl.baseDate;
 
     row.append(meta, title, renderTags(dl.entry.tags, optionsForTags()));
     section.appendChild(row);
     if (dl.instanceNote) {
-      section.appendChild(renderGlobalInstanceNote(dl.instanceNote, dl.entry.priority ? "deadline-note-with-priority" : "deadline-note"));
+      section.appendChild(renderGlobalInstanceNote(dl.instanceNote, "deadline-note"));
     }
   }
 
@@ -512,11 +506,11 @@ function renderAllDayItem(item: AgendaItem): HTMLElement {
 }
 
 function renderTimedItem(item: AgendaItem): HTMLElement {
-  return renderItem(item, "timed-item", undefined, "always", false);
+  return renderItem(item, "timed-item", undefined, "always");
 }
 
 function renderScheduledItem(item: AgendaItem): HTMLElement {
-  return renderItem(item, "scheduled-item", renderStateBadge(item.entry, "TODO"), "optional", false);
+  return renderItem(item, "scheduled-item", renderStateBadge(item.entry, "TODO"), "optional");
 }
 
 function renderDayDeadlineItem(item: AgendaItem): HTMLElement {

@@ -127,17 +127,16 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".deadlines-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-21");
     expect(container.querySelector(".deadlines-section .item-time")?.textContent).toBe("1d");
     expect(container.querySelector(".deadlines-section .deadline-item")?.classList.contains("deadline-urgency-critical")).toBe(true);
-    expect(container.querySelector(".deadlines-section .deadline-meta-priority")?.textContent).toBe("A");
-    expect(container.querySelector(".deadlines-section .item-title .item-priority")).toBeNull();
+    expect(container.querySelector(".deadlines-section .item-title .item-priority")?.textContent).toBe("A");
     const deadlineNote = container.querySelector(".deadlines-section .item-instance-note") as HTMLElement | null;
     expect(deadlineNote?.textContent).toBe("Bring receipt");
-    expect(deadlineNote?.classList.contains("deadline-note-with-priority")).toBe(true);
+    expect(deadlineNote?.classList.contains("deadline-note")).toBe(true);
     const firstDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[0];
-    expect(firstDeadlineRow?.classList.contains("has-priority")).toBe(true);
+    expect(firstDeadlineRow?.classList.contains("has-priority")).toBe(false);
     expect(firstDeadlineRow?.style.getPropertyValue("--global-row-fringe-color")).toBe("#00aa88");
     const secondDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[1];
     expect(secondDeadlineRow?.classList.contains("has-priority")).toBe(false);
-    expect(secondDeadlineRow?.querySelector(".deadline-meta-priority")).toBeNull();
+    expect(secondDeadlineRow?.querySelector(".item-title .item-priority")).toBeNull();
     const overdueState = container.querySelector(".overdue-section .item-state");
     expect(overdueState?.textContent).toBe("TODO");
     expect(overdueState?.getAttribute("data-action")).toBe("toggle-done");
@@ -266,11 +265,10 @@ describe("renderAgenda", () => {
     expect(checkboxes[0].classList.contains("checkbox-checked")).toBe(true);
     expect(container.querySelector(".tag")?.textContent).toContain("music");
     const timedRows = container.querySelectorAll<HTMLElement>(".timed-item");
-    expect(timedRows[0]?.classList.contains("has-priority")).toBe(true);
-    expect(timedRows[0]?.querySelector(".item-priority")?.textContent).toBe("B");
-    expect(timedRows[0]?.querySelector(".item-title .item-priority")).toBeNull();
+    expect(timedRows[0]?.classList.contains("has-priority")).toBe(false);
+    expect(timedRows[0]?.querySelector(".item-title .item-priority")?.textContent).toBe("B");
     expect(timedRows[1]?.classList.contains("has-priority")).toBe(false);
-    expect(timedRows[1]?.querySelector(".item-priority")).toBeNull();
+    expect(timedRows[1]?.querySelector(".item-title .item-priority")).toBeNull();
   });
 
   it("renders skipped occurrences with marker and strikethrough class", () => {
@@ -404,9 +402,9 @@ describe("renderAgenda", () => {
     const row = container.querySelector(".scheduled-item") as HTMLElement | null;
     expect(row).not.toBeNull();
     expect(row?.classList.contains("has-state")).toBe(true);
-    expect(row?.classList.contains("has-priority")).toBe(true);
+    expect(row?.classList.contains("has-priority")).toBe(false);
     expect(row?.querySelector(".item-state")?.textContent).toBe("TODO");
-    expect(row?.querySelector(".item-priority")?.textContent).toBe("C");
+    expect(row?.querySelector(".item-title .item-priority")?.textContent).toBe("C");
     expect(row?.querySelector(".item-title")?.textContent).toContain("Pay bills");
   });
 

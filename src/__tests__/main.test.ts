@@ -169,6 +169,14 @@ describe("main.ts integration", () => {
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await flush();
 
+    keydownHandler!(makeKeydownEvent("n", document.body));
+    await flush();
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("27 April – 3 May 2026");
+
+    keydownHandler!(makeKeydownEvent("t", document.body));
+    await flush();
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
+
     const deadlineTitle = document.querySelector<HTMLElement>(".deadlines-section .item-title[data-base-date='2026-04-22']");
     expect(deadlineTitle).not.toBeNull();
     deadlineTitle!.click();
