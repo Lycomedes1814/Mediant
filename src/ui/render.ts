@@ -274,6 +274,7 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
   for (const item of items) {
     const row = el("div", "someday-item");
     if (item.entry.todo === "DONE") row.classList.add("item-done");
+    applyPrimaryTagFringe(row, item.entry.tags, "compact");
 
     const state = renderStateBadge(item.entry, "TODO");
     const title = renderTitle(item.entry);

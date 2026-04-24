@@ -713,12 +713,26 @@ body {
 }
 
 .someday-item {
+  --global-row-fringe-color: transparent;
+  --global-row-fringe-width: 3px;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: baseline;
+  position: relative;
   padding: 0.6rem var(--section-padding-x);
+  padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
   font-size: 0.875rem;
   gap: 0 0.65rem;
+}
+
+.someday-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: var(--global-row-fringe-width);
+  background: var(--global-row-fringe-color);
 }
 
 .someday-item + .someday-item {
