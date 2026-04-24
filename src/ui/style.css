@@ -339,10 +339,6 @@ body {
   background: var(--global-row-fringe-color);
 }
 
-.overdue-item.has-priority {
-  grid-template-columns: 4.1ch 4.35rem 2.35rem 0.9rem 1fr auto;
-}
-
 .overdue-meta {
   display: contents;
 }
@@ -375,7 +371,7 @@ body {
 
 .overdue-item .item-title {
   grid-column: 4;
-  grid-row: 1;
+  grid-row: 2;
   min-width: 0;
   font-weight: 500;
 }
@@ -391,30 +387,11 @@ body {
   padding-inline: 0.08rem;
 }
 
-.overdue-item .overdue-meta-priority {
-  grid-column: 4;
-  grid-row: 1;
-  display: inline-flex;
-  justify-content: center;
-  width: 0.9rem;
-  min-width: 0;
-  padding-inline: 0;
-  opacity: 0.72;
-  font-size: 0.64rem;
-}
-
 .overdue-item .tag-badges {
-  grid-row: 1;
-  grid-column: 5;
-  justify-self: end;
-}
-
-.overdue-item.has-priority .item-title {
-  grid-column: 5;
-}
-
-.overdue-item.has-priority .tag-badges {
-  grid-column: 6;
+  grid-row: 3;
+  grid-column: 4 / -1;
+  justify-self: start;
+  justify-content: flex-start;
 }
 
 .overdue-item.has-instance-note {
@@ -426,23 +403,14 @@ body {
   column-gap: 0.5rem;
 }
 
-.overdue-note-with-priority {
-  grid-template-columns: 4.1ch 4.35rem 2.35rem 0.9rem 1fr auto;
-  column-gap: 0.5rem;
-}
-
 .item-instance-note.overdue-note,
-.item-instance-note.overdue-note-with-priority {
+.item-instance-note.overdue-note {
   padding-top: 0;
   padding-bottom: 0.78rem;
 }
 
 .overdue-note .item-instance-note-text {
   grid-column: 4;
-}
-
-.overdue-note-with-priority .item-instance-note-text {
-  grid-column: 5;
 }
 
 /* ── Upcoming Deadlines section (top of agenda) ───────────────────── */

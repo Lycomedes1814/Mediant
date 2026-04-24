@@ -240,7 +240,6 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
 
   for (const item of items) {
     const row = el("div", "overdue-item");
-    if (item.entry.priority) row.classList.add("has-priority");
     if (item.instanceNote) row.classList.add("has-instance-note");
     applyPrimaryTagFringe(row, item.entry.tags, "compact");
 
@@ -251,19 +250,14 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
     kind.textContent = item.kind === "deadline" ? "DEADLINE" : "SCHEDULED";
     const state = renderStateBadge(item.entry);
     meta.append(time, kind, state);
-    if (item.entry.priority) {
-      const pri = el("span", `item-priority priority-${item.entry.priority} overdue-meta-priority`);
-      pri.textContent = item.entry.priority;
-      meta.appendChild(pri);
-    }
 
-    const title = renderTitle(item.entry, { showPriority: false });
+    const title = renderTitle(item.entry);
     if (item.baseDate) title.dataset.baseDate = item.baseDate;
 
-    row.append(title, meta, renderTags(item.entry.tags, optionsForTags()));
+    row.append(meta, title, renderTags(item.entry.tags, optionsForTags()));
     section.appendChild(row);
     if (item.instanceNote) {
-      section.appendChild(renderGlobalInstanceNote(item.instanceNote, item.entry.priority ? "overdue-note-with-priority" : "overdue-note"));
+      section.appendChild(renderGlobalInstanceNote(item.instanceNote, "overdue-note"));
     }
   }
 
