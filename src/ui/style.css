@@ -319,7 +319,7 @@ body {
   --global-row-fringe-color: var(--accent-deadline);
   --global-row-fringe-width: 3px;
   display: grid;
-  grid-template-columns: 4.1ch 4.35rem 2.35rem 1fr;
+  grid-template-columns: 4.1ch 4.35rem 2.35rem 1fr auto;
   position: relative;
   align-items: baseline;
   padding: 0.78rem var(--section-padding-x);
@@ -389,11 +389,9 @@ body {
 }
 
 .overdue-item .tag-badges {
-  grid-row: 2;
-  grid-column: 1 / -1;
-  width: 100%;
-  justify-self: start;
-  justify-content: flex-start;
+  grid-row: 1;
+  grid-column: 5;
+  justify-self: end;
 }
 
 .overdue-item.has-instance-note {
