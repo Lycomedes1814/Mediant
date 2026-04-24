@@ -255,8 +255,13 @@ body {
 
 .timed-item + .timed-item,
 .timed-item + .scheduled-item,
+.timed-item + .day-deadline-item,
 .scheduled-item + .timed-item,
-.scheduled-item + .scheduled-item {
+.scheduled-item + .scheduled-item,
+.scheduled-item + .day-deadline-item,
+.day-deadline-item + .timed-item,
+.day-deadline-item + .scheduled-item,
+.day-deadline-item + .day-deadline-item {
   margin-top: var(--item-gap-y);
 }
 
