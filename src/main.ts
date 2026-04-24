@@ -2042,7 +2042,7 @@ function setupNavigation(): void {
       navigateWeek(action);
     } else if (action === "add") {
       openAddPanel();
-      if (btn instanceof HTMLButtonElement) {
+      if (btn instanceof HTMLElement) {
         btn.blur();
         lastPanelFocusEl = null;
       }
@@ -2058,7 +2058,13 @@ function setupNavigation(): void {
     } else if (action === "edit") {
       const line = Number(btn.dataset.line);
       const baseDate = btn.dataset.baseDate ?? null;
-      if (line) openEditPanel(line, baseDate);
+      if (line) {
+        openEditPanel(line, baseDate);
+        if (btn instanceof HTMLElement) {
+          btn.blur();
+          lastPanelFocusEl = null;
+        }
+      }
     } else if (action === "toggle-done") {
       e.stopPropagation();
       const line = Number(btn.dataset.line);
