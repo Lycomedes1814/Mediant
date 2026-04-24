@@ -379,6 +379,37 @@ describe("renderAgenda", () => {
     expect(state?.previousElementSibling).toBe(kind);
   });
 
+  it("marks scheduled todo rows with priority as stateful so the desktop grid stays on one line", () => {
+    const container = document.createElement("div");
+    const week = makeWeek([
+      [
+        makeItem({
+          title: "Pay bills",
+          date: new Date(2026, 3, 20),
+          category: "scheduled",
+          entry: makeEntry({ title: "Pay bills", todo: "TODO", priority: "C", sourceLineNumber: 42 }),
+          sourceLineNumber: 42,
+        }),
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+    ]);
+
+    renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 9, 0));
+
+    const row = container.querySelector(".scheduled-item") as HTMLElement | null;
+    expect(row).not.toBeNull();
+    expect(row?.classList.contains("has-state")).toBe(true);
+    expect(row?.classList.contains("has-priority")).toBe(true);
+    expect(row?.querySelector(".item-state")?.textContent).toBe("TODO");
+    expect(row?.querySelector(".item-priority")?.textContent).toBe("C");
+    expect(row?.querySelector(".item-title")?.textContent).toContain("Pay bills");
+  });
+
   it("updates all rendered tag pills when the color picker changes", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);

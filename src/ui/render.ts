@@ -410,6 +410,7 @@ function renderItem(
   applyPrimaryTagFringe(row, item.entry.tags);
 
   const children: HTMLElement[] = [];
+  const badges = badge ? (Array.isArray(badge) ? badge : [badge]) : [];
 
   const hasTime = showTime === "always" || (showTime === "optional" && item.startTime);
   if (hasTime) {
@@ -419,9 +420,12 @@ function renderItem(
     children.push(time);
   }
 
+  if (badges.some((el) => el.classList.contains("item-state"))) {
+    row.classList.add("has-state");
+  }
+
   if (badge) {
-    if (Array.isArray(badge)) children.push(...badge);
-    else children.push(badge);
+    children.push(...badges);
   } else if (item.entry.todo) {
     row.classList.add("has-state");
     children.push(renderStateBadge(item.entry));
