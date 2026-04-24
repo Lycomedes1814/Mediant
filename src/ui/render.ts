@@ -22,10 +22,11 @@ interface ToggleButtonOptions {
 export function createThemeToggle(options: ToggleButtonOptions = {}): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.className = options.label ? "theme-toggle is-labeled" : "theme-toggle";
-  btn.setAttribute("aria-label", "Toggle dark mode");
   const update = () => {
     const isDark = document.documentElement.dataset.theme === "dark";
-    btn.textContent = options.label ? `Theme: ${isDark ? "dark" : "light"}` : isDark ? "\u2600" : "\u263E";
+    const nextThemeLabel = isDark ? "Light theme" : "Dark theme";
+    btn.textContent = options.label ? nextThemeLabel : isDark ? "\u2600" : "\u263E";
+    btn.setAttribute("aria-label", options.label ? nextThemeLabel : "Toggle dark mode");
   };
   update();
   btn.addEventListener("click", () => {
@@ -45,16 +46,17 @@ export function createThemeToggle(options: ToggleButtonOptions = {}): HTMLButton
 export function createNotificationToggle(options: ToggleButtonOptions = {}): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.className = options.label ? "notification-toggle is-labeled" : "notification-toggle";
-  btn.setAttribute("aria-label", "Toggle notifications");
   const bellOutline = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
   const bellFilled = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
   const update = () => {
     const on = notificationsEnabled();
+    const nextNotificationLabel = on ? "Disable notifications" : "Enable notifications";
     if (options.label) {
-      btn.textContent = `Notifications: ${on ? "on" : "off"}`;
+      btn.textContent = nextNotificationLabel;
     } else {
       btn.innerHTML = on ? bellFilled : bellOutline;
     }
+    btn.setAttribute("aria-label", options.label ? nextNotificationLabel : "Toggle notifications");
     btn.classList.toggle("is-on", on);
   };
   update();
@@ -146,33 +148,24 @@ function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptio
   nextBtn.setAttribute("aria-label", "Next 7 days");
   nextBtn.dataset.action = "next";
 
-  nav.append(prevBtn, title, nextBtn);
-
-  const actions = el("div", "agenda-actions");
-  const primaryActions = el("div", "agenda-primary-actions");
-  const desktopSettings = el("div", "agenda-settings-desktop");
-
   const todayBtn = el("button", "agenda-nav-today");
   todayBtn.textContent = "Today";
   todayBtn.dataset.action = "today";
   todayBtn.setAttribute("aria-label", "Today");
-  todayBtn.dataset.mobileIcon = "calendar";
+
+  nav.append(prevBtn, title, nextBtn);
+
+  const actions = el("div", "agenda-actions");
+  const primaryActions = el("div", "agenda-primary-actions");
 
   const addBtn = el("button", "add-item-btn");
   addBtn.textContent = "+Add";
   addBtn.dataset.action = "add";
   addBtn.setAttribute("aria-label", "Add item");
-  addBtn.dataset.mobileIcon = "plus";
 
-  primaryActions.append(todayBtn, addBtn);
-  desktopSettings.append(
-    createColorModeToggle(options),
-    createHideEmptyDaysToggle(options),
-    createNotificationToggle(),
-    createThemeToggle(),
-  );
-  actions.append(primaryActions, desktopSettings, renderMobileSettingsMenu(options));
-  header.append(nav, actions);
+  primaryActions.append(addBtn);
+  actions.append(primaryActions, renderSettingsMenu(options));
+  header.append(nav, todayBtn, actions);
 
   if ((options.activeTagFilters?.length ?? 0) > 0) {
     header.appendChild(renderActiveTagFilters(options.activeTagFilters ?? []));
@@ -182,9 +175,9 @@ function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptio
 
 function createColorModeToggle(options: RenderAgendaOptions): HTMLButtonElement {
   const colorModeBtn = el("button", "tag-color-mode-toggle");
-  colorModeBtn.textContent = options.tagColorEditMode ? "Color tags: on" : "Color tags";
+  colorModeBtn.textContent = options.tagColorEditMode ? "Click tag to filter" : "Click tag to change color";
   colorModeBtn.dataset.action = "toggle-tag-color-mode";
-  colorModeBtn.setAttribute("aria-label", options.tagColorEditMode ? "Tag color mode on" : "Tag color mode");
+  colorModeBtn.setAttribute("aria-label", options.tagColorEditMode ? "Click tag to filter" : "Click tag to change color");
   colorModeBtn.setAttribute("aria-pressed", options.tagColorEditMode ? "true" : "false");
   if (options.tagColorEditMode) colorModeBtn.classList.add("is-on");
   return colorModeBtn;
@@ -192,22 +185,21 @@ function createColorModeToggle(options: RenderAgendaOptions): HTMLButtonElement 
 
 function createHideEmptyDaysToggle(options: RenderAgendaOptions): HTMLButtonElement {
   const hideEmptyDaysBtn = el("button", "hide-empty-days-toggle");
-  hideEmptyDaysBtn.textContent = options.hideEmptyDays ? "Empty days: hidden" : "Hide empty days";
+  hideEmptyDaysBtn.textContent = options.hideEmptyDays ? "Show empty days" : "Hide empty days";
   hideEmptyDaysBtn.dataset.action = "toggle-hide-empty-days";
-  hideEmptyDaysBtn.setAttribute("aria-label", options.hideEmptyDays ? "Empty days hidden" : "Hide empty days");
+  hideEmptyDaysBtn.setAttribute("aria-label", options.hideEmptyDays ? "Show empty days" : "Hide empty days");
   hideEmptyDaysBtn.setAttribute("aria-pressed", options.hideEmptyDays ? "true" : "false");
   if (options.hideEmptyDays) hideEmptyDaysBtn.classList.add("is-on");
   return hideEmptyDaysBtn;
 }
 
-function renderMobileSettingsMenu(options: RenderAgendaOptions): HTMLElement {
+function renderSettingsMenu(options: RenderAgendaOptions): HTMLElement {
   const menu = document.createElement("details");
   menu.className = "agenda-settings-menu";
 
   const summary = el("summary", "agenda-settings-summary");
   summary.textContent = "Settings";
   summary.setAttribute("aria-label", "Settings");
-  summary.dataset.mobileIcon = "more";
   menu.appendChild(summary);
 
   const panel = el("div", "agenda-settings-panel");

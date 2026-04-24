@@ -1255,12 +1255,6 @@ function restoreFocusAfterPanelClose(): void {
   lastPanelFocusEl = null;
   if (target && target.isConnected) {
     target.focus();
-    return;
-  }
-  const agendaRoot = document.getElementById("agenda");
-  if (agendaRoot instanceof HTMLElement) {
-    if (!agendaRoot.hasAttribute("tabindex")) agendaRoot.tabIndex = -1;
-    agendaRoot.focus();
   }
 }
 
@@ -2048,6 +2042,10 @@ function setupNavigation(): void {
       navigateWeek(action);
     } else if (action === "add") {
       openAddPanel();
+      if (btn instanceof HTMLButtonElement) {
+        btn.blur();
+        lastPanelFocusEl = null;
+      }
     } else if (action === "toggle-tag-color-mode") {
       toggleTagColorMode();
     } else if (action === "toggle-hide-empty-days") {

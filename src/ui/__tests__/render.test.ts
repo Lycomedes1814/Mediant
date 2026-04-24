@@ -165,7 +165,7 @@ describe("renderAgenda", () => {
       "Thursday 23 April",
     ]);
     const toggle = container.querySelector<HTMLButtonElement>(".hide-empty-days-toggle");
-    expect(toggle?.textContent).toBe("Empty days: hidden");
+    expect(toggle?.textContent).toBe("Show empty days");
     expect(toggle?.getAttribute("aria-pressed")).toBe("true");
     expect(toggle?.classList.contains("is-on")).toBe(true);
   });
@@ -493,8 +493,8 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".timed-item .tag[data-tag='work']")?.classList.contains("is-color-editable")).toBe(true);
     expect(container.querySelector(".timed-item .tag[data-tag='work'] .tag-color-edit-icon")?.textContent).toBe("🖌");
     expect(container.querySelector(".agenda-settings-menu .agenda-settings-summary")?.textContent).toBe("Settings");
-    expect(container.querySelector(".agenda-settings-menu .notification-toggle.is-labeled")?.textContent).toBe("Notifications: off");
-    expect(container.querySelector(".agenda-settings-menu .theme-toggle.is-labeled")?.textContent).toBe("Theme: light");
+    expect(container.querySelector(".agenda-settings-menu .notification-toggle.is-labeled")?.textContent).toBe("Enable notifications");
+    expect(container.querySelector(".agenda-settings-menu .theme-toggle.is-labeled")?.textContent).toBe("Dark theme");
   });
 });
 
@@ -526,10 +526,10 @@ describe("UI toggles", () => {
 
   it("labeled theme toggle shows the current theme state", () => {
     const toggle = createThemeToggle({ label: true });
-    expect(toggle.textContent).toBe("Theme: light");
+    expect(toggle.textContent).toBe("Dark theme");
 
     toggle.click();
-    expect(toggle.textContent).toBe("Theme: dark");
+    expect(toggle.textContent).toBe("Light theme");
   });
 
   it("notification toggle enables notifications, then disables and clears timers", async () => {
@@ -555,10 +555,10 @@ describe("UI toggles", () => {
 
   it("labeled notification toggle shows on/off text", async () => {
     const toggle = createNotificationToggle({ label: true });
-    expect(toggle.textContent).toBe("Notifications: off");
+    expect(toggle.textContent).toBe("Enable notifications");
 
     await toggle.click();
-    expect(toggle.textContent).toBe("Notifications: on");
+    expect(toggle.textContent).toBe("Disable notifications");
   });
 });
 
