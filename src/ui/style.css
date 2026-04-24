@@ -1856,6 +1856,23 @@ body {
 }
 
 @media (max-width: 480px) {
+  .agenda-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .agenda-actions button[data-mobile-label] {
+    min-width: 2.5rem;
+    padding: 0.42rem 0.7rem;
+    font-size: 0;
+  }
+
+  .agenda-actions button[data-mobile-label]::before {
+    content: attr(data-mobile-label);
+    font-size: 0.95rem;
+    line-height: 1;
+  }
+
   .deadline-item,
   .overdue-item {
     display: flex;

@@ -142,20 +142,28 @@ function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptio
   const todayBtn = el("button", "agenda-nav-today");
   todayBtn.textContent = "Today";
   todayBtn.dataset.action = "today";
+  todayBtn.dataset.mobileLabel = "\u25CE";
+  todayBtn.setAttribute("aria-label", "Today");
 
   const addBtn = el("button", "add-item-btn");
   addBtn.textContent = "+Add";
   addBtn.dataset.action = "add";
+  addBtn.dataset.mobileLabel = "+";
+  addBtn.setAttribute("aria-label", "Add item");
 
   const colorModeBtn = el("button", "tag-color-mode-toggle");
   colorModeBtn.textContent = options.tagColorEditMode ? "Color tags: on" : "Color tags";
   colorModeBtn.dataset.action = "toggle-tag-color-mode";
+  colorModeBtn.dataset.mobileLabel = "\u25C9";
+  colorModeBtn.setAttribute("aria-label", options.tagColorEditMode ? "Tag color mode on" : "Tag color mode");
   colorModeBtn.setAttribute("aria-pressed", options.tagColorEditMode ? "true" : "false");
   if (options.tagColorEditMode) colorModeBtn.classList.add("is-on");
 
   const hideEmptyDaysBtn = el("button", "hide-empty-days-toggle");
   hideEmptyDaysBtn.textContent = options.hideEmptyDays ? "Empty days: hidden" : "Hide empty days";
   hideEmptyDaysBtn.dataset.action = "toggle-hide-empty-days";
+  hideEmptyDaysBtn.dataset.mobileLabel = options.hideEmptyDays ? "\u25A3" : "\u25A1";
+  hideEmptyDaysBtn.setAttribute("aria-label", options.hideEmptyDays ? "Empty days hidden" : "Hide empty days");
   hideEmptyDaysBtn.setAttribute("aria-pressed", options.hideEmptyDays ? "true" : "false");
   if (options.hideEmptyDays) hideEmptyDaysBtn.classList.add("is-on");
 
