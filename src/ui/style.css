@@ -1041,6 +1041,13 @@ body {
   color: var(--text-dim);
 }
 
+.item-instance-note + .timed-item,
+.item-instance-note + .scheduled-item,
+.item-instance-note + .day-deadline-item,
+.item-instance-note + .allday-item {
+  margin-top: calc(var(--item-gap-y) * 0.95);
+}
+
 .note-layout-timed {
   grid-template-columns: var(--time-col) auto 1fr auto;
   column-gap: 0.8rem;
