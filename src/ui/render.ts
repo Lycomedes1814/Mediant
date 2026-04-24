@@ -646,9 +646,23 @@ function renderTag(
   span.setAttribute("role", "button");
   span.setAttribute("tabindex", "0");
   span.setAttribute("aria-pressed", options.selected ? "true" : "false");
-  span.setAttribute("aria-label", options.selected ? `Remove tag filter ${tag}` : `Filter by tag ${tag}`);
+  span.setAttribute(
+    "aria-label",
+    options.colorEditMode
+      ? `Change color for tag ${tag}`
+      : options.selected
+        ? `Remove tag filter ${tag}`
+        : `Filter by tag ${tag}`,
+  );
   if (options.selected) span.classList.add("is-selected");
   if (options.colorEditMode) span.classList.add("is-color-editable");
+
+  if (options.colorEditMode) {
+    const icon = el("span", "tag-color-edit-icon");
+    icon.textContent = "🖌";
+    icon.setAttribute("aria-hidden", "true");
+    span.appendChild(icon);
+  }
 
   const picker = document.createElement("input");
   picker.type = "color";

@@ -491,6 +491,7 @@ describe("renderAgenda", () => {
     expect(filterRow?.querySelector(".tag[data-tag='work']")?.classList.contains("is-selected")).toBe(true);
     expect(container.querySelector(".tag-color-mode-toggle")?.classList.contains("is-on")).toBe(true);
     expect(container.querySelector(".timed-item .tag[data-tag='work']")?.classList.contains("is-color-editable")).toBe(true);
+    expect(container.querySelector(".timed-item .tag[data-tag='work'] .tag-color-edit-icon")?.textContent).toBe("🖌");
   });
 });
 
