@@ -319,7 +319,7 @@ body {
   --global-row-fringe-color: var(--accent-deadline);
   --global-row-fringe-width: 3px;
   display: grid;
-  grid-template-columns: 4.1ch 4.35rem 2.35rem 1fr auto;
+  grid-template-columns: 4.1ch 4.35rem 2.35rem 1fr;
   position: relative;
   align-items: baseline;
   padding: 0.78rem var(--section-padding-x);
@@ -371,7 +371,8 @@ body {
 
 .overdue-item .item-title {
   grid-column: 4;
-  grid-row: 2;
+  grid-row: 1;
+  justify-self: start;
   min-width: 0;
   font-weight: 500;
 }
@@ -388,8 +389,9 @@ body {
 }
 
 .overdue-item .tag-badges {
-  grid-row: 3;
-  grid-column: 4 / -1;
+  grid-row: 2;
+  grid-column: 1 / -1;
+  width: 100%;
   justify-self: start;
   justify-content: flex-start;
 }
@@ -399,8 +401,7 @@ body {
 }
 
 .overdue-note {
-  grid-template-columns: 4.1ch 4.35rem 2.35rem 1fr auto;
-  column-gap: 0.5rem;
+  grid-template-columns: 4.1ch 4.35rem 2.35rem 1fr;
 }
 
 .item-instance-note.overdue-note,
