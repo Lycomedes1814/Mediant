@@ -632,6 +632,11 @@ body {
   grid-template-columns: auto 1fr auto;
 }
 
+.scheduled-item.has-state:not(.has-time) .item-title {
+  font-size: 0.9375rem;
+  font-weight: 530;
+}
+
 .scheduled-item.has-priority {
   grid-template-columns: 0.9rem 1fr auto;
 }
