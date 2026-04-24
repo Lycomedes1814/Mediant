@@ -492,6 +492,9 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".tag-color-mode-toggle")?.classList.contains("is-on")).toBe(true);
     expect(container.querySelector(".timed-item .tag[data-tag='work']")?.classList.contains("is-color-editable")).toBe(true);
     expect(container.querySelector(".timed-item .tag[data-tag='work'] .tag-color-edit-icon")?.textContent).toBe("🖌");
+    expect(container.querySelector(".agenda-settings-menu .agenda-settings-summary")?.textContent).toBe("Settings");
+    expect(container.querySelector(".agenda-settings-menu .notification-toggle.is-labeled")?.textContent).toBe("Notifications: off");
+    expect(container.querySelector(".agenda-settings-menu .theme-toggle.is-labeled")?.textContent).toBe("Theme: light");
   });
 });
 
@@ -521,6 +524,14 @@ describe("UI toggles", () => {
     expect(toggle.textContent).toBe("☾");
   });
 
+  it("labeled theme toggle shows the current theme state", () => {
+    const toggle = createThemeToggle({ label: true });
+    expect(toggle.textContent).toBe("Theme: light");
+
+    toggle.click();
+    expect(toggle.textContent).toBe("Theme: dark");
+  });
+
   it("notification toggle enables notifications, then disables and clears timers", async () => {
     const wrapper = document.createElement("div");
     const events: string[] = [];
@@ -540,6 +551,14 @@ describe("UI toggles", () => {
     expect(notificationFns.setNotificationsEnabled).toHaveBeenCalledWith(false);
     expect(toggle.classList.contains("is-on")).toBe(false);
     expect(events).toEqual(["toggled", "toggled"]);
+  });
+
+  it("labeled notification toggle shows on/off text", async () => {
+    const toggle = createNotificationToggle({ label: true });
+    expect(toggle.textContent).toBe("Notifications: off");
+
+    await toggle.click();
+    expect(toggle.textContent).toBe("Notifications: on");
   });
 });
 

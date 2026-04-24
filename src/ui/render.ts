@@ -15,35 +15,46 @@ export interface RenderAgendaOptions {
   readonly hideEmptyDays?: boolean;
 }
 
-export function createThemeToggle(): HTMLButtonElement {
+interface ToggleButtonOptions {
+  readonly label?: boolean;
+}
+
+export function createThemeToggle(options: ToggleButtonOptions = {}): HTMLButtonElement {
   const btn = document.createElement("button");
-  btn.className = "theme-toggle";
+  btn.className = options.label ? "theme-toggle is-labeled" : "theme-toggle";
   btn.setAttribute("aria-label", "Toggle dark mode");
-  btn.textContent = document.documentElement.dataset.theme === "dark" ? "\u2600" : "\u263E";
+  const update = () => {
+    const isDark = document.documentElement.dataset.theme === "dark";
+    btn.textContent = options.label ? `Theme: ${isDark ? "dark" : "light"}` : isDark ? "\u2600" : "\u263E";
+  };
+  update();
   btn.addEventListener("click", () => {
     const isDark = document.documentElement.dataset.theme === "dark";
     if (isDark) {
       delete document.documentElement.dataset.theme;
       localStorage.setItem("theme", "light");
-      btn.textContent = "\u263E";
     } else {
       document.documentElement.dataset.theme = "dark";
       localStorage.setItem("theme", "dark");
-      btn.textContent = "\u2600";
     }
+    update();
   });
   return btn;
 }
 
-export function createNotificationToggle(): HTMLButtonElement {
+export function createNotificationToggle(options: ToggleButtonOptions = {}): HTMLButtonElement {
   const btn = document.createElement("button");
-  btn.className = "notification-toggle";
+  btn.className = options.label ? "notification-toggle is-labeled" : "notification-toggle";
   btn.setAttribute("aria-label", "Toggle notifications");
   const bellOutline = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
   const bellFilled = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
   const update = () => {
     const on = notificationsEnabled();
-    btn.innerHTML = on ? bellFilled : bellOutline;
+    if (options.label) {
+      btn.textContent = `Notifications: ${on ? "on" : "off"}`;
+    } else {
+      btn.innerHTML = on ? bellFilled : bellOutline;
+    }
     btn.classList.toggle("is-on", on);
   };
   update();
@@ -138,42 +149,83 @@ function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptio
   nav.append(prevBtn, title, nextBtn);
 
   const actions = el("div", "agenda-actions");
+  const primaryActions = el("div", "agenda-primary-actions");
+  const desktopSettings = el("div", "agenda-settings-desktop");
 
   const todayBtn = el("button", "agenda-nav-today");
   todayBtn.textContent = "Today";
   todayBtn.dataset.action = "today";
-  todayBtn.dataset.mobileLabel = "\u25CE";
   todayBtn.setAttribute("aria-label", "Today");
+  todayBtn.dataset.mobileIcon = "calendar";
 
   const addBtn = el("button", "add-item-btn");
   addBtn.textContent = "+Add";
   addBtn.dataset.action = "add";
-  addBtn.dataset.mobileLabel = "+";
   addBtn.setAttribute("aria-label", "Add item");
+  addBtn.dataset.mobileIcon = "plus";
 
-  const colorModeBtn = el("button", "tag-color-mode-toggle");
-  colorModeBtn.textContent = options.tagColorEditMode ? "Color tags: on" : "Color tags";
-  colorModeBtn.dataset.action = "toggle-tag-color-mode";
-  colorModeBtn.dataset.mobileLabel = "\u25C9";
-  colorModeBtn.setAttribute("aria-label", options.tagColorEditMode ? "Tag color mode on" : "Tag color mode");
-  colorModeBtn.setAttribute("aria-pressed", options.tagColorEditMode ? "true" : "false");
-  if (options.tagColorEditMode) colorModeBtn.classList.add("is-on");
-
-  const hideEmptyDaysBtn = el("button", "hide-empty-days-toggle");
-  hideEmptyDaysBtn.textContent = options.hideEmptyDays ? "Empty days: hidden" : "Hide empty days";
-  hideEmptyDaysBtn.dataset.action = "toggle-hide-empty-days";
-  hideEmptyDaysBtn.dataset.mobileLabel = options.hideEmptyDays ? "\u25A3" : "\u25A1";
-  hideEmptyDaysBtn.setAttribute("aria-label", options.hideEmptyDays ? "Empty days hidden" : "Hide empty days");
-  hideEmptyDaysBtn.setAttribute("aria-pressed", options.hideEmptyDays ? "true" : "false");
-  if (options.hideEmptyDays) hideEmptyDaysBtn.classList.add("is-on");
-
-  actions.append(todayBtn, addBtn, colorModeBtn, hideEmptyDaysBtn, createNotificationToggle(), createThemeToggle());
+  primaryActions.append(todayBtn, addBtn);
+  desktopSettings.append(
+    createColorModeToggle(options),
+    createHideEmptyDaysToggle(options),
+    createNotificationToggle(),
+    createThemeToggle(),
+  );
+  actions.append(primaryActions, desktopSettings, renderMobileSettingsMenu(options));
   header.append(nav, actions);
 
   if ((options.activeTagFilters?.length ?? 0) > 0) {
     header.appendChild(renderActiveTagFilters(options.activeTagFilters ?? []));
   }
   return header;
+}
+
+function createColorModeToggle(options: RenderAgendaOptions): HTMLButtonElement {
+  const colorModeBtn = el("button", "tag-color-mode-toggle");
+  colorModeBtn.textContent = options.tagColorEditMode ? "Color tags: on" : "Color tags";
+  colorModeBtn.dataset.action = "toggle-tag-color-mode";
+  colorModeBtn.setAttribute("aria-label", options.tagColorEditMode ? "Tag color mode on" : "Tag color mode");
+  colorModeBtn.setAttribute("aria-pressed", options.tagColorEditMode ? "true" : "false");
+  if (options.tagColorEditMode) colorModeBtn.classList.add("is-on");
+  return colorModeBtn;
+}
+
+function createHideEmptyDaysToggle(options: RenderAgendaOptions): HTMLButtonElement {
+  const hideEmptyDaysBtn = el("button", "hide-empty-days-toggle");
+  hideEmptyDaysBtn.textContent = options.hideEmptyDays ? "Empty days: hidden" : "Hide empty days";
+  hideEmptyDaysBtn.dataset.action = "toggle-hide-empty-days";
+  hideEmptyDaysBtn.setAttribute("aria-label", options.hideEmptyDays ? "Empty days hidden" : "Hide empty days");
+  hideEmptyDaysBtn.setAttribute("aria-pressed", options.hideEmptyDays ? "true" : "false");
+  if (options.hideEmptyDays) hideEmptyDaysBtn.classList.add("is-on");
+  return hideEmptyDaysBtn;
+}
+
+function renderMobileSettingsMenu(options: RenderAgendaOptions): HTMLElement {
+  const menu = document.createElement("details");
+  menu.className = "agenda-settings-menu";
+
+  const summary = el("summary", "agenda-settings-summary");
+  summary.textContent = "Settings";
+  summary.setAttribute("aria-label", "Settings");
+  summary.dataset.mobileIcon = "more";
+  menu.appendChild(summary);
+
+  const panel = el("div", "agenda-settings-panel");
+  panel.append(
+    createColorModeToggle(options),
+    createHideEmptyDaysToggle(options),
+    createNotificationToggle({ label: true }),
+    createThemeToggle({ label: true }),
+  );
+  menu.appendChild(panel);
+
+  panel.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", () => {
+      menu.open = false;
+    });
+  });
+
+  return menu;
 }
 
 function renderActiveTagFilters(tags: readonly string[]): HTMLElement {
