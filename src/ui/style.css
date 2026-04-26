@@ -1065,31 +1065,54 @@ body {
 /* ── Checkbox list ───────────────────────────────────────────────── */
 
 .checkbox-list {
-  padding: 0.42rem var(--section-padding-x) 0 calc(var(--time-col) + 1.65rem);
+  padding: 0.48rem var(--section-padding-x) 0 calc(var(--time-col) + 1.65rem);
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 
 .checkbox-item {
   display: flex;
-  align-items: baseline;
-  gap: 0.375rem;
+  align-items: center;
+  gap: 0.45rem;
   font-size: 0.8125rem;
   color: var(--text);
+  min-height: 1.35rem;
 }
 
 .checkbox-icon {
-  font-size: 0.875rem;
-  line-height: 1;
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 1.5px solid color-mix(in srgb, var(--text-dim) 44%, transparent);
+  border-radius: 0.35rem;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--bg-card) 78%, white), var(--bg-card));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 58%, transparent);
   flex-shrink: 0;
+  position: relative;
+  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
 }
 
-.checkbox-checked {
-  opacity: 0.55;
+.checkbox-checked .checkbox-icon {
+  border-color: color-mix(in srgb, #16a34a 82%, var(--border));
+  background: linear-gradient(145deg, #22c55e, #15803d);
+  box-shadow: 0 3px 8px color-mix(in srgb, #16a34a 24%, transparent);
+}
+
+.checkbox-checked .checkbox-icon::after {
+  content: "";
+  position: absolute;
+  left: 0.28rem;
+  top: 0.13rem;
+  width: 0.28rem;
+  height: 0.5rem;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(42deg);
 }
 
 .checkbox-checked .checkbox-label {
+  color: var(--text-dim);
   text-decoration: line-through;
   text-decoration-color: var(--text-done);
 }
@@ -1660,15 +1683,50 @@ body {
 .edit-checkbox-row {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: 0.5rem;
   font-size: 0.8125rem;
   cursor: pointer;
-  padding: 0.125rem 0;
+  padding: 0.28rem 0.35rem;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--bg-card) 70%, transparent);
 }
 
 .edit-checkbox-row input[type="checkbox"] {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
   margin: 0;
   cursor: pointer;
+  flex-shrink: 0;
+  border: 1.5px solid color-mix(in srgb, var(--text-dim) 48%, transparent);
+  border-radius: 0.35rem;
+  background: var(--bg-card);
+  position: relative;
+  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.edit-checkbox-row input[type="checkbox"]:checked {
+  border-color: color-mix(in srgb, #16a34a 82%, var(--border));
+  background: linear-gradient(145deg, #22c55e, #15803d);
+  box-shadow: 0 3px 8px color-mix(in srgb, #16a34a 22%, transparent);
+}
+
+.edit-checkbox-row input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 0.29rem;
+  top: 0.14rem;
+  width: 0.3rem;
+  height: 0.52rem;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(42deg);
+}
+
+.edit-checkbox-row input[type="checkbox"]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--border-today) 58%, transparent);
+  outline-offset: 2px;
 }
 
 .edit-checkbox-text {

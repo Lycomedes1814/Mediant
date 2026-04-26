@@ -652,7 +652,7 @@ function renderCheckboxItems(items: readonly { text: string; checked: boolean }[
     const row = el("div", "checkbox-item");
     if (item.checked) row.classList.add("checkbox-checked");
     const icon = el("span", "checkbox-icon");
-    icon.textContent = item.checked ? "\u2611" : "\u2610";
+    icon.setAttribute("aria-hidden", "true");
     const label = el("span", "checkbox-label");
     label.textContent = item.text;
     row.append(icon, label);
