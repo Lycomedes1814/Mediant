@@ -153,12 +153,14 @@ describe("renderAgenda", () => {
     const deadlineCheckboxes = Array.from(container.querySelectorAll<HTMLElement>(".deadlines-section .checkbox-item"));
     expect(deadlineCheckboxes.map((item) => item.textContent)).toEqual(["Confirm time", "Send notes"]);
     expect(deadlineCheckboxes[0]?.classList.contains("checkbox-checked")).toBe(true);
+    expect(container.querySelector(".deadlines-section .checkbox-list")?.classList.contains("checkbox-list-deadline")).toBe(true);
     const secondDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[1];
     expect(secondDeadlineRow?.classList.contains("has-priority")).toBe(false);
     expect(secondDeadlineRow?.querySelector(".item-title .item-priority")).toBeNull();
     const somedayCheckboxes = Array.from(container.querySelectorAll<HTMLElement>(".someday-section .checkbox-item"));
     expect(somedayCheckboxes.map((item) => item.textContent)).toEqual(["Draft outline"]);
     expect(somedayCheckboxes[0]?.getAttribute("data-line")).toBe("11");
+    expect(container.querySelector(".someday-section .checkbox-list")?.classList.contains("checkbox-list-someday")).toBe(true);
     const overdueState = container.querySelector(".overdue-section .item-state");
     expect(overdueState?.textContent).toBe("TODO");
     expect(overdueState?.getAttribute("data-action")).toBe("toggle-done");
@@ -285,6 +287,7 @@ describe("renderAgenda", () => {
     const checkboxes = Array.from(container.querySelectorAll(".checkbox-item"));
     expect(checkboxes).toHaveLength(2);
     expect(checkboxes[0].classList.contains("checkbox-checked")).toBe(true);
+    expect(container.querySelector(".timed-section .checkbox-list")?.classList.contains("checkbox-list-timed")).toBe(true);
     expect(container.querySelector(".tag")?.textContent).toContain("music");
     const timedRows = container.querySelectorAll<HTMLElement>(".timed-item");
     expect(timedRows[0]?.classList.contains("has-priority")).toBe(false);

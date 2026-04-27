@@ -269,7 +269,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
       section.appendChild(renderGlobalInstanceNote(dl.instanceNote, "deadline-note"));
     }
     if (dl.entry.checkboxItems.length > 0) {
-      section.appendChild(renderCheckboxItems(dl.entry.checkboxItems, dl.entry.sourceLineNumber));
+      section.appendChild(renderCheckboxItems(dl.entry.checkboxItems, dl.entry.sourceLineNumber, "checkbox-list-deadline"));
     }
   }
 
@@ -331,7 +331,7 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
     row.append(state, title, renderTags(item.entry.tags, optionsForTags()));
     section.appendChild(row);
     if (item.entry.checkboxItems.length > 0) {
-      section.appendChild(renderCheckboxItems(item.entry.checkboxItems, item.entry.sourceLineNumber));
+      section.appendChild(renderCheckboxItems(item.entry.checkboxItems, item.entry.sourceLineNumber, "checkbox-list-someday"));
     }
   }
 
@@ -419,7 +419,11 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
 
       // Checkbox items
       if (item.entry.checkboxItems.length > 0) {
-        section.appendChild(renderCheckboxItems(item.entry.checkboxItems, item.entry.sourceLineNumber));
+        section.appendChild(renderCheckboxItems(
+          item.entry.checkboxItems,
+          item.entry.sourceLineNumber,
+          getCheckboxLayoutClass(item),
+        ));
       }
     }
 
@@ -655,8 +659,10 @@ function renderTitle(
 function renderCheckboxItems(
   items: readonly { text: string; checked: boolean }[],
   parentSourceLine: number,
+  layoutClass?: string,
 ): HTMLElement {
   const list = el("div", "checkbox-list");
+  if (layoutClass) list.classList.add(layoutClass);
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const row = el("div", "checkbox-item");
@@ -675,6 +681,16 @@ function renderCheckboxItems(
     list.appendChild(row);
   }
   return list;
+}
+
+function getCheckboxLayoutClass(item: AgendaItem): string {
+  if (item.category === "deadline") {
+    return item.startTime ? "checkbox-list-day-deadline-time" : "checkbox-list-day-deadline";
+  }
+  if (item.category === "scheduled") {
+    return item.startTime ? "checkbox-list-scheduled-time" : "checkbox-list-scheduled";
+  }
+  return item.entry.todo ? "checkbox-list-timed-state" : "checkbox-list-timed";
 }
 
 function optionsForTags(): Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode"> {
