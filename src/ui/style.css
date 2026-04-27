@@ -1281,6 +1281,54 @@ body {
   opacity: 0.9;
 }
 
+/* ── Quick capture ───────────────────────────────────────────────── */
+
+.quick-capture-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 18vh 1rem 1rem;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.quick-capture-overlay.is-open {
+  display: flex;
+}
+
+.quick-capture-input {
+  width: min(34rem, 100%);
+  padding: 0.85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--border-today) 34%, var(--border));
+  border-radius: 0.55rem;
+  background: var(--bg-card);
+  color: var(--text);
+  box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, 0.18), 0 0.25rem 0.75rem rgba(15, 23, 42, 0.08);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.quick-capture-input:focus {
+  outline: none;
+  border-color: var(--border-today);
+  box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, 0.22), 0 0 0 3px color-mix(in srgb, var(--border-today) 18%, transparent);
+}
+
+.quick-capture-input:disabled {
+  opacity: 0.7;
+}
+
+.quick-capture-error {
+  position: absolute;
+  top: calc(18vh + 3.75rem);
+  width: min(34rem, calc(100% - 2rem));
+  color: var(--accent-deadline);
+  font-size: 0.8125rem;
+}
+
 /* ── Panel header / close (shared by add & edit panels) ─────────── */
 
 .te-header {

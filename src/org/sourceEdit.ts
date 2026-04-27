@@ -211,3 +211,43 @@ export function deleteOrgBlockInSource(source: string, sourceLine: number): stri
 export function appendOrgTextToSource(source: string, orgText: string): string {
   return `${source.trimEnd()}\n${orgText}\n`;
 }
+
+export function appendQuickCaptureToInbox(source: string, rawText: string): string {
+  const headingText = sanitizeQuickCaptureHeading(rawText);
+  if (!headingText) return source;
+
+  const lines = source.split("\n");
+  const inboxIdx = lines.findIndex(line => line === "* Inbox");
+  const taskLine = `** TODO ${headingText}`;
+
+  if (inboxIdx < 0) {
+    const base = source.trimEnd();
+    const prefix = base ? `${base}\n` : "";
+    return `${prefix}* Inbox\n${taskLine}\n`;
+  }
+
+  let insertIdx = lines.length;
+  for (let i = inboxIdx + 1; i < lines.length; i++) {
+    if (/^\*\s/.test(lines[i])) {
+      insertIdx = i;
+      break;
+    }
+  }
+
+  const before = lines.slice(0, insertIdx);
+  while (before.length > inboxIdx + 1 && before[before.length - 1] === "") before.pop();
+  const after = lines.slice(insertIdx);
+  const updated = [...before, taskLine, ...after].join("\n");
+  return updated.endsWith("\n") ? updated : `${updated}\n`;
+}
+
+function sanitizeQuickCaptureHeading(rawText: string): string {
+  return rawText
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^(\[#([A-C])\]\s*)/, "#$2 ")
+    .replace(/\[(\d+)\/(\d+)\]/g, "($1/$2)")
+    .replace(/\[(\d+)%\]/g, "($1%)")
+    .replace(/<([^>]*)>/g, "($1)")
+    .replace(/\s+(:[\p{L}a-zA-Z0-9_@]+(?::[\p{L}a-zA-Z0-9_@]+)*:)\s*$/u, (_, tags: string) => ` ${tags.replace(/:/g, ";")}`);
+}

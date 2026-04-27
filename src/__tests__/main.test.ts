@@ -89,6 +89,43 @@ describe("main.ts integration", () => {
     expect(document.querySelector(".hide-empty-days-toggle")?.classList.contains("is-on")).toBe(false);
     expect(document.querySelectorAll(".day-block")).toHaveLength(7);
 
+    keydownHandler!(makeKeydownEvent("q", document.body));
+    await waitFor(() => document.querySelector(".quick-capture-overlay.is-open") !== null);
+    const quickInput = document.querySelector<HTMLInputElement>(".quick-capture-input");
+    expect(quickInput).not.toBeNull();
+    expect(quickInput?.placeholder).toBe("Quick task capture");
+    expect(document.activeElement).toBe(quickInput);
+
+    quickInput!.value = "Water plants";
+    quickInput!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+    await flush();
+    expect(quickInput!.value).toBe("");
+    expect(document.activeElement).toBe(quickInput);
+    expect(localStorage.getItem("mediant-org-source") ?? "").toContain(
+      "* Inbox\n" +
+      "** TODO Water plants\n",
+    );
+    expect(Array.from(document.querySelectorAll<HTMLElement>(".someday-item .item-title")).some(
+      el => el.textContent?.includes("Water plants"),
+    )).toBe(true);
+
+    quickInput!.value = "Second task";
+    quickInput!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+    await flush();
+    expect(localStorage.getItem("mediant-org-source") ?? "").toContain(
+      "** TODO Water plants\n" +
+      "** TODO Second task\n",
+    );
+    document.querySelector<HTMLElement>(".quick-capture-overlay")!.click();
+    await flush();
+    expect(document.querySelector(".quick-capture-overlay.is-open")).toBeNull();
+
+    keydownHandler!(makeKeydownEvent("q", document.body));
+    await waitFor(() => document.querySelector(".quick-capture-overlay.is-open") !== null);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await flush();
+    expect(document.querySelector(".quick-capture-overlay.is-open")).toBeNull();
+
     const workTag = document.querySelector<HTMLElement>(".tag[data-tag='work']");
     expect(workTag).not.toBeNull();
     workTag!.click();
@@ -458,10 +495,12 @@ describe("main.ts integration", () => {
     keydownHandler!(makeKeydownEvent("n", typingTitleInput!));
     keydownHandler!(makeKeydownEvent("t", typingTitleInput!));
     keydownHandler!(makeKeydownEvent("a", typingTitleInput!));
+    keydownHandler!(makeKeydownEvent("q", typingTitleInput!));
     keydownHandler!(makeKeydownEvent("x", typingTitleInput!));
     await flush();
     expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
     expect(document.querySelector(".add-panel.is-open")).not.toBeNull();
+    expect(document.querySelector(".quick-capture-overlay.is-open")).toBeNull();
   });
 
   it("drops queued edit saves after an authoritative server reload", async () => {

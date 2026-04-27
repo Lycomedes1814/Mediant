@@ -3,6 +3,7 @@ import { upsertProperty, removeProperty } from "./org/drawer.ts";
 import type { OrgEntry, RecurrenceException, RecurrenceOverride } from "./org/model.ts";
 import {
   appendOrgTextToSource,
+  appendQuickCaptureToInbox,
   deleteOrgBlockInSource,
   replaceOrgBlockInSource,
   toggleDoneInSource,
@@ -29,6 +30,11 @@ let agendaLoaded = false;
 let activeTagFilters = new Set<string>();
 let tagColorEditMode = false;
 let hideEmptyDays = localStorage.getItem("mediant-hide-empty-days") === "true";
+
+let quickCaptureOverlayEl: HTMLElement | null = null;
+let quickCaptureInputEl: HTMLInputElement | null = null;
+let quickCaptureErrorEl: HTMLElement | null = null;
+let quickCaptureLastFocusEl: HTMLElement | null = null;
 
 /** Collect every unique tag from the current parsed entries. */
 function collectAllTags(): string[] {
@@ -105,6 +111,87 @@ let inFlightEditEpoch: number | null = null;
 let editSaveInFlight = false;
 let editSavePromise: Promise<boolean> | null = null;
 let sourceEpoch = 0;
+
+function buildQuickCaptureOverlay(): void {
+  quickCaptureOverlayEl = document.createElement("div");
+  quickCaptureOverlayEl.className = "quick-capture-overlay";
+  quickCaptureOverlayEl.addEventListener("click", (e) => {
+    if (e.target !== quickCaptureInputEl) closeQuickCapture();
+  });
+
+  quickCaptureInputEl = document.createElement("input");
+  quickCaptureInputEl.type = "text";
+  quickCaptureInputEl.className = "quick-capture-input";
+  quickCaptureInputEl.placeholder = "Quick task capture";
+  quickCaptureInputEl.autocomplete = "off";
+  quickCaptureInputEl.spellcheck = true;
+  quickCaptureInputEl.setAttribute("aria-label", "Quick task capture");
+  quickCaptureInputEl.addEventListener("click", (e) => e.stopPropagation());
+  quickCaptureInputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void submitQuickCapture();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      closeQuickCapture();
+    }
+  });
+
+  quickCaptureErrorEl = document.createElement("div");
+  quickCaptureErrorEl.className = "quick-capture-error";
+  quickCaptureErrorEl.setAttribute("role", "status");
+
+  quickCaptureOverlayEl.append(quickCaptureInputEl, quickCaptureErrorEl);
+  document.body.appendChild(quickCaptureOverlayEl);
+}
+
+function openQuickCapture(): void {
+  if (!quickCaptureOverlayEl || !quickCaptureInputEl || addPanelEl?.classList.contains("is-open") || !agendaLoaded) return;
+  const active = document.activeElement;
+  quickCaptureLastFocusEl = active instanceof HTMLElement && !quickCaptureOverlayEl.contains(active) ? active : null;
+  if (quickCaptureErrorEl) quickCaptureErrorEl.textContent = "";
+  quickCaptureOverlayEl.classList.add("is-open");
+  quickCaptureInputEl.focus();
+  quickCaptureInputEl.select();
+}
+
+function closeQuickCapture(): void {
+  if (!quickCaptureOverlayEl || !quickCaptureInputEl) return;
+  quickCaptureOverlayEl.classList.remove("is-open");
+  quickCaptureInputEl.value = "";
+  if (quickCaptureErrorEl) quickCaptureErrorEl.textContent = "";
+  const target = quickCaptureLastFocusEl;
+  quickCaptureLastFocusEl = null;
+  if (target?.isConnected) target.focus();
+}
+
+function isQuickCaptureOpen(): boolean {
+  return quickCaptureOverlayEl?.classList.contains("is-open") ?? false;
+}
+
+async function submitQuickCapture(): Promise<void> {
+  if (!quickCaptureInputEl) return;
+  const text = quickCaptureInputEl.value.trim();
+  if (!text) return;
+
+  const updated = appendQuickCaptureToInbox(currentSource, text);
+  if (updated === currentSource) return;
+
+  quickCaptureInputEl.disabled = true;
+  if (quickCaptureErrorEl) quickCaptureErrorEl.textContent = "";
+  try {
+    const result = await persistSource(updated);
+    if (result === "saved") {
+      quickCaptureInputEl.value = "";
+      quickCaptureInputEl.focus();
+    } else if (quickCaptureErrorEl) {
+      quickCaptureErrorEl.textContent = "Could not save task.";
+    }
+  } finally {
+    quickCaptureInputEl.disabled = false;
+    quickCaptureInputEl.focus();
+  }
+}
 
 const DAY_ABBREVS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const EVENT_REPEAT_OPTIONS = [
@@ -1727,12 +1814,13 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return Boolean(el.closest("input, textarea, select, [contenteditable='true']"));
 }
 
-function getShortcutAction(e: KeyboardEvent): "next" | "prev" | "today" | "add" | "color-mode" | "hide-empty-days" | "clear-filters" | null {
+function getShortcutAction(e: KeyboardEvent): "next" | "prev" | "today" | "add" | "quick-capture" | "color-mode" | "hide-empty-days" | "clear-filters" | null {
   const key = e.key.toLowerCase();
   if (key === "n" || e.code === "KeyN" || e.keyCode === 78) return "next";
   if (key === "p" || e.code === "KeyP" || e.keyCode === 80) return "prev";
   if (key === "t" || e.code === "KeyT" || e.keyCode === 84) return "today";
   if (key === "a" || e.code === "KeyA" || e.keyCode === 65) return "add";
+  if (key === "q" || e.code === "KeyQ" || e.keyCode === 81) return "quick-capture";
   if (key === "c" || e.code === "KeyC" || e.keyCode === 67) return "color-mode";
   if (key === "h" || e.code === "KeyH" || e.keyCode === 72) return "hide-empty-days";
   if (key === "x" || e.code === "KeyX" || e.keyCode === 88) return "clear-filters";
@@ -1743,11 +1831,16 @@ function getShortcutAction(e: KeyboardEvent): "next" | "prev" | "today" | "add" 
 
 async function init(): Promise<void> {
   buildAddPanel();
+  buildQuickCaptureOverlay();
   setupNavigation();
   startClockTicker();
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      if (isQuickCaptureOpen()) {
+        closeQuickCapture();
+        return;
+      }
       if (addPanelEl?.classList.contains("is-open")) closeAddPanel();
       return;
     }
@@ -1771,6 +1864,9 @@ async function init(): Promise<void> {
     } else if (action === "add") {
       e.preventDefault();
       openAddPanel();
+    } else if (action === "quick-capture") {
+      e.preventDefault();
+      openQuickCapture();
     } else if (action === "color-mode") {
       e.preventDefault();
       toggleTagColorMode();
