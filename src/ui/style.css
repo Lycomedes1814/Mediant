@@ -1750,14 +1750,6 @@ body {
   color: #fff;
 }
 
-.add-field.is-disabled .add-radio-label {
-  cursor: default;
-}
-
-.add-field.is-disabled .add-radio-group input[type="radio"]:not(:checked) + .add-radio-label {
-  opacity: 0.45;
-}
-
 .add-radio-group input[value="A"]:checked + .add-radio-label {
   background: #dc2626;
   border-color: #dc2626;

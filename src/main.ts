@@ -904,14 +904,6 @@ function selectRadioValue(container: HTMLElement, value: string): void {
   });
 }
 
-function setRadioGroupDisabled(container: HTMLElement, disabled: boolean): void {
-  const radios = container.querySelectorAll<HTMLInputElement>("input[type='radio']");
-  radios.forEach(radio => {
-    radio.disabled = disabled;
-  });
-  container.classList.toggle("is-disabled", disabled);
-}
-
 function checkedRadioValue(container: HTMLElement, name: string, fallback: string): string {
   const radios = Array.from(container.querySelectorAll<HTMLInputElement>(`input[name='${name}']`));
   return radios.find(radio => radio.checked)?.value ?? fallback;
@@ -1460,7 +1452,7 @@ function openAddPanel(): void {
   refs.deadRepeatSelect.value = "";
   rebuildCheckboxUI(refs.checkboxSection);
   selectRadioValue(refs.typeGroup, "event");
-  setRadioGroupDisabled(refs.typeGroup, false);
+  refs.typeGroup.style.display = "";
   selectRadioValue(refs.priorityGroup, "");
   refs.syncVisibility();
 
@@ -1493,7 +1485,6 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   editingPriority = entry.priority;
   editingTodoState = entry.todo === "DONE" ? "DONE" : "TODO";
   editingProgress = entry.progress;
-  if (addPanelTitleEl) addPanelTitleEl.textContent = "Edit item";
   if (addPanelSaveBtnEl) addPanelSaveBtnEl.textContent = "Save";
   addPanelEl.classList.add("is-editing");
   addPanelEl.classList.toggle("has-occurrence", baseDate !== null && entryHasRepeater(entry));
@@ -1502,8 +1493,9 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   const refs = addPanelRefs;
 
   const type = entry.todo ? "todo" : "event";
+  if (addPanelTitleEl) addPanelTitleEl.textContent = type === "todo" ? "Edit task" : "Edit event";
   selectRadioValue(refs.typeGroup, type);
-  setRadioGroupDisabled(refs.typeGroup, true);
+  refs.typeGroup.style.display = "none";
 
   refs.titleInput.value = entry.title;
   refs.tagPicker.setTags([...entry.tags]);

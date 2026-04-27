@@ -201,9 +201,10 @@ describe("main.ts integration", () => {
 
     keydownHandler!(makeKeydownEvent("a", document.body));
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
+    expect(document.querySelector<HTMLElement>(".te-header span")?.textContent).toBe("Add item");
     expect(document.querySelector<HTMLInputElement>("#add-title")?.value).toBe("");
     expect(document.querySelector<HTMLInputElement>("input[name='add-type']:checked")?.value).toBe("event");
-    expect(Array.from(document.querySelectorAll<HTMLInputElement>("input[name='add-type']")).every(input => !input.disabled)).toBe(true);
+    expect((document.querySelector<HTMLInputElement>("input[name='add-type']")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
     expect((document.querySelector<HTMLInputElement>("#add-when")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
     expect((document.querySelector<HTMLInputElement>("#add-sched")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
     expect((document.querySelector<HTMLElement>(".edit-checkboxes") as HTMLElement | null)?.style.display).toBe("none");
@@ -243,9 +244,10 @@ describe("main.ts integration", () => {
     const deadRepeatSelect = document.querySelector<HTMLSelectElement>("#add-dead-repeat");
     const deadInput = document.querySelector<HTMLInputElement>("#add-dead");
     const checkboxSection = document.querySelector<HTMLElement>(".edit-checkboxes");
+    expect(document.querySelector<HTMLElement>(".te-header span")?.textContent).toBe("Edit task");
     expect(titleInput?.value).toBe("Yoga");
     expect(document.querySelector<HTMLInputElement>("input[name='add-type']:checked")?.value).toBe("todo");
-    expect(Array.from(document.querySelectorAll<HTMLInputElement>("input[name='add-type']")).every(input => input.disabled)).toBe(true);
+    expect((document.querySelector<HTMLInputElement>("input[name='add-type']")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
     expect(tagInput).not.toBeNull();
     expect(schedInput?.value).toBe("21/04/2026 17:00");
     expect(schedPreview?.textContent).toBe("Tue 21 Apr 2026, 17:00");
@@ -547,8 +549,9 @@ describe("main.ts integration", () => {
     title!.click();
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
 
+    expect(document.querySelector<HTMLElement>(".te-header span")?.textContent).toBe("Edit event");
     expect(document.querySelector<HTMLInputElement>("input[name='add-type']:checked")?.value).toBe("event");
-    expect(Array.from(document.querySelectorAll<HTMLInputElement>("input[name='add-type']")).every(input => input.disabled)).toBe(true);
+    expect((document.querySelector<HTMLInputElement>("input[name='add-type']")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
     expect((document.querySelector<HTMLElement>(".edit-checkboxes") as HTMLElement | null)?.style.display).toBe("none");
 
     const titleInput = document.querySelector<HTMLInputElement>("#add-title");
