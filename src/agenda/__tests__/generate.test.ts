@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { collectDeadlines, collectOverdueItems, generateWeek } from "../generate.ts";
+import { collectDeadlines, collectOverdueItems, collectSomedayItems, generateWeek } from "../generate.ts";
 import { parseOrg } from "../../org/parser.ts";
 import type { OrgEntry } from "../../org/model.ts";
 
@@ -1008,5 +1008,39 @@ describe("collectDeadlines", () => {
     expect(items).toHaveLength(1);
     expect(items[0].baseDate).toBe("2026-04-15");
     expect(items[0].instanceNote).toBe("Confirm autopay");
+  });
+});
+
+// ── Someday ────────────────────────────────────────────────────────
+
+describe("collectSomedayItems", () => {
+  it("preserves source order so quick captures stay in capture order", () => {
+    const entries = parseOrg(
+      "** TODO foo\n" +
+      "** TODO bar\n" +
+      "** TODO baz\n",
+    );
+
+    expect(collectSomedayItems(entries).map(item => item.entry.title)).toEqual([
+      "foo",
+      "bar",
+      "baz",
+    ]);
+  });
+
+  it("keeps DONE someday items after TODO items while preserving source order within each state", () => {
+    const entries = parseOrg(
+      "** DONE done first\n" +
+      "** TODO todo first\n" +
+      "** DONE done second\n" +
+      "** TODO todo second\n",
+    );
+
+    expect(collectSomedayItems(entries).map(item => item.entry.title)).toEqual([
+      "todo first",
+      "todo second",
+      "done first",
+      "done second",
+    ]);
   });
 });

@@ -152,7 +152,7 @@ index.html             — Minimal shell with #agenda container
 - **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under agenda items; toggleable in the edit panel for non-repeating entries. The checklist editor is hidden when a repeater is active because checklist state is not tracked per occurrence.
 - **Recurrence exceptions** — per-occurrence deviations on a repeating entry (skip, shift by `±N(m|h|d)`, reschedule to another date/time, attach a one-off note). Shifted/moved/skipped occurrences show a muted chip with detail in the tooltip; notes render as an italic line under the item. Exceptions are stored in the entry's `:PROPERTIES:` drawer keyed by the unshifted base date (e.g. `:EXCEPTION-2026-05-04: shift +45m`), so they round-trip cleanly.
 - **Series truncation** — `:SERIES-UNTIL: YYYY-MM-DD` stops a repeating series at an exclusive end date, evaluated on the unshifted base slots. This lets one heading end on a handoff date while a successor heading starts on that same date without overlap, and still allows older valid slots to be moved past the cutoff.
-- **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE)
+- **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE), shown in source order so quick captures stay in capture order
 - **Quick capture** — press `q` to open a fixed one-line capture overlay. `Enter` appends the text as an undated `TODO` under `* Inbox`, clears the field, and keeps focus ready for the next task. `Escape` or clicking outside the field closes it.
 - **DONE items** rendered at reduced opacity with line-through
 - **Today** indicated by blue card border and small dot marker

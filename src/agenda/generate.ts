@@ -146,7 +146,8 @@ export function collectOverdueItems(entries: OrgEntry[], referenceDate: Date): O
 /**
  * Collect undated TODO items — entries with a TODO state but no timestamps
  * and no planning lines. These appear in the "Someday" section.
- * Sorted alphabetically by title.
+ * Preserves Org source order so quick-captured inbox tasks stay in the order
+ * they were added.
  */
 export function collectSomedayItems(entries: OrgEntry[]): SomedayItem[] {
   const results: SomedayItem[] = [];
@@ -160,7 +161,7 @@ export function collectSomedayItems(entries: OrgEntry[]): SomedayItem[] {
 
   results.sort((a, b) => {
     if (a.entry.todo !== b.entry.todo) return a.entry.todo === "DONE" ? 1 : -1;
-    return a.entry.title.localeCompare(b.entry.title);
+    return a.entry.sourceLineNumber - b.entry.sourceLineNumber;
   });
   return results;
 }
