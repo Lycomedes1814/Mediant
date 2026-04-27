@@ -157,16 +157,17 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".deadlines-section .checkbox-list")?.classList.contains("checkbox-list-deadline")).toBe(true);
     expect(container.querySelector(".deadlines-section .checkbox-list")?.classList.contains("checkbox-list-has-priority")).toBe(true);
     const deadlineChecklistToggle = container.querySelector<HTMLButtonElement>(".deadlines-section .item-title .checkbox-list-toggle-inline");
-    expect(deadlineChecklistToggle?.textContent).toBe("<");
-    expect(deadlineChecklistToggle?.getAttribute("aria-expanded")).toBe("true");
-    expect(deadlineChecklistToggle?.closest(".item-title")?.textContent).toContain("1/2 <");
-    deadlineChecklistToggle!.click();
     const deadlineChecklist = container.querySelector<HTMLElement>(".deadlines-section .checkbox-list");
     expect(deadlineChecklist?.classList.contains("is-collapsed")).toBe(true);
     expect(deadlineChecklistToggle?.textContent).toBe(">");
     expect(deadlineChecklistToggle?.getAttribute("aria-expanded")).toBe("false");
+    expect(deadlineChecklistToggle?.closest(".item-title")?.textContent).toContain("1/2 >");
     deadlineChecklistToggle!.click();
     expect(deadlineChecklist?.classList.contains("is-collapsed")).toBe(false);
+    expect(deadlineChecklistToggle?.textContent).toBe("<");
+    expect(deadlineChecklistToggle?.getAttribute("aria-expanded")).toBe("true");
+    deadlineChecklistToggle!.click();
+    expect(deadlineChecklist?.classList.contains("is-collapsed")).toBe(true);
     const secondDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[1];
     expect(secondDeadlineRow?.classList.contains("has-priority")).toBe(false);
     expect(secondDeadlineRow?.querySelector(".item-title .item-priority")).toBeNull();
@@ -180,7 +181,7 @@ describe("renderAgenda", () => {
     expect(overdueState?.getAttribute("data-line")).toBe("7");
   });
 
-  it("preserves checklist collapse state across rerenders per rendered list", () => {
+  it("preserves checklist visibility state across rerenders per rendered list", () => {
     const container = document.createElement("div");
     const entry = makeEntry({
       title: "Purchase the moon",
@@ -218,14 +219,15 @@ describe("renderAgenda", () => {
 
     renderAgenda(container, week, deadlines, [], [], new Date(2026, 3, 20, 10, 0));
     const upcomingToggle = container.querySelector<HTMLButtonElement>(".deadlines-section .checkbox-list-toggle-inline");
+    expect(container.querySelector<HTMLElement>(".deadlines-section .checkbox-list")?.classList.contains("is-collapsed")).toBe(true);
     upcomingToggle!.click();
 
     renderAgenda(container, week, deadlines, [], [], new Date(2026, 3, 20, 10, 0));
 
-    expect(container.querySelector<HTMLElement>(".deadlines-section .checkbox-list")?.classList.contains("is-collapsed")).toBe(true);
-    expect(container.querySelector<HTMLButtonElement>(".deadlines-section .checkbox-list-toggle-inline")?.getAttribute("aria-expanded")).toBe("false");
-    expect(container.querySelector<HTMLElement>(".days-card .checkbox-list")?.classList.contains("is-collapsed")).toBe(false);
-    expect(container.querySelector<HTMLButtonElement>(".days-card .checkbox-list-toggle-inline")?.getAttribute("aria-expanded")).toBe("true");
+    expect(container.querySelector<HTMLElement>(".deadlines-section .checkbox-list")?.classList.contains("is-collapsed")).toBe(false);
+    expect(container.querySelector<HTMLButtonElement>(".deadlines-section .checkbox-list-toggle-inline")?.getAttribute("aria-expanded")).toBe("true");
+    expect(container.querySelector<HTMLElement>(".days-card .checkbox-list")?.classList.contains("is-collapsed")).toBe(true);
+    expect(container.querySelector<HTMLButtonElement>(".days-card .checkbox-list-toggle-inline")?.getAttribute("aria-expanded")).toBe("false");
   });
 
   it("hides empty day blocks when requested", () => {

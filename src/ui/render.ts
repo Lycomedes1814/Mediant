@@ -128,8 +128,8 @@ function renderAgendaBase(
     container.appendChild(renderSomeday(someday));
   }
 
-  for (const key of collapsedCheckboxListKeys) {
-    if (!renderedCheckboxListKeys.has(key)) collapsedCheckboxListKeys.delete(key);
+  for (const key of checkboxListCollapseState.keys()) {
+    if (!renderedCheckboxListKeys.has(key)) checkboxListCollapseState.delete(key);
   }
 }
 
@@ -724,7 +724,7 @@ function renderCheckboxItems(
   }
   if (listKey) {
     renderedCheckboxListKeys.add(listKey);
-    if (collapsedCheckboxListKeys.has(listKey)) list.classList.add("is-collapsed");
+    if (isCheckboxListCollapsed(listKey)) list.classList.add("is-collapsed");
   }
   if (layoutClass) list.classList.add(layoutClass);
   if (hasPriority) list.classList.add("checkbox-list-has-priority");
@@ -753,7 +753,7 @@ function renderCheckboxItems(
 
 let checkboxListIdCounter = 0;
 const checkboxListsById = new Map<string, HTMLElement>();
-const collapsedCheckboxListKeys = new Set<string>();
+const checkboxListCollapseState = new Map<string, boolean>();
 let renderedCheckboxListKeys = new Set<string>();
 
 function nextCheckboxListId(): string {
@@ -772,8 +772,12 @@ function checkboxKeyForAgendaItem(item: AgendaItem): string {
   ].join(":");
 }
 
+function isCheckboxListCollapsed(listKey: string): boolean {
+  return checkboxListCollapseState.get(listKey) ?? true;
+}
+
 function appendCheckboxToggle(title: HTMLElement, listId: string, listKey: string): void {
-  const initiallyCollapsed = collapsedCheckboxListKeys.has(listKey);
+  const initiallyCollapsed = isCheckboxListCollapsed(listKey);
   title.appendChild(document.createTextNode(" "));
   const toggle = document.createElement("button");
   toggle.className = "checkbox-list-toggle-inline";
@@ -787,8 +791,7 @@ function appendCheckboxToggle(title: HTMLElement, listId: string, listKey: strin
     const list = checkboxListsById.get(listId) ?? document.getElementById(listId);
     if (!list) return;
     const collapsed = list.classList.toggle("is-collapsed");
-    if (collapsed) collapsedCheckboxListKeys.add(listKey);
-    else collapsedCheckboxListKeys.delete(listKey);
+    checkboxListCollapseState.set(listKey, collapsed);
     toggle.textContent = collapsed ? ">" : "<";
     toggle.setAttribute("aria-label", collapsed ? "Show checklist" : "Hide checklist");
     toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
