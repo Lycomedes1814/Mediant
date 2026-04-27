@@ -904,6 +904,14 @@ function selectRadioValue(container: HTMLElement, value: string): void {
   });
 }
 
+function setRadioGroupDisabled(container: HTMLElement, disabled: boolean): void {
+  const radios = container.querySelectorAll<HTMLInputElement>("input[type='radio']");
+  radios.forEach(radio => {
+    radio.disabled = disabled;
+  });
+  container.classList.toggle("is-disabled", disabled);
+}
+
 function checkedRadioValue(container: HTMLElement, name: string, fallback: string): string {
   const radios = Array.from(container.querySelectorAll<HTMLInputElement>(`input[name='${name}']`));
   return radios.find(radio => radio.checked)?.value ?? fallback;
@@ -1260,12 +1268,8 @@ function buildPanelOrgText(opts: { focusInvalid: boolean }): string | null {
     return parsed;
   };
 
-  const checkboxItems = editingCheckboxItems.filter(ci => ci.text.trim() !== "");
-  editingProgress = checkboxItems.length > 0
-    ? { done: checkboxItems.filter(ci => ci.checked).length, total: checkboxItems.length }
-    : null;
-
   if (type === "event") {
+    editingProgress = null;
     const dt = readDateTime(refs.whenInput);
     if (dt === null) return null;
     if (!dt.date) {
@@ -1282,9 +1286,13 @@ function buildPanelOrgText(opts: { focusInvalid: boolean }): string | null {
       date: dt.date,
       time: dt.time,
       repeater: refs.repeatSelect.value || null,
-      checkboxItems,
     });
   }
+
+  const checkboxItems = editingCheckboxItems.filter(ci => ci.text.trim() !== "");
+  editingProgress = checkboxItems.length > 0
+    ? { done: checkboxItems.filter(ci => ci.checked).length, total: checkboxItems.length }
+    : null;
 
   const scheduled = readDateTime(refs.schedInput);
   if (scheduled === null) return null;
@@ -1452,6 +1460,7 @@ function openAddPanel(): void {
   refs.deadRepeatSelect.value = "";
   rebuildCheckboxUI(refs.checkboxSection);
   selectRadioValue(refs.typeGroup, "event");
+  setRadioGroupDisabled(refs.typeGroup, false);
   selectRadioValue(refs.priorityGroup, "");
   refs.syncVisibility();
 
@@ -1494,6 +1503,7 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
 
   const type = entry.todo ? "todo" : "event";
   selectRadioValue(refs.typeGroup, type);
+  setRadioGroupDisabled(refs.typeGroup, true);
 
   refs.titleInput.value = entry.title;
   refs.tagPicker.setTags([...entry.tags]);

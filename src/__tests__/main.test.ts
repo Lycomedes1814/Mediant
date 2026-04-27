@@ -203,6 +203,7 @@ describe("main.ts integration", () => {
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
     expect(document.querySelector<HTMLInputElement>("#add-title")?.value).toBe("");
     expect(document.querySelector<HTMLInputElement>("input[name='add-type']:checked")?.value).toBe("event");
+    expect(Array.from(document.querySelectorAll<HTMLInputElement>("input[name='add-type']")).every(input => !input.disabled)).toBe(true);
     expect((document.querySelector<HTMLInputElement>("#add-when")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
     expect((document.querySelector<HTMLInputElement>("#add-sched")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
     expect((document.querySelector<HTMLElement>(".edit-checkboxes") as HTMLElement | null)?.style.display).toBe("none");
@@ -243,6 +244,8 @@ describe("main.ts integration", () => {
     const deadInput = document.querySelector<HTMLInputElement>("#add-dead");
     const checkboxSection = document.querySelector<HTMLElement>(".edit-checkboxes");
     expect(titleInput?.value).toBe("Yoga");
+    expect(document.querySelector<HTMLInputElement>("input[name='add-type']:checked")?.value).toBe("todo");
+    expect(Array.from(document.querySelectorAll<HTMLInputElement>("input[name='add-type']")).every(input => input.disabled)).toBe(true);
     expect(tagInput).not.toBeNull();
     expect(schedInput?.value).toBe("21/04/2026 17:00");
     expect(schedPreview?.textContent).toBe("Tue 21 Apr 2026, 17:00");
@@ -505,6 +508,62 @@ describe("main.ts integration", () => {
     expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
     expect(document.querySelector(".add-panel.is-open")).not.toBeNull();
     expect(document.querySelector(".quick-capture-overlay.is-open")).toBeNull();
+  });
+
+  it("locks type in edit mode and omits checklist state from events", async () => {
+    const serverSource = [
+      "* Workshop [1/2] :work:",
+      "<2026-04-20 Mon 13:00>",
+      "- [X] Slides",
+      "- [ ] Notes",
+      "",
+    ].join("\n");
+    const putCalls: string[] = [];
+    class FakeEventSource {
+      onmessage: ((event: { data: string }) => void) | null = null;
+      constructor(readonly url: string) {}
+      close(): void {}
+    }
+
+    vi.stubGlobal("EventSource", FakeEventSource as unknown as typeof EventSource);
+    vi.stubGlobal("fetch", vi.fn((input: string, init?: RequestInit) => {
+      if (input !== "/api/source") throw new Error(`unexpected fetch: ${input}`);
+      const method = init?.method ?? "GET";
+      if (method === "GET") return Promise.resolve(makeMockResponse(200, serverSource, "v1"));
+      if (method === "PUT") {
+        putCalls.push(String(init?.body ?? ""));
+        return Promise.resolve(makeMockResponse(200, "", "v2"));
+      }
+      throw new Error(`unexpected method: ${method}`);
+    }));
+
+    await import("../main.ts");
+    await flush();
+    await waitFor(() => document.querySelector(".timed-item") !== null);
+
+    const title = Array.from(document.querySelectorAll<HTMLElement>(".item-title"))
+      .find(el => el.textContent?.includes("Workshop")) ?? null;
+    expect(title).not.toBeNull();
+    title!.click();
+    await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
+
+    expect(document.querySelector<HTMLInputElement>("input[name='add-type']:checked")?.value).toBe("event");
+    expect(Array.from(document.querySelectorAll<HTMLInputElement>("input[name='add-type']")).every(input => input.disabled)).toBe(true);
+    expect((document.querySelector<HTMLElement>(".edit-checkboxes") as HTMLElement | null)?.style.display).toBe("none");
+
+    const titleInput = document.querySelector<HTMLInputElement>("#add-title");
+    expect(titleInput).not.toBeNull();
+    titleInput!.value = "Workshop updated";
+    titleInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    await flush();
+
+    expect(putCalls).toHaveLength(1);
+    const updatedSource = putCalls[0];
+    expect(updatedSource).toContain("* Workshop updated :work:");
+    expect(updatedSource).toContain("<2026-04-20 Mon 13:00>");
+    expect(updatedSource).not.toContain("[1/2]");
+    expect(updatedSource).not.toContain("- [X] Slides");
+    expect(updatedSource).not.toContain("- [ ] Notes");
   });
 
   it("drops queued edit saves after an authoritative server reload", async () => {
