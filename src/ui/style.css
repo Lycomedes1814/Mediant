@@ -631,6 +631,10 @@ body {
   padding-top: 0;
 }
 
+.deadlines-section > .checkbox-list-deadline:last-child {
+  padding-bottom: 0.78rem;
+}
+
 .deadline-note {
   grid-template-columns: 4.1ch 2.35rem 1fr auto;
   column-gap: 0.5rem;
