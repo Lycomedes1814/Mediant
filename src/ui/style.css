@@ -623,6 +623,14 @@ body {
   padding-bottom: 0.18rem;
 }
 
+.deadline-item.has-checkbox-list {
+  padding-bottom: 0.22rem;
+}
+
+.deadline-item.has-checkbox-list + .checkbox-list-deadline {
+  padding-top: 0;
+}
+
 .deadline-note {
   grid-template-columns: 4.1ch 2.35rem 1fr auto;
   column-gap: 0.5rem;
