@@ -953,6 +953,8 @@ function formatDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K];
+function el(tag: string, className?: string): HTMLElement;
 function el(tag: string, className?: string): HTMLElement {
   const e = document.createElement(tag);
   if (className) e.className = className;

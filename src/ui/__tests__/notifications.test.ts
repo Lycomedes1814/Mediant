@@ -22,7 +22,7 @@ describe("scheduleNotifications", () => {
     localStorage.clear();
     localStorage.setItem("mediant-notifications", "on");
     notificationMock = vi.fn();
-    notificationMock.permission = "granted";
+    (notificationMock as unknown as { permission: string }).permission = "granted";
     vi.stubGlobal("Notification", notificationMock);
   });
 

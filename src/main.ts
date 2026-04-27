@@ -1761,7 +1761,7 @@ function filterWeekByTags(week: AgendaWeek): AgendaWeek {
   return week.map(day => ({
     ...day,
     items: day.items.filter(item => entryMatchesTagFilters(item.entry)),
-  })) as AgendaWeek;
+  })) as unknown as AgendaWeek;
 }
 
 function filterDeadlinesByTags(items: DeadlineItem[]): DeadlineItem[] {
