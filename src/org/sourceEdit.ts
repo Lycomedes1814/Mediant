@@ -36,16 +36,20 @@ export function replaceOrgBlockInSource(source: string, sourceLine: number, newT
   const bareRe = /^\s*<\d{4}-\d{2}-\d{2}/;
   const checkboxRe = /^\s*-\s+\[[ X]\]\s+/;
   const newBlockLines = newText.split("\n");
-  const newHasPlanning = newBlockLines.some((line) => planningRe.test(line));
-  let dropBare = newBlockLines.some((line) => bareRe.test(line));
+  const newHasBareTimestamp = newBlockLines.some((line) => bareRe.test(line));
+  const shouldDropAllBare = !newHasBareTimestamp;
+  let dropReplacementBare = newHasBareTimestamp;
   const preserved: string[] = [];
 
   for (let i = startIdx + 1; i < endIdx; i++) {
     const line = lines[i];
-    if (newHasPlanning && planningRe.test(line)) continue;
-    if (dropBare && bareRe.test(line)) {
-      dropBare = false;
-      continue;
+    if (planningRe.test(line)) continue;
+    if (bareRe.test(line)) {
+      if (shouldDropAllBare) continue;
+      if (dropReplacementBare) {
+        dropReplacementBare = false;
+        continue;
+      }
     }
     if (checkboxRe.test(line)) continue;
     preserved.push(line);

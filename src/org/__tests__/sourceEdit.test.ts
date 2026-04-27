@@ -98,6 +98,45 @@ describe("replaceOrgBlockInSource", () => {
     );
   });
 
+  it("removes old bare event timestamps when converting an event to an unscheduled TODO", () => {
+    const source =
+      "** Event\n" +
+      "<2026-04-07 ti. 10:00>\n" +
+      "Body.\n";
+
+    const updated = replaceOrgBlockInSource(
+      source,
+      1,
+      "** TODO Event\n",
+    );
+
+    expect(updated).toBe(
+      "** TODO Event\n" +
+      "\n" +
+      "Body.\n",
+    );
+  });
+
+  it("removes old planning lines when converting a scheduled TODO to an event", () => {
+    const source =
+      "** TODO Task\n" +
+      "SCHEDULED: <2026-04-07 ti.>\n" +
+      "Body.\n";
+
+    const updated = replaceOrgBlockInSource(
+      source,
+      1,
+      "** Task\n<2026-04-08 on. 11:00>\n",
+    );
+
+    expect(updated).toBe(
+      "** Task\n" +
+      "<2026-04-08 on. 11:00>\n" +
+      "\n" +
+      "Body.\n",
+    );
+  });
+
   it("is a no-op when the source line is out of range", () => {
     const source = "** TODO Task\n";
     expect(replaceOrgBlockInSource(source, 5, "** TODO Other\n")).toBe(source);
