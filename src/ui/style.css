@@ -76,6 +76,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 0.375rem;
   padding: 0.875rem 0 0.625rem;
   margin-bottom: 1.25rem;
@@ -937,6 +938,8 @@ body {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  flex: 0 0 100%;
+  order: 10;
   gap: 0.45rem;
   margin-top: 0.75rem;
 }
@@ -1988,14 +1991,11 @@ body {
 
 @media (max-width: 480px) {
   .agenda-header {
-    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
   }
 
   .active-tag-filters {
-    flex: 0 0 100%;
-    order: 10;
     margin-top: 0.25rem;
   }
 
