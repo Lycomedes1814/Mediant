@@ -1771,6 +1771,12 @@ body {
   color: #fff;
 }
 
+.add-radio-group input[name="add-priority"][value=""]:checked + .add-radio-label {
+  background: color-mix(in srgb, var(--border) 45%, transparent);
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+  color: var(--text-dim);
+}
+
 .add-radio-group input[value="A"]:checked + .add-radio-label {
   background: #dc2626;
   border-color: #dc2626;
