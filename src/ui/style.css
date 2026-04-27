@@ -1047,6 +1047,7 @@ body {
 .checkbox-list-someday {
   grid-template-columns: 2.35rem 1fr auto;
   border-left: 0;
+  padding-top: 0;
   padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
   column-gap: 0.65rem;
 }
@@ -1076,9 +1077,12 @@ body {
   grid-column: 2;
 }
 
-.checkbox-list-deadline.checkbox-list-has-priority .checkbox-list-items,
-.checkbox-list-someday.checkbox-list-has-priority .checkbox-list-items {
+.checkbox-list-deadline.checkbox-list-has-priority .checkbox-list-items {
   padding-left: 2.85rem;
+}
+
+.checkbox-list-someday.checkbox-list-has-priority .checkbox-list-items {
+  padding-left: 1.5rem;
 }
 
 .checkbox-list-deadline .checkbox-list-items,
