@@ -269,8 +269,8 @@ function buildAddPanel(): void {
 
   // Type toggle
   const typeGroup = makeRadioGroup("Type", "add-type", [
-    { value: "todo", label: "TODO", checked: true },
-    { value: "event", label: "Event" },
+    { value: "event", label: "Event", checked: true },
+    { value: "todo", label: "TODO" },
   ]);
   form.appendChild(typeGroup.container);
 
@@ -322,7 +322,7 @@ function buildAddPanel(): void {
   // Show/hide fields based on type
   const typeRadios = typeGroup.container.querySelectorAll<HTMLInputElement>("input[name='add-type']");
   const syncVisibility = (): void => {
-    const isTodo = (typeGroup.container.querySelector<HTMLInputElement>("input[name='add-type']:checked"))?.value === "todo";
+    const isTodo = checkedRadioValue(typeGroup.container, "add-type", "event") === "todo";
     const hasSchedDate = hasParsedDate(schedInput.input);
     const hasDeadDate = hasParsedDate(deadInput.input);
     const repeating = hasActiveRepeater(
@@ -919,6 +919,18 @@ function makeRadioGroup(label: string, name: string, options: { value: string; l
   return { container };
 }
 
+function selectRadioValue(container: HTMLElement, value: string): void {
+  const radios = container.querySelectorAll<HTMLInputElement>("input[type='radio']");
+  radios.forEach(radio => {
+    radio.checked = radio.value === value;
+  });
+}
+
+function checkedRadioValue(container: HTMLElement, name: string, fallback: string): string {
+  const radios = Array.from(container.querySelectorAll<HTMLInputElement>(`input[name='${name}']`));
+  return radios.find(radio => radio.checked)?.value ?? fallback;
+}
+
 function makeTextInput(label: string, id: string): { container: HTMLElement; input: HTMLInputElement } {
   const container = document.createElement("div");
   container.className = "add-field";
@@ -1251,7 +1263,7 @@ function buildOrgText(opts: BuildOrgOpts): string {
 function buildPanelOrgText(opts: { focusInvalid: boolean }): string | null {
   if (!addPanelRefs) return null;
   const refs = addPanelRefs;
-  const type = (refs.typeGroup.querySelector<HTMLInputElement>("input[name='add-type']:checked"))?.value ?? "todo";
+  const type = checkedRadioValue(refs.typeGroup, "add-type", "event");
   const heading = refs.titleInput.value.trim();
   if (!heading) {
     if (opts.focusInvalid) refs.titleInput.focus();
@@ -1457,10 +1469,8 @@ function openAddPanel(): void {
   refs.schedRepeatSelect.value = "";
   refs.deadRepeatSelect.value = "";
   rebuildCheckboxUI(refs.checkboxSection);
-  const todoRadio = refs.typeGroup.querySelector<HTMLInputElement>("input[value='todo']");
-  if (todoRadio) todoRadio.checked = true;
-  const noPriorityRadio = refs.priorityGroup.querySelector<HTMLInputElement>("input[value='']");
-  if (noPriorityRadio) noPriorityRadio.checked = true;
+  selectRadioValue(refs.typeGroup, "event");
+  selectRadioValue(refs.priorityGroup, "");
   refs.syncVisibility();
 
   addOverlayEl.classList.add("is-open");
@@ -1501,15 +1511,13 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   const refs = addPanelRefs;
 
   const type = entry.todo ? "todo" : "event";
-  const typeRadio = refs.typeGroup.querySelector<HTMLInputElement>(`input[value="${type}"]`);
-  if (typeRadio) typeRadio.checked = true;
+  selectRadioValue(refs.typeGroup, type);
 
   refs.titleInput.value = entry.title;
   refs.tagPicker.setTags([...entry.tags]);
 
   const prioVal = entry.priority ?? "";
-  const prioRadio = refs.priorityGroup.querySelector<HTMLInputElement>(`input[value="${prioVal}"]`);
-  if (prioRadio) prioRadio.checked = true;
+  selectRadioValue(refs.priorityGroup, prioVal);
 
   refs.whenInput.value = "";
   refs.schedInput.value = "";

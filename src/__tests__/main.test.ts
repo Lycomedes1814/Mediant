@@ -202,6 +202,9 @@ describe("main.ts integration", () => {
     keydownHandler!(makeKeydownEvent("a", document.body));
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
     expect(document.querySelector<HTMLInputElement>("#add-title")?.value).toBe("");
+    expect(document.querySelector<HTMLInputElement>("input[name='add-type']:checked")?.value).toBe("event");
+    expect((document.querySelector<HTMLInputElement>("#add-when")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
+    expect((document.querySelector<HTMLInputElement>("#add-sched")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
 
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await flush();
