@@ -1068,6 +1068,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  padding-left: 1.15rem;
   font-size: 0.8125rem;
   color: var(--text);
   min-height: 1.35rem;
