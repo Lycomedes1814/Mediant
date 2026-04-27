@@ -24,7 +24,6 @@
   --border-light: #ede7df;
   --border-today: #4f7df5;
 
-  --time-col: 7rem;
   --bg-state: rgba(79, 125, 245, 0.12);
   --card-shadow: 0 12px 32px rgba(15, 23, 42, 0.06), 0 2px 8px rgba(15, 23, 42, 0.04);
 
@@ -376,12 +375,12 @@ body {
 }
 
 .timed-item {
-  grid-template-columns: var(--time-col) 1fr auto;
+  grid-template-columns: auto 1fr auto;
   font-size: 0.875rem;
 }
 
 .timed-item.has-state {
-  grid-template-columns: var(--time-col) auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
 }
 
 .timed-item + .timed-item,
@@ -657,7 +656,7 @@ body {
 }
 
 .scheduled-item.has-time {
-  grid-template-columns: var(--time-col) 1fr auto;
+  grid-template-columns: auto 1fr auto;
 }
 
 .scheduled-item.has-state {
@@ -670,7 +669,7 @@ body {
 }
 
 .scheduled-item.has-time.has-state {
-  grid-template-columns: var(--time-col) auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
 }
 
 .scheduled-item .item-state {
@@ -718,7 +717,7 @@ body {
 }
 
 .day-deadline-item.has-time {
-  grid-template-columns: var(--time-col) auto auto 1fr auto;
+  grid-template-columns: auto auto auto 1fr auto;
 }
 
 .day-deadline-item .item-kind {
@@ -975,7 +974,7 @@ body {
 
 .now-line {
   display: grid;
-  grid-template-columns: var(--time-col) auto 1fr;
+  grid-template-columns: auto auto 1fr;
   align-items: center;
   padding: 0.25rem var(--section-padding-x) 0.15rem;
   pointer-events: none;
@@ -1028,7 +1027,7 @@ body {
 
 .checkbox-list {
   display: grid;
-  grid-template-columns: var(--time-col) 1fr auto;
+  grid-template-columns: auto 1fr auto;
   align-items: start;
   position: relative;
   padding: 0.48rem var(--section-padding-x) 0;
@@ -1056,7 +1055,7 @@ body {
 }
 
 .checkbox-list-day-deadline-time {
-  grid-template-columns: var(--time-col) 5.1rem 2.35rem 1fr auto;
+  grid-template-columns: auto 5.1rem 2.35rem 1fr auto;
 }
 
 .checkbox-list-scheduled {
@@ -1065,11 +1064,11 @@ body {
 
 .checkbox-list-scheduled-time,
 .checkbox-list-timed-state {
-  grid-template-columns: var(--time-col) 2.35rem 1fr auto;
+  grid-template-columns: auto 2.35rem 1fr auto;
 }
 
 .checkbox-list-timed {
-  grid-template-columns: var(--time-col) 1fr auto;
+  grid-template-columns: auto 1fr auto;
 }
 
 .checkbox-list-items {
@@ -1230,7 +1229,7 @@ body {
 
 .note-layout-timed,
 .note-layout-with-time {
-  grid-template-columns: var(--time-col) auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
   column-gap: 0.8rem;
 }
 
@@ -1259,7 +1258,7 @@ body {
 
 .item-body {
   display: none;
-  padding: 0.42rem var(--section-padding-x) 0 calc(var(--time-col) + 1.65rem);
+  padding: 0.42rem var(--section-padding-x) 0;
   font-size: 0.8125rem;
   color: var(--text-dim);
 }
@@ -2062,7 +2061,6 @@ body {
   }
 
   :root {
-    --time-col: 5.5rem;
     --section-padding-x: 0.9rem;
     --item-gap-y: 0.75rem;
   }
