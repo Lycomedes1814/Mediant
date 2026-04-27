@@ -1018,6 +1018,7 @@ body {
   grid-template-columns: 4.1ch 2.35rem 1fr auto;
   border-left: 0;
   padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
+  padding-top: 0.16rem;
   column-gap: 0.5rem;
 }
 
