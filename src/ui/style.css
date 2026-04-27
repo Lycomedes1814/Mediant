@@ -1006,39 +1006,62 @@ body {
 /* ── Checkbox list ───────────────────────────────────────────────── */
 
 .checkbox-list {
-  padding: 0.48rem var(--section-padding-x) 0 calc(var(--time-col) + 1.65rem);
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  display: grid;
+  grid-template-columns: var(--time-col) 1fr auto;
+  align-items: start;
+  padding: 0.48rem var(--section-padding-x) 0;
+  border-left: 3px solid transparent;
+  gap: 0.35rem 0.8rem;
 }
 
 .checkbox-list-deadline {
-  padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width) + 4.1ch + 2.35rem + 1rem - 1.4rem);
+  grid-template-columns: 4.1ch 2.35rem 1fr auto;
+  border-left: 0;
+  padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
+  column-gap: 0.5rem;
 }
 
 .checkbox-list-someday {
-  padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width) + 2.35rem + 0.65rem - 1.4rem);
+  grid-template-columns: auto 1fr auto;
+  border-left: 0;
+  padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
+  column-gap: 0.65rem;
 }
 
 .checkbox-list-day-deadline {
-  padding-left: calc(var(--section-padding-x) + 3px + 5.1rem + 2.35rem + 1.6rem - 1.4rem);
+  grid-template-columns: auto auto 1fr auto;
 }
 
 .checkbox-list-day-deadline-time {
-  padding-left: calc(var(--section-padding-x) + var(--time-col) + 5.1rem + 2.35rem + 2.4rem - 1.4rem);
+  grid-template-columns: var(--time-col) auto auto 1fr auto;
 }
 
 .checkbox-list-scheduled {
-  padding-left: calc(var(--section-padding-x) + 2.35rem + 0.8rem - 1.4rem);
+  grid-template-columns: auto 1fr auto;
 }
 
 .checkbox-list-scheduled-time,
 .checkbox-list-timed-state {
-  padding-left: calc(var(--section-padding-x) + var(--time-col) + 2.35rem + 1.6rem - 1.4rem);
+  grid-template-columns: var(--time-col) auto 1fr auto;
 }
 
 .checkbox-list-timed {
-  padding-left: calc(var(--section-padding-x) + var(--time-col) + 0.8rem - 1.4rem);
+  grid-template-columns: var(--time-col) 1fr auto;
+}
+
+.checkbox-list .checkbox-item {
+  grid-column: 2;
+}
+
+.checkbox-list-deadline .checkbox-item,
+.checkbox-list-day-deadline .checkbox-item,
+.checkbox-list-scheduled-time .checkbox-item,
+.checkbox-list-timed-state .checkbox-item {
+  grid-column: 3;
+}
+
+.checkbox-list-day-deadline-time .checkbox-item {
+  grid-column: 4;
 }
 
 .checkbox-item {
@@ -2078,8 +2101,21 @@ body {
     gap: 0.25rem;
   }
 
-  .deadlines-section .checkbox-list {
+  .checkbox-list,
+  .checkbox-list-deadline,
+  .checkbox-list-someday,
+  .checkbox-list-day-deadline,
+  .checkbox-list-day-deadline-time,
+  .checkbox-list-scheduled,
+  .checkbox-list-scheduled-time,
+  .checkbox-list-timed-state,
+  .checkbox-list-timed {
+    grid-template-columns: 1fr;
     padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
+  }
+
+  .checkbox-list .checkbox-item {
+    grid-column: 1;
   }
 
   .overdue-meta,
