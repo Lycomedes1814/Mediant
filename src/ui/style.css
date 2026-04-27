@@ -1022,27 +1022,27 @@ body {
 }
 
 .checkbox-list-someday {
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 2.35rem 1fr auto;
   border-left: 0;
   padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
   column-gap: 0.65rem;
 }
 
 .checkbox-list-day-deadline {
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: 5.1rem 2.35rem 1fr auto;
 }
 
 .checkbox-list-day-deadline-time {
-  grid-template-columns: var(--time-col) auto auto 1fr auto;
+  grid-template-columns: var(--time-col) 5.1rem 2.35rem 1fr auto;
 }
 
 .checkbox-list-scheduled {
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 2.35rem 1fr auto;
 }
 
 .checkbox-list-scheduled-time,
 .checkbox-list-timed-state {
-  grid-template-columns: var(--time-col) auto 1fr auto;
+  grid-template-columns: var(--time-col) 2.35rem 1fr auto;
 }
 
 .checkbox-list-timed {
