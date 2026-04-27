@@ -1053,6 +1053,11 @@ body {
   grid-column: 2;
 }
 
+.checkbox-list-deadline.checkbox-list-has-priority .checkbox-item,
+.checkbox-list-someday.checkbox-list-has-priority .checkbox-item {
+  padding-left: 2.85rem;
+}
+
 .checkbox-list-deadline .checkbox-item,
 .checkbox-list-day-deadline .checkbox-item,
 .checkbox-list-scheduled-time .checkbox-item,

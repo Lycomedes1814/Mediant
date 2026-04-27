@@ -269,7 +269,12 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
       section.appendChild(renderGlobalInstanceNote(dl.instanceNote, "deadline-note"));
     }
     if (dl.entry.checkboxItems.length > 0) {
-      section.appendChild(renderCheckboxItems(dl.entry.checkboxItems, dl.entry.sourceLineNumber, "checkbox-list-deadline"));
+      section.appendChild(renderCheckboxItems(
+        dl.entry.checkboxItems,
+        dl.entry.sourceLineNumber,
+        "checkbox-list-deadline",
+        dl.entry.priority !== null,
+      ));
     }
   }
 
@@ -331,7 +336,12 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
     row.append(state, title, renderTags(item.entry.tags, optionsForTags()));
     section.appendChild(row);
     if (item.entry.checkboxItems.length > 0) {
-      section.appendChild(renderCheckboxItems(item.entry.checkboxItems, item.entry.sourceLineNumber, "checkbox-list-someday"));
+      section.appendChild(renderCheckboxItems(
+        item.entry.checkboxItems,
+        item.entry.sourceLineNumber,
+        "checkbox-list-someday",
+        item.entry.priority !== null,
+      ));
     }
   }
 
@@ -423,6 +433,7 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
           item.entry.checkboxItems,
           item.entry.sourceLineNumber,
           getCheckboxLayoutClass(item),
+          item.entry.priority !== null,
         ));
       }
     }
@@ -660,9 +671,11 @@ function renderCheckboxItems(
   items: readonly { text: string; checked: boolean }[],
   parentSourceLine: number,
   layoutClass?: string,
+  hasPriority: boolean = false,
 ): HTMLElement {
   const list = el("div", "checkbox-list");
   if (layoutClass) list.classList.add(layoutClass);
+  if (hasPriority) list.classList.add("checkbox-list-has-priority");
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const row = el("div", "checkbox-item");

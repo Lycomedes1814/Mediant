@@ -154,6 +154,7 @@ describe("renderAgenda", () => {
     expect(deadlineCheckboxes.map((item) => item.textContent)).toEqual(["Confirm time", "Send notes"]);
     expect(deadlineCheckboxes[0]?.classList.contains("checkbox-checked")).toBe(true);
     expect(container.querySelector(".deadlines-section .checkbox-list")?.classList.contains("checkbox-list-deadline")).toBe(true);
+    expect(container.querySelector(".deadlines-section .checkbox-list")?.classList.contains("checkbox-list-has-priority")).toBe(true);
     const secondDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[1];
     expect(secondDeadlineRow?.classList.contains("has-priority")).toBe(false);
     expect(secondDeadlineRow?.querySelector(".item-title .item-priority")).toBeNull();
