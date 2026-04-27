@@ -84,6 +84,7 @@ describe("renderAgenda", () => {
         title: "Upcoming",
         todo: "TODO",
         priority: "A",
+        progress: { done: 1, total: 2 },
         tags: ["music"],
         checkboxItems: [
           { text: "Confirm time", checked: true },
@@ -155,9 +156,10 @@ describe("renderAgenda", () => {
     expect(deadlineCheckboxes[0]?.classList.contains("checkbox-checked")).toBe(true);
     expect(container.querySelector(".deadlines-section .checkbox-list")?.classList.contains("checkbox-list-deadline")).toBe(true);
     expect(container.querySelector(".deadlines-section .checkbox-list")?.classList.contains("checkbox-list-has-priority")).toBe(true);
-    const deadlineChecklistToggle = container.querySelector<HTMLButtonElement>(".deadlines-section .checkbox-list-toggle");
+    const deadlineChecklistToggle = container.querySelector<HTMLButtonElement>(".deadlines-section .item-title .checkbox-list-toggle-inline");
     expect(deadlineChecklistToggle?.textContent).toBe("<");
     expect(deadlineChecklistToggle?.getAttribute("aria-expanded")).toBe("true");
+    expect(deadlineChecklistToggle?.closest(".item-title")?.textContent).toContain("1/2 <");
     deadlineChecklistToggle!.click();
     const deadlineChecklist = container.querySelector<HTMLElement>(".deadlines-section .checkbox-list");
     expect(deadlineChecklist?.classList.contains("is-collapsed")).toBe(true);
