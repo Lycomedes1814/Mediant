@@ -775,6 +775,10 @@ body {
   min-width: 0;
 }
 
+.someday-section .checkbox-list {
+  padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width) + 2.35rem + 0.65rem);
+}
+
 /* ── DONE items ───────────────────────────────────────────────────── */
 
 .item-done {
@@ -1010,6 +1014,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.deadlines-section .checkbox-list {
+  padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width) + 4.1ch + 2.35rem + 1rem);
 }
 
 .checkbox-item {
@@ -2047,6 +2055,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  .deadlines-section .checkbox-list {
+    padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
   }
 
   .overdue-meta,

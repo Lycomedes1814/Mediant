@@ -80,7 +80,16 @@ describe("renderAgenda", () => {
       instanceNote: null,
     }];
     const deadlines: DeadlineItem[] = [{
-      entry: makeEntry({ title: "Upcoming", todo: "TODO", priority: "A", tags: ["music"] }),
+      entry: makeEntry({
+        title: "Upcoming",
+        todo: "TODO",
+        priority: "A",
+        tags: ["music"],
+        checkboxItems: [
+          { text: "Confirm time", checked: true },
+          { text: "Send notes", checked: false },
+        ],
+      }),
       dueDate: new Date(2026, 3, 21),
       daysUntil: 1,
       sourceTimestamp: makeTimestamp("2026-04-21"),
@@ -95,7 +104,15 @@ describe("renderAgenda", () => {
       instanceNote: null,
     }];
     const someday: SomedayItem[] = [{
-      entry: makeEntry({ title: "Someday", todo: "TODO", tags: ["music"] }),
+      entry: makeEntry({
+        title: "Someday",
+        todo: "TODO",
+        tags: ["music"],
+        sourceLineNumber: 11,
+        checkboxItems: [
+          { text: "Draft outline", checked: false },
+        ],
+      }),
     }];
 
     renderAgenda(container, week, deadlines, overdue, someday, new Date(2026, 3, 20, 12, 30));
@@ -133,9 +150,15 @@ describe("renderAgenda", () => {
     const firstDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[0];
     expect(firstDeadlineRow?.classList.contains("has-priority")).toBe(false);
     expect(firstDeadlineRow?.style.getPropertyValue("--global-row-fringe-color")).toBe("#00aa88");
+    const deadlineCheckboxes = Array.from(container.querySelectorAll<HTMLElement>(".deadlines-section .checkbox-item"));
+    expect(deadlineCheckboxes.map((item) => item.textContent)).toEqual(["Confirm time", "Send notes"]);
+    expect(deadlineCheckboxes[0]?.classList.contains("checkbox-checked")).toBe(true);
     const secondDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[1];
     expect(secondDeadlineRow?.classList.contains("has-priority")).toBe(false);
     expect(secondDeadlineRow?.querySelector(".item-title .item-priority")).toBeNull();
+    const somedayCheckboxes = Array.from(container.querySelectorAll<HTMLElement>(".someday-section .checkbox-item"));
+    expect(somedayCheckboxes.map((item) => item.textContent)).toEqual(["Draft outline"]);
+    expect(somedayCheckboxes[0]?.getAttribute("data-line")).toBe("11");
     const overdueState = container.querySelector(".overdue-section .item-state");
     expect(overdueState?.textContent).toBe("TODO");
     expect(overdueState?.getAttribute("data-action")).toBe("toggle-done");

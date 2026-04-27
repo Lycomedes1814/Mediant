@@ -268,6 +268,9 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     if (dl.instanceNote) {
       section.appendChild(renderGlobalInstanceNote(dl.instanceNote, "deadline-note"));
     }
+    if (dl.entry.checkboxItems.length > 0) {
+      section.appendChild(renderCheckboxItems(dl.entry.checkboxItems, dl.entry.sourceLineNumber));
+    }
   }
 
   return section;
@@ -327,6 +330,9 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
 
     row.append(state, title, renderTags(item.entry.tags, optionsForTags()));
     section.appendChild(row);
+    if (item.entry.checkboxItems.length > 0) {
+      section.appendChild(renderCheckboxItems(item.entry.checkboxItems, item.entry.sourceLineNumber));
+    }
   }
 
   return section;
