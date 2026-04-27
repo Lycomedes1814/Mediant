@@ -752,6 +752,15 @@ body {
   grid-column: 5;
 }
 
+.day-deadline-item.has-checkbox-list {
+  padding-bottom: 0.04rem;
+}
+
+.day-deadline-item.has-checkbox-list + .checkbox-list-day-deadline,
+.day-deadline-item.has-checkbox-list + .checkbox-list-day-deadline-time {
+  padding-top: 0;
+}
+
 .day-deadline-item .item-kind {
   font-size: 0.6875rem;
   font-weight: 500;

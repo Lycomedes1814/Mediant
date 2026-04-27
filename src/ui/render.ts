@@ -598,7 +598,9 @@ function renderScheduledItem(item: AgendaItem, checkboxListId: string | null = n
 function renderDayDeadlineItem(item: AgendaItem, checkboxListId: string | null = null): HTMLElement {
   const kind = el("span", "item-kind");
   kind.textContent = "DEADLINE";
-  return renderItem(item, "day-deadline-item", [kind, renderStateBadge(item.entry, "TODO")], "optional", true, checkboxListId);
+  const row = renderItem(item, "day-deadline-item", [kind, renderStateBadge(item.entry, "TODO")], "optional", true, checkboxListId);
+  if (item.entry.checkboxItems.length > 0) row.classList.add("has-checkbox-list");
+  return row;
 }
 
 function applyPrimaryTagFringe(row: HTMLElement, tags: readonly string[], mode: "border" | "compact" = "border"): void {
