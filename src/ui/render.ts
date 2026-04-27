@@ -795,6 +795,7 @@ function appendCheckboxToggle(title: HTMLElement, listId: string, listKey: strin
     toggle.textContent = collapsed ? ">" : "<";
     toggle.setAttribute("aria-label", collapsed ? "Show checklist" : "Hide checklist");
     toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    toggle.blur();
   });
   title.appendChild(toggle);
 }
