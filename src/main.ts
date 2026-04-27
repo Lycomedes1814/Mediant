@@ -1931,7 +1931,7 @@ function showInput(): void {
 
   const ghLink = document.createElement("a");
   ghLink.className = "github-link";
-  ghLink.href = "https://github.com/Lycomedes1814/Mediant";
+  ghLink.href = "https://github.com/Jovlang/Mediant";
   ghLink.target = "_blank";
   ghLink.rel = "noopener noreferrer";
   ghLink.setAttribute("aria-label", "View on GitHub");
