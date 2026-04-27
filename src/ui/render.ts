@@ -93,6 +93,7 @@ function renderAgendaBase(
 ): void {
   checkboxListIdCounter = 0;
   checkboxListsById.clear();
+  renderedCheckboxListKeys = new Set();
   container.innerHTML = "";
 
   // Header
@@ -125,6 +126,10 @@ function renderAgendaBase(
   // Someday section
   if (someday.length > 0) {
     container.appendChild(renderSomeday(someday));
+  }
+
+  for (const key of collapsedCheckboxListKeys) {
+    if (!renderedCheckboxListKeys.has(key)) collapsedCheckboxListKeys.delete(key);
   }
 }
 
@@ -264,9 +269,12 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     meta.append(time, state);
 
     const checkboxListId = dl.entry.checkboxItems.length > 0 ? nextCheckboxListId() : null;
+    const checkboxListKey = checkboxListId
+      ? `deadline:${dl.entry.sourceLineNumber}:${dl.baseDate ?? formatDateKey(dl.dueDate)}`
+      : null;
     const title = renderTitle(dl.entry);
     if (dl.baseDate) title.dataset.baseDate = dl.baseDate;
-    if (checkboxListId) appendCheckboxToggle(title, checkboxListId);
+    if (checkboxListId && checkboxListKey) appendCheckboxToggle(title, checkboxListId, checkboxListKey);
 
     row.append(meta, title, renderTags(dl.entry.tags, optionsForTags()));
     section.appendChild(row);
@@ -280,6 +288,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
         "checkbox-list-deadline",
         dl.entry.priority !== null,
         checkboxListId ?? undefined,
+        checkboxListKey ?? undefined,
       ));
     }
   }
@@ -338,8 +347,9 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
 
     const state = renderStateBadge(item.entry, "TODO");
     const checkboxListId = item.entry.checkboxItems.length > 0 ? nextCheckboxListId() : null;
+    const checkboxListKey = checkboxListId ? `someday:${item.entry.sourceLineNumber}` : null;
     const title = renderTitle(item.entry);
-    if (checkboxListId) appendCheckboxToggle(title, checkboxListId);
+    if (checkboxListId && checkboxListKey) appendCheckboxToggle(title, checkboxListId, checkboxListKey);
 
     row.append(state, title, renderTags(item.entry.tags, optionsForTags()));
     section.appendChild(row);
@@ -350,6 +360,7 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
         "checkbox-list-someday",
         item.entry.priority !== null,
         checkboxListId ?? undefined,
+        checkboxListKey ?? undefined,
       ));
     }
   }
@@ -417,13 +428,14 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
       }
 
       const checkboxListId = item.entry.checkboxItems.length > 0 ? nextCheckboxListId() : null;
+      const checkboxListKey = checkboxListId ? checkboxKeyForAgendaItem(item) : null;
 
       if (item.category === "scheduled") {
-        section.appendChild(renderScheduledItem(item, checkboxListId));
+        section.appendChild(renderScheduledItem(item, checkboxListId, checkboxListKey));
       } else if (item.category === "deadline") {
-        section.appendChild(renderDayDeadlineItem(item, checkboxListId));
+        section.appendChild(renderDayDeadlineItem(item, checkboxListId, checkboxListKey));
       } else {
-        section.appendChild(renderTimedItem(item, checkboxListId));
+        section.appendChild(renderTimedItem(item, checkboxListId, checkboxListKey));
       }
 
       // Instance note (per-occurrence)
@@ -446,6 +458,7 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
           getCheckboxLayoutClass(item),
           item.entry.priority !== null,
           checkboxListId ?? undefined,
+          checkboxListKey ?? undefined,
         ));
       }
     }
@@ -477,6 +490,7 @@ function renderItem(
   showTime?: "always" | "optional",
   showPriority: boolean = true,
   checkboxListId: string | null = null,
+  checkboxListKey: string | null = null,
 ): HTMLElement {
   const row = el("div", className);
   if (item.entry.todo === "DONE") row.classList.add("item-done");
@@ -519,7 +533,7 @@ function renderItem(
     title.appendChild(document.createTextNode(" "));
     title.appendChild(renderOverrideChip(item.override));
   }
-  if (checkboxListId) appendCheckboxToggle(title, checkboxListId);
+  if (checkboxListId && checkboxListKey) appendCheckboxToggle(title, checkboxListId, checkboxListKey);
   children.push(title, renderTags(item.entry.tags, optionsForTags()));
   row.append(...children);
   return row;
@@ -587,18 +601,30 @@ function renderAllDayItem(item: AgendaItem): HTMLElement {
   return renderItem(item, "allday-item");
 }
 
-function renderTimedItem(item: AgendaItem, checkboxListId: string | null = null): HTMLElement {
-  return renderItem(item, "timed-item", undefined, "always", true, checkboxListId);
+function renderTimedItem(
+  item: AgendaItem,
+  checkboxListId: string | null = null,
+  checkboxListKey: string | null = null,
+): HTMLElement {
+  return renderItem(item, "timed-item", undefined, "always", true, checkboxListId, checkboxListKey);
 }
 
-function renderScheduledItem(item: AgendaItem, checkboxListId: string | null = null): HTMLElement {
-  return renderItem(item, "scheduled-item", renderStateBadge(item.entry, "TODO"), "optional", true, checkboxListId);
+function renderScheduledItem(
+  item: AgendaItem,
+  checkboxListId: string | null = null,
+  checkboxListKey: string | null = null,
+): HTMLElement {
+  return renderItem(item, "scheduled-item", renderStateBadge(item.entry, "TODO"), "optional", true, checkboxListId, checkboxListKey);
 }
 
-function renderDayDeadlineItem(item: AgendaItem, checkboxListId: string | null = null): HTMLElement {
+function renderDayDeadlineItem(
+  item: AgendaItem,
+  checkboxListId: string | null = null,
+  checkboxListKey: string | null = null,
+): HTMLElement {
   const kind = el("span", "item-kind");
   kind.textContent = "DEADLINE";
-  const row = renderItem(item, "day-deadline-item", [kind, renderStateBadge(item.entry, "TODO")], "optional", true, checkboxListId);
+  const row = renderItem(item, "day-deadline-item", [kind, renderStateBadge(item.entry, "TODO")], "optional", true, checkboxListId, checkboxListKey);
   if (item.entry.checkboxItems.length > 0) row.classList.add("has-checkbox-list");
   return row;
 }
@@ -689,11 +715,16 @@ function renderCheckboxItems(
   layoutClass?: string,
   hasPriority: boolean = false,
   listId?: string,
+  listKey?: string,
 ): HTMLElement {
   const list = el("div", "checkbox-list");
   if (listId) {
     list.id = listId;
     checkboxListsById.set(listId, list);
+  }
+  if (listKey) {
+    renderedCheckboxListKeys.add(listKey);
+    if (collapsedCheckboxListKeys.has(listKey)) list.classList.add("is-collapsed");
   }
   if (layoutClass) list.classList.add(layoutClass);
   if (hasPriority) list.classList.add("checkbox-list-has-priority");
@@ -722,26 +753,42 @@ function renderCheckboxItems(
 
 let checkboxListIdCounter = 0;
 const checkboxListsById = new Map<string, HTMLElement>();
+const collapsedCheckboxListKeys = new Set<string>();
+let renderedCheckboxListKeys = new Set<string>();
 
 function nextCheckboxListId(): string {
   checkboxListIdCounter += 1;
   return `checklist-${checkboxListIdCounter}`;
 }
 
-function appendCheckboxToggle(title: HTMLElement, listId: string): void {
+function checkboxKeyForAgendaItem(item: AgendaItem): string {
+  return [
+    "day",
+    formatDateKey(item.date),
+    item.category,
+    item.entry.sourceLineNumber,
+    item.baseDate ?? formatDateKey(item.date),
+    item.startTime ?? "",
+  ].join(":");
+}
+
+function appendCheckboxToggle(title: HTMLElement, listId: string, listKey: string): void {
+  const initiallyCollapsed = collapsedCheckboxListKeys.has(listKey);
   title.appendChild(document.createTextNode(" "));
   const toggle = document.createElement("button");
   toggle.className = "checkbox-list-toggle-inline";
   toggle.type = "button";
-  toggle.textContent = "<";
-  toggle.setAttribute("aria-label", "Hide checklist");
-  toggle.setAttribute("aria-expanded", "true");
+  toggle.textContent = initiallyCollapsed ? ">" : "<";
+  toggle.setAttribute("aria-label", initiallyCollapsed ? "Show checklist" : "Hide checklist");
+  toggle.setAttribute("aria-expanded", initiallyCollapsed ? "false" : "true");
   toggle.setAttribute("aria-controls", listId);
   toggle.addEventListener("click", (event) => {
     event.stopPropagation();
     const list = checkboxListsById.get(listId) ?? document.getElementById(listId);
     if (!list) return;
     const collapsed = list.classList.toggle("is-collapsed");
+    if (collapsed) collapsedCheckboxListKeys.add(listKey);
+    else collapsedCheckboxListKeys.delete(listKey);
     toggle.textContent = collapsed ? ">" : "<";
     toggle.setAttribute("aria-label", collapsed ? "Show checklist" : "Hide checklist");
     toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
@@ -894,6 +941,13 @@ function formatDateRange(start: Date, end: Date): string {
     return `${start.getDate()} ${MONTH_NAMES[start.getMonth()]} – ${end.getDate()} ${MONTH_NAMES[end.getMonth()]} ${start.getFullYear()}`;
   }
   return `${start.getDate()} ${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()} – ${end.getDate()} ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
+}
+
+function formatDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function el(tag: string, className?: string): HTMLElement {

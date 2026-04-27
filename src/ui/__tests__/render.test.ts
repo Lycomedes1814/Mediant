@@ -180,6 +180,54 @@ describe("renderAgenda", () => {
     expect(overdueState?.getAttribute("data-line")).toBe("7");
   });
 
+  it("preserves checklist collapse state across rerenders per rendered list", () => {
+    const container = document.createElement("div");
+    const entry = makeEntry({
+      title: "Purchase the moon",
+      todo: "TODO",
+      priority: "A",
+      progress: { done: 1, total: 2 },
+      checkboxItems: [
+        { text: "Prepare spaceship", checked: true },
+        { text: "Fight space aliens", checked: false },
+      ],
+      sourceLineNumber: 42,
+    });
+    const week = makeWeek([
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [makeItem({
+        entry,
+        date: new Date(2026, 3, 26),
+        category: "deadline",
+        sourceTimestamp: makeTimestamp("2026-04-26"),
+      })],
+    ]);
+    const deadlines: DeadlineItem[] = [{
+      entry,
+      dueDate: new Date(2026, 3, 26),
+      daysUntil: 6,
+      sourceTimestamp: makeTimestamp("2026-04-26"),
+      baseDate: null,
+      instanceNote: null,
+    }];
+
+    renderAgenda(container, week, deadlines, [], [], new Date(2026, 3, 20, 10, 0));
+    const upcomingToggle = container.querySelector<HTMLButtonElement>(".deadlines-section .checkbox-list-toggle-inline");
+    upcomingToggle!.click();
+
+    renderAgenda(container, week, deadlines, [], [], new Date(2026, 3, 20, 10, 0));
+
+    expect(container.querySelector<HTMLElement>(".deadlines-section .checkbox-list")?.classList.contains("is-collapsed")).toBe(true);
+    expect(container.querySelector<HTMLButtonElement>(".deadlines-section .checkbox-list-toggle-inline")?.getAttribute("aria-expanded")).toBe("false");
+    expect(container.querySelector<HTMLElement>(".days-card .checkbox-list")?.classList.contains("is-collapsed")).toBe(false);
+    expect(container.querySelector<HTMLButtonElement>(".days-card .checkbox-list-toggle-inline")?.getAttribute("aria-expanded")).toBe("true");
+  });
+
   it("hides empty day blocks when requested", () => {
     const container = document.createElement("div");
     const week = makeWeek([
