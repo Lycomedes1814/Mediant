@@ -757,7 +757,7 @@ body {
 }
 
 .day-deadline-item.has-checkbox-list {
-  padding-bottom: 0.04rem;
+  padding-bottom: 0.28rem;
 }
 
 .day-deadline-item.has-checkbox-list + .checkbox-list-day-deadline,
