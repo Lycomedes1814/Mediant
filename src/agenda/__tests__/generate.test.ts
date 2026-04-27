@@ -943,6 +943,7 @@ describe("collectDeadlines", () => {
     const entries = [
       entry({
         title: "Ship it",
+        todo: "TODO",
         planning: [{
           kind: "deadline",
           timestamp: { date: "2026-04-10", startTime: "19:00", endTime: null, repeater: null, raw: "" },
@@ -952,6 +953,12 @@ describe("collectDeadlines", () => {
     const items = collectDeadlines(entries, new Date(2026, 3, 10, 9, 0));
     expect(items).toHaveLength(1);
     expect(items[0].daysUntil).toBe(0);
+  });
+
+  it("excludes DONE deadlines", () => {
+    const entries = parseOrg("** DONE Filed taxes\nDEADLINE: <2026-04-10 fr.>\n");
+    const items = collectDeadlines(entries, new Date(2026, 3, 9, 9, 0));
+    expect(items).toHaveLength(0);
   });
 
   it("uses the next upcoming recurring deadline occurrence", () => {

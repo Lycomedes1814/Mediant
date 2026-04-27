@@ -80,13 +80,14 @@ export function generateWeek(entries: OrgEntry[], startDate: Date): AgendaWeek {
 /**
  * Collect all upcoming deadlines from entries, relative to a reference date.
  * Returns deadlines sorted by due date (soonest first).
- * Only includes items where daysUntil >= 0 (today or future).
+ * Only includes TODO items where daysUntil >= 0 (today or future).
  */
 export function collectDeadlines(entries: OrgEntry[], referenceDate: Date): DeadlineItem[] {
   const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
   const results: DeadlineItem[] = [];
 
   for (const entry of entries) {
+    if (entry.todo !== "TODO") continue;
     for (const plan of entry.planning) {
       if (plan.kind !== "deadline") continue;
       const occurrence = findNextPlanningOccurrence(entry, plan.timestamp, today);
