@@ -1988,9 +1988,15 @@ body {
 
 @media (max-width: 480px) {
   .agenda-header {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .active-tag-filters {
+    flex: 0 0 100%;
+    order: 10;
+    margin-top: 0.25rem;
   }
 
   .agenda-nav {
