@@ -990,6 +990,7 @@ body {
 }
 
 .now-label {
+  margin-left: 0.55rem;
   font-size: 0.72rem;
   font-weight: 600;
   white-space: nowrap;
