@@ -676,6 +676,23 @@ function renderCheckboxItems(
   const list = el("div", "checkbox-list");
   if (layoutClass) list.classList.add(layoutClass);
   if (hasPriority) list.classList.add("checkbox-list-has-priority");
+
+  const toggle = document.createElement("button");
+  toggle.className = "checkbox-list-toggle";
+  toggle.type = "button";
+  toggle.textContent = "<";
+  toggle.setAttribute("aria-label", "Hide checklist");
+  toggle.setAttribute("aria-expanded", "true");
+  toggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const collapsed = list.classList.toggle("is-collapsed");
+    toggle.textContent = collapsed ? ">" : "<";
+    toggle.setAttribute("aria-label", collapsed ? "Show checklist" : "Hide checklist");
+    toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  });
+  list.appendChild(toggle);
+
+  const rows = el("div", "checkbox-list-items");
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const row = el("div", "checkbox-item");
@@ -691,8 +708,9 @@ function renderCheckboxItems(
     const label = el("span", "checkbox-label");
     label.textContent = item.text;
     row.append(icon, label);
-    list.appendChild(row);
+    rows.appendChild(row);
   }
+  list.appendChild(rows);
   return list;
 }
 

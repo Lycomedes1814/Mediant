@@ -220,20 +220,6 @@ function hasParsedDate(input: HTMLInputElement): boolean {
   return Boolean(parseDateTime(input.value.trim())?.date);
 }
 
-function hasActiveRepeater(
-  isTodo: boolean,
-  whenInput: HTMLInputElement,
-  repeatSelect: HTMLSelectElement,
-  schedInput: HTMLInputElement,
-  schedRepeatSelect: HTMLSelectElement,
-  deadInput: HTMLInputElement,
-  deadRepeatSelect: HTMLSelectElement,
-): boolean {
-  if (!isTodo) return hasParsedDate(whenInput) && Boolean(repeatSelect.value);
-  return (hasParsedDate(schedInput) && Boolean(schedRepeatSelect.value))
-    || (hasParsedDate(deadInput) && Boolean(deadRepeatSelect.value));
-}
-
 function buildAddPanel(): void {
   addOverlayEl = document.createElement("div");
   addOverlayEl.className = "add-overlay";
@@ -326,22 +312,13 @@ function buildAddPanel(): void {
     const isTodo = checkedRadioValue(typeGroup.container, "add-type", "event") === "todo";
     const hasSchedDate = hasParsedDate(schedInput.input);
     const hasDeadDate = hasParsedDate(deadInput.input);
-    const repeating = hasActiveRepeater(
-      isTodo,
-      whenInput.input,
-      repeatSelect.select,
-      schedInput.input,
-      schedRepeatSelect.select,
-      deadInput.input,
-      deadRepeatSelect.select,
-    );
     whenInput.container.style.display = isTodo ? "none" : "";
     repeatSelect.container.style.display = isTodo ? "none" : "";
     schedInput.container.style.display = isTodo ? "" : "none";
     schedRepeatSelect.container.style.display = isTodo && hasSchedDate ? "" : "none";
     deadInput.container.style.display = isTodo ? "" : "none";
     deadRepeatSelect.container.style.display = isTodo && hasDeadDate ? "" : "none";
-    checkboxSection.style.display = repeating ? "none" : "";
+    checkboxSection.style.display = isTodo ? "" : "none";
     updateDateTimePreview(whenInput.input, whenInput.preview);
     updateDateTimePreview(schedInput.input, schedInput.preview);
     updateDateTimePreview(deadInput.input, deadInput.preview);

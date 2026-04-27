@@ -1009,6 +1009,7 @@ body {
   display: grid;
   grid-template-columns: var(--time-col) 1fr auto;
   align-items: start;
+  position: relative;
   padding: 0.48rem var(--section-padding-x) 0;
   border-left: 3px solid transparent;
   gap: 0.35rem 0.8rem;
@@ -1050,24 +1051,64 @@ body {
   grid-template-columns: var(--time-col) 1fr auto;
 }
 
-.checkbox-list .checkbox-item {
+.checkbox-list-toggle,
+.checkbox-list-items {
   grid-column: 2;
 }
 
-.checkbox-list-deadline.checkbox-list-has-priority .checkbox-item,
-.checkbox-list-someday.checkbox-list-has-priority .checkbox-item {
+.checkbox-list-deadline.checkbox-list-has-priority .checkbox-list-items,
+.checkbox-list-someday.checkbox-list-has-priority .checkbox-list-items {
   padding-left: 2.85rem;
 }
 
-.checkbox-list-deadline .checkbox-item,
-.checkbox-list-day-deadline .checkbox-item,
-.checkbox-list-scheduled-time .checkbox-item,
-.checkbox-list-timed-state .checkbox-item {
+.checkbox-list-deadline .checkbox-list-toggle,
+.checkbox-list-deadline .checkbox-list-items,
+.checkbox-list-day-deadline .checkbox-list-toggle,
+.checkbox-list-day-deadline .checkbox-list-items,
+.checkbox-list-scheduled-time .checkbox-list-toggle,
+.checkbox-list-scheduled-time .checkbox-list-items,
+.checkbox-list-timed-state .checkbox-list-toggle,
+.checkbox-list-timed-state .checkbox-list-items {
   grid-column: 3;
 }
 
-.checkbox-list-day-deadline-time .checkbox-item {
+.checkbox-list-day-deadline-time .checkbox-list-toggle,
+.checkbox-list-day-deadline-time .checkbox-list-items {
   grid-column: 4;
+}
+
+.checkbox-list-toggle {
+  grid-row: 1;
+  justify-self: start;
+  align-self: start;
+  width: 1rem;
+  height: 1.35rem;
+  margin-left: -0.15rem;
+  transform: translateX(-100%);
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.checkbox-list-toggle:hover {
+  color: var(--text);
+  background: var(--bg-state);
+}
+
+.checkbox-list-items {
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.checkbox-list.is-collapsed .checkbox-list-items {
+  display: none;
 }
 
 .checkbox-item {
@@ -2121,7 +2162,8 @@ body {
     padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
   }
 
-  .checkbox-list .checkbox-item {
+  .checkbox-list .checkbox-list-toggle,
+  .checkbox-list .checkbox-list-items {
     grid-column: 1;
   }
 

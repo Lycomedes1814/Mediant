@@ -205,6 +205,7 @@ describe("main.ts integration", () => {
     expect(document.querySelector<HTMLInputElement>("input[name='add-type']:checked")?.value).toBe("event");
     expect((document.querySelector<HTMLInputElement>("#add-when")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
     expect((document.querySelector<HTMLInputElement>("#add-sched")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
+    expect((document.querySelector<HTMLElement>(".edit-checkboxes") as HTMLElement | null)?.style.display).toBe("none");
 
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await flush();
@@ -253,7 +254,7 @@ describe("main.ts integration", () => {
     expect(deadRepeatSelect?.value).toBe("");
     expect((schedRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
     expect((deadRepeatSelect?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
-    expect(checkboxSection?.style.display).toBe("none");
+    expect(checkboxSection?.style.display).toBe("");
 
     tagInput!.focus();
     tagInput!.value = "wo";
@@ -320,7 +321,7 @@ describe("main.ts integration", () => {
     expect(schedPreview?.textContent).toBe("Wed 22 Apr 2026, 19:15");
     schedRepeatSelect!.value = "++1w";
     schedRepeatSelect!.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(checkboxSection?.style.display).toBe("none");
+    expect(checkboxSection?.style.display).toBe("");
     schedRepeatSelect!.value = "";
     schedRepeatSelect!.dispatchEvent(new Event("change", { bubbles: true }));
     expect(checkboxSection?.style.display).toBe("");

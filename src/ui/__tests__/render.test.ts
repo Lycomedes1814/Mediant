@@ -155,6 +155,16 @@ describe("renderAgenda", () => {
     expect(deadlineCheckboxes[0]?.classList.contains("checkbox-checked")).toBe(true);
     expect(container.querySelector(".deadlines-section .checkbox-list")?.classList.contains("checkbox-list-deadline")).toBe(true);
     expect(container.querySelector(".deadlines-section .checkbox-list")?.classList.contains("checkbox-list-has-priority")).toBe(true);
+    const deadlineChecklistToggle = container.querySelector<HTMLButtonElement>(".deadlines-section .checkbox-list-toggle");
+    expect(deadlineChecklistToggle?.textContent).toBe("<");
+    expect(deadlineChecklistToggle?.getAttribute("aria-expanded")).toBe("true");
+    deadlineChecklistToggle!.click();
+    const deadlineChecklist = container.querySelector<HTMLElement>(".deadlines-section .checkbox-list");
+    expect(deadlineChecklist?.classList.contains("is-collapsed")).toBe(true);
+    expect(deadlineChecklistToggle?.textContent).toBe(">");
+    expect(deadlineChecklistToggle?.getAttribute("aria-expanded")).toBe("false");
+    deadlineChecklistToggle!.click();
+    expect(deadlineChecklist?.classList.contains("is-collapsed")).toBe(false);
     const secondDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[1];
     expect(secondDeadlineRow?.classList.contains("has-priority")).toBe(false);
     expect(secondDeadlineRow?.querySelector(".item-title .item-priority")).toBeNull();
