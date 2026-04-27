@@ -413,7 +413,7 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
 
       // Checkbox items
       if (item.entry.checkboxItems.length > 0) {
-        section.appendChild(renderCheckboxItems(item.entry.checkboxItems));
+        section.appendChild(renderCheckboxItems(item.entry.checkboxItems, item.entry.sourceLineNumber));
       }
     }
 
@@ -646,11 +646,21 @@ function renderTitle(
   return title;
 }
 
-function renderCheckboxItems(items: readonly { text: string; checked: boolean }[]): HTMLElement {
+function renderCheckboxItems(
+  items: readonly { text: string; checked: boolean }[],
+  parentSourceLine: number,
+): HTMLElement {
   const list = el("div", "checkbox-list");
-  for (const item of items) {
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
     const row = el("div", "checkbox-item");
     if (item.checked) row.classList.add("checkbox-checked");
+    row.dataset.action = "toggle-checkbox";
+    row.dataset.line = String(parentSourceLine);
+    row.dataset.checkboxIndex = String(i);
+    row.setAttribute("role", "button");
+    row.setAttribute("tabindex", "0");
+    row.setAttribute("aria-label", item.checked ? "Mark not done" : "Mark done");
     const icon = el("span", "checkbox-icon");
     icon.setAttribute("aria-hidden", "true");
     const label = el("span", "checkbox-label");

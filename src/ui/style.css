@@ -1019,6 +1019,13 @@ body {
   font-size: 0.8125rem;
   color: var(--text);
   min-height: 1.35rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-item:hover .checkbox-icon {
+  filter: brightness(1.15);
+  border-color: color-mix(in srgb, var(--text-dim) 70%, transparent);
 }
 
 .checkbox-icon {

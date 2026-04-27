@@ -6,6 +6,7 @@ import {
   appendQuickCaptureToTasks,
   deleteOrgBlockInSource,
   replaceOrgBlockInSource,
+  toggleCheckboxInSource,
   toggleDoneInSource,
 } from "../sourceEdit.ts";
 import { parseOrg } from "../parser.ts";
@@ -228,6 +229,106 @@ describe("toggleDoneInSource", () => {
   it("does nothing for headings without TODO/DONE", () => {
     const source = "** Plain heading\n";
     expect(toggleDoneInSource(source, 1)).toBe(source);
+  });
+});
+
+describe("toggleCheckboxInSource", () => {
+  it("flips an unchecked box to X and updates the [N/M] cookie", () => {
+    const source =
+      "** TODO Buy stuff [1/3]\n" +
+      "- [X] Milk\n" +
+      "- [ ] Bread\n" +
+      "- [ ] Eggs\n";
+
+    expect(toggleCheckboxInSource(source, 1, 1)).toBe(
+      "** TODO Buy stuff [2/3]\n" +
+      "- [X] Milk\n" +
+      "- [X] Bread\n" +
+      "- [ ] Eggs\n",
+    );
+  });
+
+  it("flips a checked box back to unchecked and updates the cookie", () => {
+    const source =
+      "** TODO Buy stuff [2/3]\n" +
+      "- [X] Milk\n" +
+      "- [X] Bread\n" +
+      "- [ ] Eggs\n";
+
+    expect(toggleCheckboxInSource(source, 1, 0)).toBe(
+      "** TODO Buy stuff [1/3]\n" +
+      "- [ ] Milk\n" +
+      "- [X] Bread\n" +
+      "- [ ] Eggs\n",
+    );
+  });
+
+  it("updates a [%] cookie", () => {
+    const source =
+      "** TODO Buy stuff [33%]\n" +
+      "- [X] Milk\n" +
+      "- [ ] Bread\n" +
+      "- [ ] Eggs\n";
+
+    expect(toggleCheckboxInSource(source, 1, 1)).toBe(
+      "** TODO Buy stuff [67%]\n" +
+      "- [X] Milk\n" +
+      "- [X] Bread\n" +
+      "- [ ] Eggs\n",
+    );
+  });
+
+  it("leaves the heading unchanged when there is no progress cookie", () => {
+    const source =
+      "** TODO Buy stuff\n" +
+      "- [ ] Milk\n";
+
+    expect(toggleCheckboxInSource(source, 1, 0)).toBe(
+      "** TODO Buy stuff\n" +
+      "- [X] Milk\n",
+    );
+  });
+
+  it("only edits the target entry's block, not subsequent entries' checkboxes", () => {
+    const source =
+      "** TODO First [0/1]\n" +
+      "- [ ] A\n" +
+      "** TODO Second [0/1]\n" +
+      "- [ ] B\n";
+
+    expect(toggleCheckboxInSource(source, 1, 0)).toBe(
+      "** TODO First [1/1]\n" +
+      "- [X] A\n" +
+      "** TODO Second [0/1]\n" +
+      "- [ ] B\n",
+    );
+  });
+
+  it("supports indented checkbox items", () => {
+    const source =
+      "** TODO Outer [0/1]\n" +
+      "  - [ ] Indented\n";
+
+    expect(toggleCheckboxInSource(source, 1, 0)).toBe(
+      "** TODO Outer [1/1]\n" +
+      "  - [X] Indented\n",
+    );
+  });
+
+  it("is a no-op when the index is out of range", () => {
+    const source =
+      "** TODO Buy stuff [0/1]\n" +
+      "- [ ] Milk\n";
+
+    expect(toggleCheckboxInSource(source, 1, 5)).toBe(source);
+  });
+
+  it("is a no-op when the parent line is not a heading", () => {
+    const source =
+      "** TODO Task\n" +
+      "- [ ] Item\n";
+
+    expect(toggleCheckboxInSource(source, 2, 0)).toBe(source);
   });
 });
 

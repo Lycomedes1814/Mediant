@@ -6,6 +6,7 @@ import {
   appendQuickCaptureToTasks,
   deleteOrgBlockInSource,
   replaceOrgBlockInSource,
+  toggleCheckboxInSource,
   toggleDoneInSource,
 } from "./org/sourceEdit.ts";
 import { stepDate } from "./org/timestamp.ts";
@@ -1427,6 +1428,10 @@ async function toggleDone(sourceLine: number): Promise<void> {
   await persistSource(toggleDoneInSource(currentSource, sourceLine));
 }
 
+async function toggleCheckbox(parentSourceLine: number, index: number): Promise<void> {
+  await persistSource(toggleCheckboxInSource(currentSource, parentSourceLine, index));
+}
+
 function deleteOrgBlock(sourceLine: number): void {
   void persistSource(deleteOrgBlockInSource(currentSource, sourceLine));
 }
@@ -2173,6 +2178,11 @@ function setupNavigation(): void {
       e.stopPropagation();
       const line = Number(btn.dataset.line);
       if (line) void toggleDone(line);
+    } else if (action === "toggle-checkbox") {
+      e.stopPropagation();
+      const line = Number(btn.dataset.line);
+      const index = Number(btn.dataset.checkboxIndex);
+      if (line && Number.isInteger(index) && index >= 0) void toggleCheckbox(line, index);
     }
   });
 }

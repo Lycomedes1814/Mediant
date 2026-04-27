@@ -107,6 +107,72 @@ export function toggleDoneInSource(source: string, sourceLine: number): string {
   return lines.join("\n");
 }
 
+/**
+ * Flip the checked state of the `index`th checkbox within the entry block at
+ * `parentSourceLine`. Updates any `[N/M]` or `[N%]` progress cookie on the
+ * heading to match the new counts. No-op if the entry or checkbox isn't found.
+ */
+export function toggleCheckboxInSource(source: string, parentSourceLine: number, index: number): string {
+  const lines = source.split("\n");
+  const startIdx = parentSourceLine - 1;
+  if (startIdx < 0 || startIdx >= lines.length) return source;
+  if (!/^\*+\s/.test(lines[startIdx])) return source;
+
+  let endIdx = lines.length;
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    if (/^\*+\s/.test(lines[i])) {
+      endIdx = i;
+      break;
+    }
+  }
+
+  const checkboxRe = /^(\s*-\s+\[)([ X])(\]\s+.+)$/;
+  let count = 0;
+  let targetIdx = -1;
+  for (let i = startIdx + 1; i < endIdx; i++) {
+    if (checkboxRe.test(lines[i])) {
+      if (count === index) {
+        targetIdx = i;
+        break;
+      }
+      count += 1;
+    }
+  }
+  if (targetIdx === -1) return source;
+
+  lines[targetIdx] = lines[targetIdx].replace(
+    checkboxRe,
+    (_match, before: string, mark: string, after: string) =>
+      `${before}${mark === "X" ? " " : "X"}${after}`,
+  );
+
+  let done = 0;
+  let total = 0;
+  for (let i = startIdx + 1; i < endIdx; i++) {
+    const m = lines[i].match(checkboxRe);
+    if (m) {
+      total += 1;
+      if (m[2] === "X") done += 1;
+    }
+  }
+
+  lines[startIdx] = updateProgressCookie(lines[startIdx], done, total);
+  return lines.join("\n");
+}
+
+function updateProgressCookie(heading: string, done: number, total: number): string {
+  const fracRe = /\[\d*\/\d*\]/;
+  if (fracRe.test(heading)) {
+    return heading.replace(fracRe, `[${done}/${total}]`);
+  }
+  const pctRe = /\[\d*%\]/;
+  if (pctRe.test(heading)) {
+    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+    return heading.replace(pctRe, `[${pct}%]`);
+  }
+  return heading;
+}
+
 function shiftRepeatingTimestamp(raw: string, now: Date): string {
   const match = raw.match(/^<(\d{4}-\d{2}-\d{2})\s+(\S+)\s*(?:(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?)?\s*((?:\.\+|\+\+|\+)\d+[dwmy])\s*>$/);
   if (!match) return raw;
