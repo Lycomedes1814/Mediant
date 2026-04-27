@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  appendAgendaItemToSource,
   appendOrgTextToSource,
-  appendQuickCaptureToInbox,
+  appendOrgTextUnderHeading,
+  appendQuickCaptureToTasks,
   deleteOrgBlockInSource,
   replaceOrgBlockInSource,
   toggleDoneInSource,
@@ -278,21 +280,74 @@ describe("appendOrgTextToSource", () => {
   });
 });
 
-describe("appendQuickCaptureToInbox", () => {
-  it("creates an Inbox at the end of an empty source", () => {
-    expect(appendQuickCaptureToInbox("", "Buy milk")).toBe(
-      "* Inbox\n" +
+describe("appendOrgTextUnderHeading", () => {
+  it("creates a top-level Tasks heading and appends TODOs as child entries", () => {
+    expect(appendOrgTextUnderHeading("", "Tasks", "* TODO New task")).toBe(
+      "* Tasks\n" +
+      "** TODO New task\n",
+    );
+  });
+
+  it("creates a top-level Events heading and appends events as child entries", () => {
+    expect(appendOrgTextUnderHeading("* Tasks\n** TODO Existing\n", "Events", "* Meeting\n<2026-04-24 Fri 10:00>")).toBe(
+      "* Tasks\n" +
+      "** TODO Existing\n" +
+      "* Events\n" +
+      "** Meeting\n" +
+      "<2026-04-24 Fri 10:00>\n",
+    );
+  });
+
+  it("appends before the next top-level heading", () => {
+    const source =
+      "* Tasks\n" +
+      "** TODO Existing\n" +
+      "\n" +
+      "* Events\n" +
+      "** Meeting\n";
+
+    expect(appendOrgTextUnderHeading(source, "Tasks", "* TODO Later")).toBe(
+      "* Tasks\n" +
+      "** TODO Existing\n" +
+      "** TODO Later\n" +
+      "* Events\n" +
+      "** Meeting\n",
+    );
+  });
+});
+
+describe("appendAgendaItemToSource", () => {
+  it("routes TODO entries to Tasks", () => {
+    expect(appendAgendaItemToSource("", "* TODO Follow up")).toBe(
+      "* Tasks\n" +
+      "** TODO Follow up\n",
+    );
+  });
+
+  it("routes event entries to Events", () => {
+    expect(appendAgendaItemToSource("", "* Meeting\n<2026-04-24 Fri 10:00>")).toBe(
+      "* Events\n" +
+      "** Meeting\n" +
+      "<2026-04-24 Fri 10:00>\n",
+    );
+  });
+});
+
+describe("appendQuickCaptureToTasks", () => {
+  it("creates a Tasks heading at the end of an empty source", () => {
+    expect(appendQuickCaptureToTasks("", "Buy milk")).toBe(
+      "* Tasks\n" +
       "** TODO Buy milk\n",
     );
   });
 
-  it("appends to an existing Inbox subtree", () => {
+  it("appends to an existing Tasks subtree", () => {
     const source =
-      "* Inbox\n" +
+      "* Tasks\n" +
       "** TODO Existing\n";
 
-    expect(appendQuickCaptureToInbox(source, "Call Ada")).toBe(
-      "* Inbox\n" +
+    expect(appendQuickCaptureToTasks(source, "Call Ada")).toBe(
+      "* Tasks\n" +
       "** TODO Existing\n" +
       "** TODO Call Ada\n",
     );
@@ -300,14 +355,14 @@ describe("appendQuickCaptureToInbox", () => {
 
   it("preserves following top-level headings", () => {
     const source =
-      "* Inbox\n" +
+      "* Tasks\n" +
       "** TODO Existing\n" +
       "\n" +
       "* Projects\n" +
       "** TODO Planned\n";
 
-    expect(appendQuickCaptureToInbox(source, "Quick task")).toBe(
-      "* Inbox\n" +
+    expect(appendQuickCaptureToTasks(source, "Quick task")).toBe(
+      "* Tasks\n" +
       "** TODO Existing\n" +
       "** TODO Quick task\n" +
       "* Projects\n" +
@@ -316,20 +371,20 @@ describe("appendQuickCaptureToInbox", () => {
   });
 
   it("normalizes multiline heading text into a single safe heading", () => {
-    expect(appendQuickCaptureToInbox("* Inbox\n", "  First\n** Injected\r\n  Second  ")).toBe(
-      "* Inbox\n" +
+    expect(appendQuickCaptureToTasks("* Tasks\n", "  First\n** Injected\r\n  Second  ")).toBe(
+      "* Tasks\n" +
       "** TODO First ** Injected Second\n",
     );
   });
 
   it("keeps captured Org-looking syntax as plain someday task text", () => {
-    const updated = appendQuickCaptureToInbox(
+    const updated = appendQuickCaptureToTasks(
       "",
       "[#A] Ship <2026-04-20 Mon> [1/2] :work:",
     );
 
     expect(updated).toBe(
-      "* Inbox\n" +
+      "* Tasks\n" +
       "** TODO #A Ship (2026-04-20 Mon) (1/2) ;work;\n",
     );
 
@@ -342,7 +397,7 @@ describe("appendQuickCaptureToInbox", () => {
   });
 
   it("leaves the source unchanged for blank captures", () => {
-    const source = "* Inbox\n";
-    expect(appendQuickCaptureToInbox(source, " \n\t ")).toBe(source);
+    const source = "* Tasks\n";
+    expect(appendQuickCaptureToTasks(source, " \n\t ")).toBe(source);
   });
 });

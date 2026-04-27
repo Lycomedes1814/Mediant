@@ -5,7 +5,7 @@
 - [ ] Month view
 - [x] Toggle hiding empty days (useful with filters)
 - [ ] Mobile notifications
-- [x] Quick-capture popup for inbox tasks
+- [x] Quick-capture popup for task capture
 - [ ] ICS import/export
 - [ ] Subscribe to ICS URLs
 - [ ] Serve ICS endpoint
@@ -29,10 +29,10 @@ Goal: provide a low-friction way to fire off tasks immediately, without forcing 
 
 ### Org storage
 
-- [x] Append captures under a dedicated top-level `* Inbox` heading
-- [x] Create `* Inbox` at the end of the source if it does not already exist
+- [x] Append captures under a dedicated top-level `* Tasks` heading
+- [x] Create `* Tasks` at the end of the source if it does not already exist
 - [x] Store each captured task as a child heading: `** TODO <captured text>`
-- [x] Preserve existing source content and heading order; only append to the Inbox subtree
+- [x] Preserve existing source content and heading order; only append to the Tasks subtree
 - [x] In server mode, write through `persistSource()` with existing version conflict handling
 - [x] In static mode, write through the existing localStorage-backed source path
 
@@ -46,15 +46,14 @@ Goal: provide a low-friction way to fire off tasks immediately, without forcing 
 
 ### Implementation
 
-- [x] Add source-edit helper to find or create the Inbox heading and append child TODO entries
-- [x] Add focused tests for creating Inbox, appending to existing Inbox, preserving following headings, and escaping heading text safely
+- [x] Add source-edit helper to find or create the Tasks heading and append child TODO entries
+- [x] Add focused tests for creating Tasks, appending to existing Tasks, preserving following headings, and escaping heading text safely
 - [x] Add overlay state and `q` keyboard shortcut handling in `main.ts`
 - [x] Add CSS for the compact fixed overlay
 - [x] Add render/main integration tests for opening, capturing, repeated capture, and exit behavior
 
 ### Open decisions
 
-- [ ] Decide whether Inbox should be hidden from agenda day sections if future versions allow dated quick captures
 - [ ] Decide whether captured text should accept lightweight prefixes later, e.g. `#tag`, `!A`, or `tomorrow`
 
 ## This and future operations

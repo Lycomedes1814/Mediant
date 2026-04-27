@@ -102,7 +102,7 @@ describe("main.ts integration", () => {
     expect(quickInput!.value).toBe("");
     expect(document.activeElement).toBe(quickInput);
     expect(localStorage.getItem("mediant-org-source") ?? "").toContain(
-      "* Inbox\n" +
+      "* Tasks\n" +
       "** TODO Water plants\n",
     );
     expect(Array.from(document.querySelectorAll<HTMLElement>(".someday-item .item-title")).some(

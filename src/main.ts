@@ -2,8 +2,8 @@ import { parseOrg } from "./org/parser.ts";
 import { upsertProperty, removeProperty } from "./org/drawer.ts";
 import type { OrgEntry, RecurrenceException, RecurrenceOverride } from "./org/model.ts";
 import {
-  appendOrgTextToSource,
-  appendQuickCaptureToInbox,
+  appendAgendaItemToSource,
+  appendQuickCaptureToTasks,
   deleteOrgBlockInSource,
   replaceOrgBlockInSource,
   toggleDoneInSource,
@@ -174,7 +174,7 @@ async function submitQuickCapture(): Promise<void> {
   const text = quickCaptureInputEl.value.trim();
   if (!text) return;
 
-  const updated = appendQuickCaptureToInbox(currentSource, text);
+  const updated = appendQuickCaptureToTasks(currentSource, text);
   if (updated === currentSource) return;
 
   quickCaptureInputEl.disabled = true;
@@ -1432,7 +1432,7 @@ function deleteOrgBlock(sourceLine: number): void {
 }
 
 function appendOrgText(orgText: string): void {
-  void persistSource(appendOrgTextToSource(currentSource, orgText));
+  void persistSource(appendAgendaItemToSource(currentSource, orgText));
 }
 
 function openAddPanel(): void {

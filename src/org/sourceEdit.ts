@@ -216,22 +216,38 @@ export function appendOrgTextToSource(source: string, orgText: string): string {
   return `${source.trimEnd()}\n${orgText}\n`;
 }
 
-export function appendQuickCaptureToInbox(source: string, rawText: string): string {
+export function appendOrgTextUnderHeading(source: string, heading: "Tasks" | "Events", orgText: string): string {
+  const normalized = normalizeOrgTextLevel(orgText, 2);
+  if (!normalized.trim()) return source;
+  return appendChildUnderTopLevelHeading(source, heading, normalized);
+}
+
+export function appendAgendaItemToSource(source: string, orgText: string): string {
+  const heading = /^\*+\s+(?:TODO|DONE)\b/.test(orgText) ? "Tasks" : "Events";
+  return appendOrgTextUnderHeading(source, heading, orgText);
+}
+
+export function appendQuickCaptureToTasks(source: string, rawText: string): string {
   const headingText = sanitizeQuickCaptureHeading(rawText);
   if (!headingText) return source;
 
-  const lines = source.split("\n");
-  const inboxIdx = lines.findIndex(line => line === "* Inbox");
   const taskLine = `** TODO ${headingText}`;
+  return appendChildUnderTopLevelHeading(source, "Tasks", taskLine);
+}
 
-  if (inboxIdx < 0) {
+function appendChildUnderTopLevelHeading(source: string, heading: string, childText: string): string {
+  const lines = source.split("\n");
+  const headingLine = `* ${heading}`;
+  const headingIdx = lines.findIndex(line => line === headingLine);
+
+  if (headingIdx < 0) {
     const base = source.trimEnd();
     const prefix = base ? `${base}\n` : "";
-    return `${prefix}* Inbox\n${taskLine}\n`;
+    return `${prefix}${headingLine}\n${childText}\n`;
   }
 
   let insertIdx = lines.length;
-  for (let i = inboxIdx + 1; i < lines.length; i++) {
+  for (let i = headingIdx + 1; i < lines.length; i++) {
     if (/^\*\s/.test(lines[i])) {
       insertIdx = i;
       break;
@@ -239,10 +255,19 @@ export function appendQuickCaptureToInbox(source: string, rawText: string): stri
   }
 
   const before = lines.slice(0, insertIdx);
-  while (before.length > inboxIdx + 1 && before[before.length - 1] === "") before.pop();
+  while (before.length > headingIdx + 1 && before[before.length - 1] === "") before.pop();
   const after = lines.slice(insertIdx);
-  const updated = [...before, taskLine, ...after].join("\n");
+  const updated = [...before, childText, ...after].join("\n");
   return updated.endsWith("\n") ? updated : `${updated}\n`;
+}
+
+function normalizeOrgTextLevel(orgText: string, level: number): string {
+  const lines = orgText.trimEnd().split("\n");
+  if (lines.length === 0) return "";
+  const match = lines[0].match(/^(\*+)(\s+.*)$/);
+  if (!match) return orgText.trimEnd();
+  lines[0] = `${"*".repeat(level)}${match[2]}`;
+  return lines.join("\n");
 }
 
 function sanitizeQuickCaptureHeading(rawText: string): string {

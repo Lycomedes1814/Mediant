@@ -153,14 +153,14 @@ index.html             — Minimal shell with #agenda container
 - **Recurrence exceptions** — per-occurrence deviations on a repeating entry (skip, shift by `±N(m|h|d)`, reschedule to another date/time, attach a one-off note). Shifted/moved/skipped occurrences show a muted chip with detail in the tooltip; notes render as an italic line under the item. Exceptions are stored in the entry's `:PROPERTIES:` drawer keyed by the unshifted base date (e.g. `:EXCEPTION-2026-05-04: shift +45m`), so they round-trip cleanly.
 - **Series truncation** — `:SERIES-UNTIL: YYYY-MM-DD` stops a repeating series at an exclusive end date, evaluated on the unshifted base slots. This lets one heading end on a handoff date while a successor heading starts on that same date without overlap, and still allows older valid slots to be moved past the cutoff.
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE), shown in source order so quick captures stay in capture order
-- **Quick capture** — press `q` to open a fixed one-line capture overlay. `Enter` appends the text as an undated `TODO` under `* Inbox`, clears the field, and keeps focus ready for the next task. `Escape` or clicking outside the field closes it.
+- **Quick capture** — press `q` to open a fixed one-line capture overlay. `Enter` appends the text as an undated `TODO` under `* Tasks`, clears the field, and keeps focus ready for the next task. `Escape` or clicking outside the field closes it.
 - **DONE items** rendered at reduced opacity with line-through
 - **Today** indicated by blue card border and small dot marker
 - **Hide empty days** — the `Hide empty days` toggle removes days with no visible agenda items from the rolling week view. This is useful with tag filters; if every day is hidden, the day-card container is hidden too. The preference is stored in `localStorage`.
 - **Week navigation** with prev/next/today buttons
 - **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open the add-item panel, `q` open quick capture, `c` toggle tag color mode, `h` toggle hide empty days, `x` clear active tag filters. Shortcuts are disabled while typing in form fields.
 - **Now line** on today's timed section
-- **Add-item panel** for creating TODO tasks and events from the UI
+- **Add-item panel** for creating TODO tasks and events from the UI. New TODOs are appended under `* Tasks`; new events are appended under `* Events`.
 - **Edit-item panel** for updating an existing entry in place (preserves body text). Edits autosave as fields change; there is no separate Save step. Clicking a recurring occurrence reveals a "This occurrence" section alongside the series fields, where skip/stop-repeat toggles, the move date/time field, the note field, and Clear override write exception properties keyed on the unshifted base date.
 - **Shorthand date input** — add/edit date fields accept `DD`, `DD/MM`, `DD/MM/YY`, `DD/MM/YYYY`, `+N`, and weekday names like `mon`..`sun`. Ambiguous numeric forms resolve to the next future occurrence, and 2-digit years are interpreted in the current century.
 - Responsive: sticky day headers and adjusted spacing on mobile
