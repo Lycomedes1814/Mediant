@@ -1080,7 +1080,9 @@ body {
   padding-left: 2.85rem;
 }
 
-.checkbox-list-someday .checkbox-list-items {
+.checkbox-list-someday .checkbox-list-items,
+.checkbox-list-day-deadline .checkbox-list-items,
+.checkbox-list-day-deadline-time .checkbox-list-items {
   padding-left: 1.5rem;
 }
 
