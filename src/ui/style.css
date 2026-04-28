@@ -281,8 +281,8 @@ body {
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--text-dim) 10%, var(--bg-card)),
-      color-mix(in srgb, var(--text-dim) 5%, var(--bg-card)) 76%
+      color-mix(in srgb, var(--bg-card) 96%, var(--bg)),
+      color-mix(in srgb, var(--bg-card) 90%, var(--text-dim)) 76%
     );
   border-color: color-mix(in srgb, var(--border) 62%, var(--text-dim));
   border-style: dotted;
@@ -829,6 +829,7 @@ body {
 
 .someday-item .item-title {
   min-width: 0;
+  font-weight: 540;
 }
 
 /* ── DONE items ───────────────────────────────────────────────────── */
