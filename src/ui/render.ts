@@ -247,10 +247,6 @@ function renderActiveTagFilters(tags: readonly string[]): HTMLElement {
 function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
   const section = el("section", "deadlines-section");
 
-  const header = el("header", "deadlines-header");
-  header.textContent = "Upcoming deadlines";
-  section.appendChild(header);
-
   for (const dl of deadlines) {
     const row = el("div", "deadline-item");
     if (dl.instanceNote) row.classList.add("has-instance-note");

@@ -545,15 +545,6 @@ body {
   grid-column: 4;
 }
 
-/* ── Upcoming Deadlines section (top of agenda) ───────────────────── */
-
-.deadlines-header {
-  padding-top: 1rem;
-  padding-bottom: 0.35rem;
-  color: #c97a73;
-  opacity: 0.85;
-}
-
 .deadlines-section {
   background:
     linear-gradient(
