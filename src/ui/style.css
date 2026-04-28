@@ -439,8 +439,7 @@ body {
   font-size: 0.95rem;
 }
 
-.overdue-header,
-.deadlines-header {
+.overdue-header {
   color: var(--accent-deadline);
 }
 
