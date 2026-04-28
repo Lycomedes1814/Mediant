@@ -1079,7 +1079,7 @@ body {
   padding-left: 2.85rem;
 }
 
-.checkbox-list-someday.checkbox-list-has-priority .checkbox-list-items {
+.checkbox-list-someday .checkbox-list-items {
   padding-left: 1.5rem;
 }
 
@@ -1189,6 +1189,7 @@ body {
   letter-spacing: 0.02em;
   color: var(--text-dim);
   background: var(--bg-state);
+  border: 1px dotted var(--text-dim);
   border-radius: 0.25rem;
   padding: 0 0.3125rem;
   line-height: 1.4;
