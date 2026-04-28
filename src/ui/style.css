@@ -554,8 +554,12 @@ body {
 
 .deadlines-section {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 96%, var(--border-today)), var(--bg-card) 68%);
-  border-color: color-mix(in srgb, var(--border) 78%, var(--border-today));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--border-today) 7%, var(--bg-card)),
+      color-mix(in srgb, var(--border-today) 2%, var(--bg-card)) 70%
+    );
+  border-color: color-mix(in srgb, var(--border) 88%, var(--border-today));
   box-shadow:
     0 14px 34px rgba(15, 23, 42, 0.07),
     0 1px 0 color-mix(in srgb, var(--bg-card) 85%, white) inset;
@@ -603,8 +607,8 @@ body {
   grid-row: 1;
   font-family: var(--font-mono);
   font-size: 0.84rem;
-  font-weight: 760;
-  color: color-mix(in srgb, var(--border-today) 64%, var(--text));
+  font-weight: 650;
+  color: color-mix(in srgb, var(--border-today) 48%, var(--text));
   min-width: 0;
 }
 
@@ -636,12 +640,13 @@ body {
   grid-column: 3;
   justify-self: end;
   gap: 0.28rem;
-  opacity: 0.78;
+  opacity: 0.66;
 }
 
 .deadline-item .tag {
   font-weight: 560;
-  opacity: 0.72;
+  opacity: 0.68;
+  filter: saturate(0.72);
 }
 
 .deadline-item.has-instance-note {
