@@ -277,15 +277,16 @@ body {
 
 .someday-section {
   margin-top: 1rem;
-  padding: 0.42rem 0;
+  padding: 0.58rem 0;
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--text-dim) 4%, var(--bg-card)),
-      var(--bg-card) 72%
+      color-mix(in srgb, var(--text-dim) 9%, var(--bg-card)),
+      color-mix(in srgb, var(--text-dim) 3%, var(--bg-card)) 74%
     );
+  border-color: color-mix(in srgb, var(--border) 84%, var(--text-dim));
   border-style: dashed;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.075);
 }
 
 .day-block {
