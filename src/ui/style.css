@@ -277,6 +277,15 @@ body {
 
 .someday-section {
   margin-top: 1rem;
+  padding: 0.42rem 0;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--text-dim) 4%, var(--bg-card)),
+      var(--bg-card) 72%
+    );
+  border-style: dashed;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
 }
 
 .day-block {
@@ -432,8 +441,7 @@ body {
 /* ── Overdue section (top of agenda) ─────────────────────────────── */
 
 .overdue-header,
-.deadlines-header,
-.someday-header {
+.deadlines-header {
   padding: 0.95rem var(--section-padding-x) 0.4rem;
   font-weight: 600;
   font-size: 0.95rem;
@@ -797,10 +805,6 @@ body {
 }
 
 /* ── Someday section (bottom of agenda) ──────────────────────────── */
-
-.someday-header {
-  color: var(--text);
-}
 
 .someday-item {
   --global-row-fringe-color: transparent;

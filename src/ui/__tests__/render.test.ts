@@ -129,7 +129,7 @@ describe("renderAgenda", () => {
 
     expect(container.querySelector(".overdue-header")?.textContent).toBe("Overdue");
     expect(container.querySelector(".deadlines-header")).toBeNull();
-    expect(container.querySelector(".someday-header")?.textContent).toBe("Someday");
+    expect(container.querySelector(".someday-header")).toBeNull();
     expect(container.querySelector(".overdue-section .item-time")?.textContent).toBe("-2d");
     expect(container.querySelector(".overdue-section .item-title")?.getAttribute("data-base-date")).toBe("2026-04-18");
     expect(container.querySelector(".overdue-section .item-title .item-priority")?.textContent).toBe("B");

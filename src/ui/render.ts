@@ -331,10 +331,6 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
 function renderSomeday(items: SomedayItem[]): HTMLElement {
   const section = el("section", "someday-section");
 
-  const header = el("header", "someday-header");
-  header.textContent = "Someday";
-  section.appendChild(header);
-
   for (const item of items) {
     const row = el("div", "someday-item");
     if (item.entry.todo === "DONE") row.classList.add("item-done");
