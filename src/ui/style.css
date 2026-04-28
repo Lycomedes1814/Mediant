@@ -550,7 +550,7 @@ body {
 .deadlines-header {
   padding-top: 1rem;
   padding-bottom: 0.35rem;
-  color: color-mix(in srgb, var(--text-dim) 82%, var(--text));
+  color: color-mix(in srgb, var(--accent-deadline) 46%, var(--text-dim));
 }
 
 .deadlines-section {
