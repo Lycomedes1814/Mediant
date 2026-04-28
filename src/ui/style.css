@@ -300,7 +300,31 @@ body {
 }
 
 .day-block.is-today {
-  background: var(--bg-today);
+  position: relative;
+  background: transparent;
+}
+
+.day-block.is-today::before {
+  content: "";
+  position: absolute;
+  inset: 0.55rem 0.65rem;
+  border-radius: 0.875rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--border-today) 8%, var(--bg-card)),
+      var(--bg-today) 78%
+    );
+  border: 1px solid color-mix(in srgb, var(--border) 72%, var(--border-today));
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.055),
+    0 12px 26px rgba(15, 23, 42, 0.06);
+  pointer-events: none;
+}
+
+.day-block.is-today > * {
+  position: relative;
+  z-index: 1;
 }
 
 .day-header {
