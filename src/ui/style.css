@@ -845,6 +845,10 @@ body {
   color: var(--text-done);
 }
 
+.item-done .tag {
+  opacity: 0.6;
+}
+
 .item-skipped {
   opacity: 0.55;
 }
