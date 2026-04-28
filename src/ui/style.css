@@ -281,10 +281,10 @@ body {
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--text-dim) 9%, var(--bg-card)),
-      color-mix(in srgb, var(--text-dim) 3%, var(--bg-card)) 74%
+      color-mix(in srgb, var(--text-dim) 13%, var(--bg-card)),
+      color-mix(in srgb, var(--text-dim) 5%, var(--bg-card)) 74%
     );
-  border-color: color-mix(in srgb, var(--border) 84%, var(--text-dim));
+  border-color: color-mix(in srgb, var(--border) 76%, var(--text-dim));
   border-style: dashed;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.075);
 }
