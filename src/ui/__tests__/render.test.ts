@@ -515,13 +515,13 @@ describe("renderAgenda", () => {
     const pickers = Array.from(container.querySelectorAll<HTMLInputElement>(".tag-color-picker"));
     expect(pickers.length).toBeGreaterThan(1);
     const tagsBefore = Array.from(container.querySelectorAll<HTMLElement>(".tag[data-tag='work']"));
-    const beforeValues = tagsBefore.map((tag) => tag.style.background);
+    const beforeValues = tagsBefore.map((tag) => tag.style.getPropertyValue("--tag-color"));
     pickers[0].value = "#123456";
     pickers[0].dispatchEvent(new Event("input", { bubbles: true }));
 
     expect(tagFns.setTagColor).toHaveBeenCalledWith("work", "#123456");
     const tags = Array.from(container.querySelectorAll<HTMLElement>(".tag[data-tag='work']"));
-    const afterValues = tags.map((tag) => tag.style.background);
+    const afterValues = tags.map((tag) => tag.style.getPropertyValue("--tag-color"));
     expect(new Set(afterValues).size).toBe(1);
     expect(afterValues[0]).not.toBe(beforeValues[0]);
   });

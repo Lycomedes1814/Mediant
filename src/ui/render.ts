@@ -806,7 +806,7 @@ function renderTag(
   const span = el("span", "tag");
   span.dataset.tag = tag;
   span.dataset.action = "toggle-tag-filter";
-  span.style.background = getTagColor(tag);
+  span.style.setProperty("--tag-color", getTagColor(tag));
   span.textContent = tag;
   span.setAttribute("role", "button");
   span.setAttribute("tabindex", "0");
@@ -841,7 +841,7 @@ function renderTag(
   picker.addEventListener("input", () => {
     setTagColor(tag, picker.value);
     document.querySelectorAll<HTMLElement>(".tag[data-tag]").forEach((el) => {
-      if (el.dataset.tag === tag) el.style.background = picker.value;
+      if (el.dataset.tag === tag) el.style.setProperty("--tag-color", picker.value);
     });
   });
 
