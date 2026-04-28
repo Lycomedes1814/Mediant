@@ -546,6 +546,7 @@ body {
 }
 
 .deadlines-section {
+  padding-top: 0.22rem;
   background:
     linear-gradient(
       180deg,
