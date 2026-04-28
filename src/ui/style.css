@@ -641,13 +641,10 @@ body {
   grid-column: 3;
   justify-self: end;
   gap: 0.28rem;
-  opacity: 0.66;
 }
 
 .deadline-item .tag {
   font-weight: 560;
-  opacity: 0.68;
-  filter: saturate(0.72);
 }
 
 .deadline-item.has-instance-note {
