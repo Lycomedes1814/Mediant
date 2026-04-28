@@ -1030,6 +1030,7 @@ body {
   align-items: start;
   position: relative;
   padding: 0.48rem var(--section-padding-x) 0;
+  margin-bottom: 0.5rem;
   border-left: 3px solid transparent;
   gap: 0.35rem 0.8rem;
 }
