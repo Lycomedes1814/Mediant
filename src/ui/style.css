@@ -557,10 +557,10 @@ body {
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--border-today) 7%, var(--bg-card)),
-      color-mix(in srgb, var(--border-today) 2%, var(--bg-card)) 70%
+      color-mix(in srgb, var(--accent-deadline) 7%, var(--bg-card)),
+      color-mix(in srgb, var(--accent-deadline) 2%, var(--bg-card)) 70%
     );
-  border-color: color-mix(in srgb, var(--border) 88%, var(--border-today));
+  border-color: color-mix(in srgb, var(--border) 88%, var(--accent-deadline));
   box-shadow:
     0 14px 34px rgba(15, 23, 42, 0.07),
     0 1px 0 color-mix(in srgb, var(--bg-card) 85%, white) inset;
