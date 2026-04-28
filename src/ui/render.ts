@@ -543,15 +543,15 @@ function renderOverrideChip(
   override: { kind: "cancelled" | "shift" | "reschedule"; detail: string },
   direction: "earlier" | "later",
 ): HTMLElement {
-  const chipClass = override.kind === "cancelled"
-    ? "item-override-chip override-cancelled"
-    : "item-override-chip";
-  const chip = el("span", chipClass);
   if (override.kind === "cancelled") {
-    chip.textContent = "⊘ Skipped";
-  } else {
-    chip.textContent = direction === "earlier" ? "← Moved" : "→ Moved";
+    const mark = el("span", "item-skipped-mark");
+    mark.textContent = "•";
+    mark.title = override.detail;
+    mark.setAttribute("aria-label", `Skipped (${override.detail})`);
+    return mark;
   }
+  const chip = el("span", "item-override-chip");
+  chip.textContent = direction === "earlier" ? "← Moved" : "→ Moved";
   chip.title = override.detail;
   chip.setAttribute("aria-label", `${chip.textContent} (${override.detail})`);
   return chip;

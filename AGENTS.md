@@ -96,7 +96,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
   - Deadline items (DEADLINE badge + title, time shown if present)
   - Timed events (time column + title + tag badges, tag-colored left border)
   - Scheduled tasks inline with events (time → TODO badge → title)
-- **DONE items** rendered at `opacity: 0.55` in muted text (`var(--text-done)`)
+- **DONE items** rendered at `opacity: 0.7` in muted text (`var(--text-done)`)
 - **Today** indicated by blue border + small blue dot (not a text badge)
 - **Hide empty days** — toolbar toggle removes day blocks with no visible agenda items. If no day blocks remain, the day-card container is not rendered. Preference persists in localStorage (`mediant-hide-empty-days`).
 - **Tags** rendered as colored badge pills, right-aligned. Colors auto-assigned from a palette and persisted in localStorage (`mediant-tag-colors`).
@@ -106,7 +106,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Priority badges** — `[#A]`/`[#B]`/`[#C]` rendered as small colored badges (red/amber/blue) nested inside the item title so the row grid templates stay fixed. Do not duplicate priority in metadata rows; it should appear before the title everywhere.
 - **Progress badges** — `[2/3]` rendered as a small badge next to the title (green when complete, gray otherwise)
 - **Checkbox lists** — `- [ ]`/`- [X]` items rendered as a mini checklist under the agenda item; checked items dimmed. The checklist editor is available for TODO tasks, including repeating tasks, and hidden for events. Events never write checklist state. Lists are collapsed by default; a small disclosure control inside the item title (`>` collapsed, `<` expanded) toggles visibility per list. Collapse state is keyed by a stable per-list identity so it survives full agenda rerenders, and duplicate renderings of the same entry (e.g. an upcoming-deadlines row and the matching day-card row) keep independent state.
-- **Recurrence-exception chip** — shifted, rescheduled, or cancelled occurrences show a small muted chip nested before the title: `⊘ Skipped` for cancellations, `← Moved` / `→ Moved` for shifts and reschedules (arrow direction reflects whether the occurrence moved earlier or later than the base slot). Tooltip carries the detail (`+45m`, `from 2026-05-11 17:00-18:00`, `Skipped occurrence`).
+- **Recurrence-exception chip** — shifted or rescheduled occurrences show a small muted chip nested before the title: `← Moved` / `→ Moved` (arrow direction reflects whether the occurrence moved earlier or later than the base slot). Skipped occurrences are de-emphasised instead of badged: a `•` glyph prefixes the title, the row drops to opacity 0.55, and the title shifts to muted text; the word "Skipped" lives only in the tooltip / aria-label. Tooltip carries the detail (`+45m`, `from 2026-05-11 17:00-18:00`, `Skipped occurrence`).
 - **Instance note** — `:EXCEPTION-NOTE-<date>:` renders as an italic one-liner directly under the occurrence, aligned with the row's title column.
 - **Now line** on today's card — orange line positioned proportionally within the timed section
 - **Navigation** — prev/next by 7-day increments, "Today" button returns to today as start date

@@ -492,8 +492,8 @@ describe("main.ts integration", () => {
     expect(skippedTitle?.textContent).toContain("Yoga deluxe");
     const skippedRow = skippedTitle?.closest(".item-skipped");
     expect(skippedRow).not.toBeNull();
-    const skippedChip = skippedTitle?.querySelector<HTMLElement>(".item-override-chip.override-cancelled");
-    expect(skippedChip?.textContent).toBe("⊘ Skipped");
+    const skippedMark = skippedTitle?.querySelector<HTMLElement>(".item-skipped-mark");
+    expect(skippedMark?.textContent).toBe("•");
 
     document.querySelector<HTMLButtonElement>(".add-item-btn")!.click();
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);

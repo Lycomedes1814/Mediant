@@ -386,9 +386,9 @@ describe("renderAgenda", () => {
     expect(row).not.toBeNull();
     expect(row?.classList.contains("item-skipped")).toBe(true);
 
-    const chip = container.querySelector(".item-override-chip") as HTMLElement | null;
-    expect(chip?.textContent).toBe("⊘ Skipped");
-    expect(chip?.classList.contains("override-cancelled")).toBe(true);
+    const mark = container.querySelector(".item-skipped-mark") as HTMLElement | null;
+    expect(mark?.textContent).toBe("•");
+    expect(mark?.title).toBe("Skipped occurrence");
   });
 
   it("renders occurrence notes for all-day items", () => {
