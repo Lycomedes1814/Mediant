@@ -548,8 +548,17 @@ body {
 /* ── Upcoming Deadlines section (top of agenda) ───────────────────── */
 
 .deadlines-header {
-  padding-top: 1.05rem;
-  padding-bottom: 0.5rem;
+  padding-top: 1rem;
+  padding-bottom: 0.35rem;
+}
+
+.deadlines-section {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 96%, var(--border-today)), var(--bg-card) 68%);
+  border-color: color-mix(in srgb, var(--border) 78%, var(--border-today));
+  box-shadow:
+    0 14px 34px rgba(15, 23, 42, 0.07),
+    0 1px 0 color-mix(in srgb, var(--bg-card) 85%, white) inset;
 }
 
 .deadline-urgency-critical {
@@ -572,10 +581,17 @@ body {
 
 .deadline-item {
   --global-row-fringe-color: transparent;
-  grid-template-columns: 4.1ch 2.35rem 1fr auto;
-  padding: 0.78rem var(--section-padding-x);
-  padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
-  gap: 0 0.5rem;
+  grid-template-columns: 4.35ch minmax(0, 1fr) auto;
+  padding: 0.68rem var(--section-padding-x);
+  gap: 0 0.72rem;
+}
+
+.deadline-item::before {
+  display: none;
+}
+
+.deadline-item + .deadline-item {
+  margin-top: 0.14rem;
 }
 
 .deadline-meta {
@@ -586,35 +602,46 @@ body {
   grid-column: 1;
   grid-row: 1;
   font-family: var(--font-mono);
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--deadline-urgency, var(--accent-deadline));
-  letter-spacing: -0.01em;
+  font-size: 0.84rem;
+  font-weight: 760;
+  color: color-mix(in srgb, var(--border-today) 64%, var(--text));
+  min-width: 0;
+}
+
+.deadline-main {
+  grid-column: 2;
+  grid-row: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.48rem;
   min-width: 0;
 }
 
 .deadline-item .item-state {
-  grid-column: 2;
-  grid-row: 1;
-  display: inline-flex;
-  opacity: 0.76;
-  padding-inline: 0.08rem;
-  min-width: 0;
-  justify-content: center;
+  flex: 0 0 auto;
   font-size: 0.6625rem;
+  color: var(--text-dim);
+  background: transparent;
+  opacity: 0.68;
+  padding-inline: 0.08rem;
 }
 
 .deadline-item .item-title {
-  grid-column: 3;
-  grid-row: 1;
   min-width: 0;
   font-weight: 500;
 }
 
 .deadline-item .tag-badges {
   grid-row: 1;
-  grid-column: 4;
+  grid-column: 3;
   justify-self: end;
+  gap: 0.28rem;
+  opacity: 0.78;
+}
+
+.deadline-item .tag {
+  font-weight: 560;
+  opacity: 0.72;
 }
 
 .deadline-item.has-instance-note {
@@ -634,8 +661,8 @@ body {
 }
 
 .deadline-note {
-  grid-template-columns: 4.1ch 2.35rem 1fr auto;
-  column-gap: 0.5rem;
+  grid-template-columns: 4.35ch minmax(0, 1fr) auto;
+  column-gap: 0.72rem;
 }
 
 .item-instance-note.deadline-note {
@@ -644,7 +671,7 @@ body {
 }
 
 .deadline-note .item-instance-note-text {
-  grid-column: 3;
+  grid-column: 2;
 }
 
 /* ── Scheduled items ──────────────────────────────────────────────── */
@@ -1035,11 +1062,11 @@ body {
 }
 
 .checkbox-list-deadline {
-  grid-template-columns: 4.1ch 2.35rem 1fr auto;
+  grid-template-columns: 4.35ch minmax(0, 1fr) auto;
   border-left: 0;
-  padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
+  padding-left: var(--section-padding-x);
   padding-top: 0.16rem;
-  column-gap: 0.5rem;
+  column-gap: 0.72rem;
 }
 
 .checkbox-list-someday {

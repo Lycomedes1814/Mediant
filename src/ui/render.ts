@@ -262,8 +262,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     const meta = el("span", "deadline-meta");
     const time = el("span", "item-time");
     time.textContent = formatDeadlineDueText(dl.daysUntil);
-    const state = renderStateBadge(dl.entry);
-    meta.append(time, state);
+    meta.append(time);
 
     const checkboxListId = dl.entry.checkboxItems.length > 0 ? nextCheckboxListId() : null;
     const checkboxListKey = checkboxListId
@@ -273,7 +272,10 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     if (dl.baseDate) title.dataset.baseDate = dl.baseDate;
     if (checkboxListId && checkboxListKey) appendCheckboxToggle(title, checkboxListId, checkboxListKey);
 
-    row.append(meta, title, renderTags(dl.entry.tags, optionsForTags()));
+    const main = el("span", "deadline-main");
+    main.append(renderStateBadge(dl.entry), title);
+
+    row.append(meta, main, renderTags(dl.entry.tags, optionsForTags()));
     section.appendChild(row);
     if (dl.instanceNote) {
       section.appendChild(renderGlobalInstanceNote(dl.instanceNote, "deadline-note"));
