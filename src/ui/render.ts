@@ -531,7 +531,7 @@ function renderItem(
   if (item.baseDate) title.dataset.baseDate = item.baseDate;
   if (item.override) {
     title.insertBefore(document.createTextNode(" "), title.firstChild);
-    title.insertBefore(renderOverrideChip(item.override), title.firstChild);
+    title.insertBefore(renderOverrideChip(item.override, moveDirection(item)), title.firstChild);
   }
   if (checkboxListId && checkboxListKey) appendCheckboxToggle(title, checkboxListId, checkboxListKey);
   children.push(title, renderTags(item.entry.tags, optionsForTags()));
@@ -541,18 +541,29 @@ function renderItem(
 
 function renderOverrideChip(
   override: { kind: "cancelled" | "shift" | "reschedule"; detail: string },
+  direction: "earlier" | "later",
 ): HTMLElement {
   const chipClass = override.kind === "cancelled"
     ? "item-override-chip override-cancelled"
     : "item-override-chip";
   const chip = el("span", chipClass);
-  chip.textContent =
-    override.kind === "cancelled"
-      ? "skipped"
-      : "moved";
+  if (override.kind === "cancelled") {
+    chip.textContent = "⊘ Skipped";
+  } else {
+    chip.textContent = direction === "earlier" ? "← Moved" : "→ Moved";
+  }
   chip.title = override.detail;
   chip.setAttribute("aria-label", `${chip.textContent} (${override.detail})`);
   return chip;
+}
+
+function moveDirection(item: AgendaItem): "earlier" | "later" {
+  if (!item.baseDate) return "later";
+  const parts = item.baseDate.split("-").map(Number);
+  const baseInstantMs =
+    new Date(parts[0], parts[1] - 1, parts[2]).getTime() +
+    (item.baseStartMinutes ?? 0) * 60_000;
+  return item.date.getTime() < baseInstantMs ? "earlier" : "later";
 }
 
 function renderInstanceNote(item: AgendaItem): HTMLElement {

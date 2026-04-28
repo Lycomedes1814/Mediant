@@ -493,7 +493,7 @@ describe("main.ts integration", () => {
     const skippedRow = skippedTitle?.closest(".item-skipped");
     expect(skippedRow).not.toBeNull();
     const skippedChip = skippedTitle?.querySelector<HTMLElement>(".item-override-chip.override-cancelled");
-    expect(skippedChip?.textContent).toBe("skipped");
+    expect(skippedChip?.textContent).toBe("⊘ Skipped");
 
     document.querySelector<HTMLButtonElement>(".add-item-btn")!.click();
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);

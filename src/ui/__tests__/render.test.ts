@@ -340,7 +340,7 @@ describe("renderAgenda", () => {
     expect(title?.querySelector(".item-progress")?.textContent).toBe("2/3");
 
     const chip = container.querySelector(".item-override-chip") as HTMLElement | null;
-    expect(chip?.textContent).toBe("moved");
+    expect(chip?.textContent).toBe("→ Moved");
     expect(chip?.title).toBe("from 2026-04-19 17:00-18:00");
     const note = container.querySelector(".item-instance-note") as HTMLElement | null;
     expect(note?.textContent).toBe("Bring water");
@@ -387,7 +387,7 @@ describe("renderAgenda", () => {
     expect(row?.classList.contains("item-skipped")).toBe(true);
 
     const chip = container.querySelector(".item-override-chip") as HTMLElement | null;
-    expect(chip?.textContent).toBe("skipped");
+    expect(chip?.textContent).toBe("⊘ Skipped");
     expect(chip?.classList.contains("override-cancelled")).toBe(true);
   });
 
