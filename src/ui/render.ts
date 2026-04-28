@@ -8,6 +8,7 @@
 import type { AgendaWeek, AgendaDay, AgendaItem, DeadlineItem, OverdueItem, SomedayItem } from "../agenda/model.ts";
 import { getTagColor, setTagColor, TAG_DEFAULT_COLOR } from "./tagColors.ts";
 import { notificationsEnabled, setNotificationsEnabled, requestPermission, clearScheduled, scheduleNotifications } from "./notifications.ts";
+import { DAY_NAMES, MONTH_NAMES } from "../dateLabels.ts";
 
 export interface RenderAgendaOptions {
   readonly activeTagFilters?: readonly string[];
@@ -75,10 +76,6 @@ export function createNotificationToggle(options: ToggleButtonOptions = {}): HTM
   });
   return btn;
 }
-
-const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"];
 
 // ── Public API ───────────────────────────────────────────────────────
 
@@ -400,7 +397,7 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
   if (allDay.length > 0) {
     const section = el("div", "allday-section");
     for (const item of allDay) {
-      section.appendChild(renderAllDayItem(item));
+      section.appendChild(renderItemForCategory(item));
       if (item.instanceNote) {
         section.appendChild(renderInstanceNote(item));
       }
@@ -430,13 +427,7 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
       const checkboxListId = item.entry.checkboxItems.length > 0 ? nextCheckboxListId() : null;
       const checkboxListKey = checkboxListId ? checkboxKeyForAgendaItem(item) : null;
 
-      if (item.category === "scheduled") {
-        section.appendChild(renderScheduledItem(item, checkboxListId, checkboxListKey));
-      } else if (item.category === "deadline") {
-        section.appendChild(renderDayDeadlineItem(item, checkboxListId, checkboxListKey));
-      } else {
-        section.appendChild(renderTimedItem(item, checkboxListId, checkboxListKey));
-      }
+      section.appendChild(renderItemForCategory(item, checkboxListId, checkboxListKey));
 
       // Instance note (per-occurrence)
       if (item.instanceNote) {
@@ -583,56 +574,32 @@ function renderGlobalInstanceNote(note: string, layoutClass: string): HTMLElemen
 }
 
 function buildInstanceNoteClassName(item: AgendaItem): string {
-  const classes = ["item-instance-note"];
-  if (item.category === "all-day") {
-    classes.push(item.entry.todo ? "note-layout-allday-with-state" : "note-layout-allday");
-    classes.push(item.entry.todo ? "note-title-col-2" : "note-title-col-1");
-    return classes.join(" ");
-  }
-  if (item.category === "timed") {
-    classes.push("note-layout-timed");
-    classes.push(item.entry.todo ? "note-title-col-3" : "note-title-col-2");
-    return classes.join(" ");
-  }
+  const byCategory = {
+    "all-day": item.entry.todo
+      ? ["note-layout-allday-with-state", "note-title-col-2"]
+      : ["note-layout-allday", "note-title-col-1"],
+    timed: ["note-layout-timed", item.entry.todo ? "note-title-col-3" : "note-title-col-2"],
+    scheduled: item.startTime
+      ? ["note-layout-with-time", "note-title-col-3"]
+      : ["note-layout-compact", "note-title-col-2"],
+    deadline: item.startTime
+      ? ["note-layout-with-time", "note-title-col-3"]
+      : ["note-layout-compact", "note-title-col-2"],
+  } satisfies Record<AgendaItem["category"], string[]>;
+  return ["item-instance-note", ...byCategory[item.category]].join(" ");
+}
+
+function renderItemForCategory(
+  item: AgendaItem,
+  checkboxListId: string | null = null,
+  checkboxListKey: string | null = null,
+): HTMLElement {
+  if (item.category === "all-day") return renderItem(item, "allday-item");
+  if (item.category === "timed") return renderItem(item, "timed-item", undefined, "always", true, checkboxListId, checkboxListKey);
   if (item.category === "scheduled") {
-    classes.push(item.startTime ? "note-layout-with-time" : "note-layout-compact");
-    classes.push(item.startTime ? "note-title-col-3" : "note-title-col-2");
-    return classes.join(" ");
+    return renderItem(item, "scheduled-item", renderStateBadge(item.entry, "TODO"), "optional", true, checkboxListId, checkboxListKey);
   }
-  if (item.category === "deadline") {
-    classes.push(item.startTime ? "note-layout-with-time" : "note-layout-compact");
-    classes.push(item.startTime ? "note-title-col-3" : "note-title-col-2");
-    return classes.join(" ");
-  }
-  classes.push("note-layout-compact", "note-title-col-2");
-  return classes.join(" ");
-}
 
-function renderAllDayItem(item: AgendaItem): HTMLElement {
-  return renderItem(item, "allday-item");
-}
-
-function renderTimedItem(
-  item: AgendaItem,
-  checkboxListId: string | null = null,
-  checkboxListKey: string | null = null,
-): HTMLElement {
-  return renderItem(item, "timed-item", undefined, "always", true, checkboxListId, checkboxListKey);
-}
-
-function renderScheduledItem(
-  item: AgendaItem,
-  checkboxListId: string | null = null,
-  checkboxListKey: string | null = null,
-): HTMLElement {
-  return renderItem(item, "scheduled-item", renderStateBadge(item.entry, "TODO"), "optional", true, checkboxListId, checkboxListKey);
-}
-
-function renderDayDeadlineItem(
-  item: AgendaItem,
-  checkboxListId: string | null = null,
-  checkboxListKey: string | null = null,
-): HTMLElement {
   const kind = el("span", "item-kind");
   kind.textContent = "DEADLINE";
   const row = renderItem(item, "day-deadline-item", [kind, renderStateBadge(item.entry, "TODO")], "optional", true, checkboxListId, checkboxListKey);

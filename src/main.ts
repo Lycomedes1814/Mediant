@@ -12,9 +12,10 @@ import {
 import { stepDate } from "./org/timestamp.ts";
 import { generateWeek, collectDeadlines, collectOverdueItems, collectSomedayItems } from "./agenda/generate.ts";
 import { renderAgenda, createThemeToggle, openTagColorPicker } from "./ui/render.ts";
-import type { AgendaWeek, DeadlineItem, OverdueItem, SomedayItem } from "./agenda/model.ts";
+import type { AgendaWeek } from "./agenda/model.ts";
 import { getTagColor } from "./ui/tagColors.ts";
 import { scheduleNotifications } from "./ui/notifications.ts";
+import { DAY_ABBREVS, MONTH_ABBREVS } from "./dateLabels.ts";
 
 // ── Constants ───────────────────────────────────────────────────────
 
@@ -70,22 +71,21 @@ interface TagPicker {
   onChange: (callback: (() => void) | null) => void;
 }
 
+interface DateTimeInput {
+  container: HTMLElement;
+  input: HTMLInputElement;
+  preview: HTMLElement;
+  datePicker: HTMLInputElement;
+  timePicker: HTMLInputElement;
+}
+
 interface AddPanelRefs {
   typeGroup: HTMLElement;
   priorityGroup: HTMLElement;
   titleInput: HTMLInputElement;
-  whenInput: HTMLInputElement;
-  whenPreview: HTMLElement;
-  whenDatePicker: HTMLInputElement;
-  whenTimePicker: HTMLInputElement;
-  schedInput: HTMLInputElement;
-  schedPreview: HTMLElement;
-  schedDatePicker: HTMLInputElement;
-  schedTimePicker: HTMLInputElement;
-  deadInput: HTMLInputElement;
-  deadPreview: HTMLElement;
-  deadDatePicker: HTMLInputElement;
-  deadTimePicker: HTMLInputElement;
+  when: DateTimeInput;
+  sched: DateTimeInput;
+  dead: DateTimeInput;
   tagPicker: TagPicker;
   repeatSelect: HTMLSelectElement;
   schedRepeatSelect: HTMLSelectElement;
@@ -194,7 +194,6 @@ async function submitQuickCapture(): Promise<void> {
   }
 }
 
-const DAY_ABBREVS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const EVENT_REPEAT_OPTIONS = [
   { value: "", label: "None" },
   { value: "+1d", label: "Every day (+1d)" },
@@ -282,14 +281,26 @@ function buildAddPanel(): void {
   form.appendChild(titleInput.container);
 
   // Event: when
-  const whenInput = makeDateTimeInput("When", "add-when");
+  const whenInput = makeDateTimeInput("When", "add-when", {
+    onChange: () => scheduleEditAutosave(),
+  });
   form.appendChild(whenInput.container);
 
   // TODO: scheduled / deadline (combined date+time)
-  const schedInput = makeDateTimeInput("Scheduled", "add-sched");
+  const schedInput = makeDateTimeInput("Scheduled", "add-sched", {
+    onChange: () => {
+      syncVisibility();
+      scheduleEditAutosave();
+    },
+  });
   form.appendChild(schedInput.container);
 
-  const deadInput = makeDateTimeInput("Deadline", "add-dead");
+  const deadInput = makeDateTimeInput("Deadline", "add-dead", {
+    onChange: () => {
+      syncVisibility();
+      scheduleEditAutosave();
+    },
+  });
   form.appendChild(deadInput.container);
 
   // Repeat (event only)
@@ -329,47 +340,6 @@ function buildAddPanel(): void {
   }));
 
   titleInput.input.addEventListener("input", scheduleEditAutosave);
-  whenInput.input.addEventListener("input", () => {
-    updateDateTimePreview(whenInput.input, whenInput.preview);
-    scheduleEditAutosave();
-  });
-  schedInput.input.addEventListener("input", () => {
-    updateDateTimePreview(schedInput.input, schedInput.preview);
-    syncVisibility();
-    scheduleEditAutosave();
-  });
-  deadInput.input.addEventListener("input", () => {
-    updateDateTimePreview(deadInput.input, deadInput.preview);
-    syncVisibility();
-    scheduleEditAutosave();
-  });
-  whenInput.input.addEventListener("input", () => syncPickersFromText(whenInput.input, whenInput.datePicker, whenInput.timePicker));
-  schedInput.input.addEventListener("input", () => syncPickersFromText(schedInput.input, schedInput.datePicker, schedInput.timePicker));
-  deadInput.input.addEventListener("input", () => syncPickersFromText(deadInput.input, deadInput.datePicker, deadInput.timePicker));
-  whenInput.datePicker.addEventListener("input", () => syncTextFromPickers(whenInput.input, whenInput.preview, whenInput.datePicker, whenInput.timePicker));
-  whenInput.datePicker.addEventListener("input", scheduleEditAutosave);
-  whenInput.timePicker.addEventListener("input", () => syncTextFromPickers(whenInput.input, whenInput.preview, whenInput.datePicker, whenInput.timePicker));
-  whenInput.timePicker.addEventListener("input", scheduleEditAutosave);
-  schedInput.datePicker.addEventListener("input", () => {
-    syncTextFromPickers(schedInput.input, schedInput.preview, schedInput.datePicker, schedInput.timePicker);
-    syncVisibility();
-    scheduleEditAutosave();
-  });
-  schedInput.timePicker.addEventListener("input", () => {
-    syncTextFromPickers(schedInput.input, schedInput.preview, schedInput.datePicker, schedInput.timePicker);
-    syncVisibility();
-    scheduleEditAutosave();
-  });
-  deadInput.datePicker.addEventListener("input", () => {
-    syncTextFromPickers(deadInput.input, deadInput.preview, deadInput.datePicker, deadInput.timePicker);
-    syncVisibility();
-    scheduleEditAutosave();
-  });
-  deadInput.timePicker.addEventListener("input", () => {
-    syncTextFromPickers(deadInput.input, deadInput.preview, deadInput.datePicker, deadInput.timePicker);
-    syncVisibility();
-    scheduleEditAutosave();
-  });
   repeatSelect.select.addEventListener("change", () => {
     syncVisibility();
     scheduleEditAutosave();
@@ -502,18 +472,9 @@ function buildAddPanel(): void {
     typeGroup: typeGroup.container,
     priorityGroup: priorityGroup.container,
     titleInput: titleInput.input,
-    whenInput: whenInput.input,
-    whenPreview: whenInput.preview,
-    whenDatePicker: whenInput.datePicker,
-    whenTimePicker: whenInput.timePicker,
-    schedInput: schedInput.input,
-    schedPreview: schedInput.preview,
-    schedDatePicker: schedInput.datePicker,
-    schedTimePicker: schedInput.timePicker,
-    deadInput: deadInput.input,
-    deadPreview: deadInput.preview,
-    deadDatePicker: deadInput.datePicker,
-    deadTimePicker: deadInput.timePicker,
+    when: whenInput,
+    sched: schedInput,
+    dead: deadInput,
     tagPicker,
     repeatSelect: repeatSelect.select,
     schedRepeatSelect: schedRepeatSelect.select,
@@ -1007,7 +968,8 @@ function expandDate(raw: string): string {
 function makeDateTimeInput(
   label: string,
   id: string,
-): { container: HTMLElement; input: HTMLInputElement; preview: HTMLElement; datePicker: HTMLInputElement; timePicker: HTMLInputElement } {
+  options: { onChange?: () => void } = {},
+): DateTimeInput {
   const container = document.createElement("div");
   container.className = "add-field";
 
@@ -1071,6 +1033,18 @@ function makeDateTimeInput(
   const preview = document.createElement("div");
   preview.className = "datetime-preview";
 
+  input.addEventListener("input", () => {
+    updateDateTimePreview(input, preview);
+    syncPickersFromText(input, datePicker, timePicker);
+    options.onChange?.();
+  });
+  const syncFromPicker = (): void => {
+    syncTextFromPickers(input, preview, datePicker, timePicker);
+    options.onChange?.();
+  };
+  datePicker.addEventListener("input", syncFromPicker);
+  timePicker.addEventListener("input", syncFromPicker);
+
   inputWrap.append(input, toggleBtn, pickerPopover);
   container.append(lbl, inputWrap, preview);
   return { container, input, preview, datePicker, timePicker };
@@ -1113,8 +1087,8 @@ function formatPreviewDate(date: string): string {
   const [year, month, day] = date.split("-").map(Number);
   const dt = new Date(year, month - 1, day);
   if (!Number.isFinite(dt.getTime())) return "";
-  const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()];
-  const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dt.getMonth()];
+  const dayName = DAY_ABBREVS[dt.getDay()];
+  const monthName = MONTH_ABBREVS[dt.getMonth()];
   return `${dayName} ${day} ${monthName} ${year}`;
 }
 
@@ -1165,6 +1139,11 @@ function syncTextFromPickers(
   const time = timePicker.value.trim();
   input.value = date ? (time ? `${isoToDisplayDate(date)} ${time}` : isoToDisplayDate(date)) : "";
   updateDateTimePreview(input, preview);
+}
+
+function syncDateTimeInput(field: DateTimeInput): void {
+  updateDateTimePreview(field.input, field.preview);
+  syncPickersFromText(field.input, field.datePicker, field.timePicker);
 }
 
 function parseOccurrenceOverrideInput(raw: string, baseDate: string | null): string | null {
@@ -1262,10 +1241,10 @@ function buildPanelOrgText(opts: { focusInvalid: boolean }): string | null {
 
   if (type === "event") {
     editingProgress = null;
-    const dt = readDateTime(refs.whenInput);
+    const dt = readDateTime(refs.when.input);
     if (dt === null) return null;
     if (!dt.date) {
-      if (opts.focusInvalid) refs.whenInput.focus();
+      if (opts.focusInvalid) refs.when.input.focus();
       return null;
     }
     return buildOrgText({
@@ -1286,9 +1265,9 @@ function buildPanelOrgText(opts: { focusInvalid: boolean }): string | null {
     ? { done: checkboxItems.filter(ci => ci.checked).length, total: checkboxItems.length }
     : null;
 
-  const scheduled = readDateTime(refs.schedInput);
+  const scheduled = readDateTime(refs.sched.input);
   if (scheduled === null) return null;
-  const deadline = readDateTime(refs.deadInput);
+  const deadline = readDateTime(refs.dead.input);
   if (deadline === null) return null;
   return buildOrgText({
     type: "todo",
@@ -1437,15 +1416,12 @@ function openAddPanel(): void {
 
   const refs = addPanelRefs;
   refs.titleInput.value = "";
-  refs.whenInput.value = "";
-  refs.schedInput.value = "";
-  refs.deadInput.value = "";
-  updateDateTimePreview(refs.whenInput, refs.whenPreview);
-  updateDateTimePreview(refs.schedInput, refs.schedPreview);
-  updateDateTimePreview(refs.deadInput, refs.deadPreview);
-  syncPickersFromText(refs.whenInput, refs.whenDatePicker, refs.whenTimePicker);
-  syncPickersFromText(refs.schedInput, refs.schedDatePicker, refs.schedTimePicker);
-  syncPickersFromText(refs.deadInput, refs.deadDatePicker, refs.deadTimePicker);
+  refs.when.input.value = "";
+  refs.sched.input.value = "";
+  refs.dead.input.value = "";
+  syncDateTimeInput(refs.when);
+  syncDateTimeInput(refs.sched);
+  syncDateTimeInput(refs.dead);
   refs.tagPicker.setTags([]);
   refs.repeatSelect.value = "";
   refs.schedRepeatSelect.value = "";
@@ -1503,9 +1479,9 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   const prioVal = entry.priority ?? "";
   selectRadioValue(refs.priorityGroup, prioVal);
 
-  refs.whenInput.value = "";
-  refs.schedInput.value = "";
-  refs.deadInput.value = "";
+  refs.when.input.value = "";
+  refs.sched.input.value = "";
+  refs.dead.input.value = "";
   refs.repeatSelect.value = "";
   refs.schedRepeatSelect.value = "";
   refs.deadRepeatSelect.value = "";
@@ -1515,32 +1491,29 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   if (type === "event") {
     const ts = entry.timestamps[0] ?? null;
     if (ts) {
-      refs.whenInput.value = tsToDateTimeDisplay(ts);
+      refs.when.input.value = tsToDateTimeDisplay(ts);
       refs.repeatSelect.value = formatRepeaterValue(ts.repeater);
     }
   } else {
     const sched = entry.planning.find(p => p.kind === "scheduled");
     const deadline = entry.planning.find(p => p.kind === "deadline");
     if (sched) {
-      refs.schedInput.value = tsToDateTimeDisplay(sched.timestamp);
+      refs.sched.input.value = tsToDateTimeDisplay(sched.timestamp);
       refs.schedRepeatSelect.value = formatRepeaterValue(sched.timestamp.repeater);
       editingSchedRepeater = sched.timestamp.repeater
         ? formatRepeaterValue(sched.timestamp.repeater) : null;
     }
     if (deadline) {
-      refs.deadInput.value = tsToDateTimeDisplay(deadline.timestamp);
+      refs.dead.input.value = tsToDateTimeDisplay(deadline.timestamp);
       refs.deadRepeatSelect.value = formatRepeaterValue(deadline.timestamp.repeater);
       editingDeadRepeater = deadline.timestamp.repeater
         ? formatRepeaterValue(deadline.timestamp.repeater) : null;
     }
   }
 
-  updateDateTimePreview(refs.whenInput, refs.whenPreview);
-  updateDateTimePreview(refs.schedInput, refs.schedPreview);
-  updateDateTimePreview(refs.deadInput, refs.deadPreview);
-  syncPickersFromText(refs.whenInput, refs.whenDatePicker, refs.whenTimePicker);
-  syncPickersFromText(refs.schedInput, refs.schedDatePicker, refs.schedTimePicker);
-  syncPickersFromText(refs.deadInput, refs.deadDatePicker, refs.deadTimePicker);
+  syncDateTimeInput(refs.when);
+  syncDateTimeInput(refs.sched);
+  syncDateTimeInput(refs.dead);
 
   // Populate checkbox items
   editingCheckboxItems = entry.checkboxItems.map(ci => ({ text: ci.text, checked: ci.checked }));
@@ -1764,15 +1737,7 @@ function filterWeekByTags(week: AgendaWeek): AgendaWeek {
   })) as unknown as AgendaWeek;
 }
 
-function filterDeadlinesByTags(items: DeadlineItem[]): DeadlineItem[] {
-  return items.filter(item => entryMatchesTagFilters(item.entry));
-}
-
-function filterOverdueByTags(items: OverdueItem[]): OverdueItem[] {
-  return items.filter(item => entryMatchesTagFilters(item.entry));
-}
-
-function filterSomedayByTags(items: SomedayItem[]): SomedayItem[] {
+function filterByTags<T extends { entry: Pick<OrgEntry, "tags"> }>(items: T[]): T[] {
   return items.filter(item => entryMatchesTagFilters(item.entry));
 }
 
@@ -1806,17 +1771,21 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return Boolean(el.closest("input, textarea, select, [contenteditable='true']"));
 }
 
-function getShortcutAction(e: KeyboardEvent): "next" | "prev" | "today" | "add" | "quick-capture" | "color-mode" | "hide-empty-days" | "clear-filters" | null {
-  const key = e.key.toLowerCase();
-  if (key === "n" || e.code === "KeyN" || e.keyCode === 78) return "next";
-  if (key === "p" || e.code === "KeyP" || e.keyCode === 80) return "prev";
-  if (key === "t" || e.code === "KeyT" || e.keyCode === 84) return "today";
-  if (key === "a" || e.code === "KeyA" || e.keyCode === 65) return "add";
-  if (key === "q" || e.code === "KeyQ" || e.keyCode === 81) return "quick-capture";
-  if (key === "c" || e.code === "KeyC" || e.keyCode === 67) return "color-mode";
-  if (key === "h" || e.code === "KeyH" || e.keyCode === 72) return "hide-empty-days";
-  if (key === "x" || e.code === "KeyX" || e.keyCode === 88) return "clear-filters";
-  return null;
+type ShortcutAction = "next" | "prev" | "today" | "add" | "quick-capture" | "color-mode" | "hide-empty-days" | "clear-filters";
+
+const SHORTCUT_ACTIONS: Record<string, ShortcutAction> = {
+  n: "next",
+  p: "prev",
+  t: "today",
+  a: "add",
+  q: "quick-capture",
+  c: "color-mode",
+  h: "hide-empty-days",
+  x: "clear-filters",
+};
+
+function getShortcutAction(e: KeyboardEvent): ShortcutAction | null {
+  return SHORTCUT_ACTIONS[e.key.toLowerCase()] ?? null;
 }
 
 // ── Bootstrap ────────────────────────────────────────────────────────
@@ -2078,9 +2047,9 @@ function render(): void {
   const overdue = collectOverdueItems(entries, today);
   const someday = collectSomedayItems(entries);
   const filteredWeek = filterWeekByTags(week);
-  const filteredDeadlines = filterDeadlinesByTags(deadlines);
-  const filteredOverdue = filterOverdueByTags(overdue);
-  const filteredSomeday = filterSomedayByTags(someday);
+  const filteredDeadlines = filterByTags(deadlines);
+  const filteredOverdue = filterByTags(overdue);
+  const filteredSomeday = filterByTags(someday);
 
   renderAgenda(container, filteredWeek, filteredDeadlines, filteredOverdue, filteredSomeday, today, {
     activeTagFilters: [...activeTagFilters].sort(),
