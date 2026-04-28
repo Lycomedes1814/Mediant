@@ -307,7 +307,6 @@ body {
       color-mix(in srgb, var(--border-today) 7%, var(--bg-card)),
       var(--bg-today) 82%
     );
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 78%, var(--border-today));
 }
 
 .day-header {
@@ -2154,10 +2153,6 @@ body {
     top: 0;
     background: inherit;
     z-index: 2;
-  }
-
-  .day-block.is-today .day-header {
-    background: var(--bg-today);
   }
 
   .timed-item,
