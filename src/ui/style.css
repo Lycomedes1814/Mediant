@@ -645,6 +645,7 @@ body {
 
 .deadline-item .tag {
   font-weight: 560;
+  opacity: 0.86;
 }
 
 .deadline-item.has-instance-note {
