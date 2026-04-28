@@ -3,6 +3,7 @@
 // over localhost with read/write + change notifications.
 
 import http from "node:http";
+import net from "node:net";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -64,8 +65,21 @@ try {
   die(`Cannot stat ${filePath}: ${e.message}`);
 }
 
+function probePort(port) {
+  return new Promise((resolve) => {
+    const probe = net.createServer();
+    probe.once("error", (e) => resolve(e.code === "EADDRINUSE" ? "in-use" : "error"));
+    probe.once("listening", () => probe.close(() => resolve("free")));
+    probe.listen(port, "127.0.0.1");
+  });
+}
+
 // Daemon mode: re-exec ourselves detached with the flag stripped and exit.
 if (args.daemon && !process.env.MEDIANT_CHILD) {
+  const status = await probePort(args.port);
+  if (status === "in-use") {
+    die(`mediant: port ${args.port} is already in use — another daemon may already be running`);
+  }
   const childArgs = process.argv.slice(1).filter((a) => a !== "--daemon");
   const child = spawn(process.execPath, childArgs, {
     detached: true,
