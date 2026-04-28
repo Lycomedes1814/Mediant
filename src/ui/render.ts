@@ -530,8 +530,8 @@ function renderItem(
   const title = renderTitle(item.entry, { showPriority });
   if (item.baseDate) title.dataset.baseDate = item.baseDate;
   if (item.override) {
-    title.appendChild(document.createTextNode(" "));
-    title.appendChild(renderOverrideChip(item.override));
+    title.insertBefore(document.createTextNode(" "), title.firstChild);
+    title.insertBefore(renderOverrideChip(item.override), title.firstChild);
   }
   if (checkboxListId && checkboxListKey) appendCheckboxToggle(title, checkboxListId, checkboxListKey);
   children.push(title, renderTags(item.entry.tags, optionsForTags()));

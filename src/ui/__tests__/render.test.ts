@@ -359,7 +359,7 @@ describe("renderAgenda", () => {
     expect(timedRows[1]?.querySelector(".item-title .item-priority")).toBeNull();
   });
 
-  it("renders skipped occurrences with marker and strikethrough class", () => {
+  it("renders skipped occurrences with marker and skipped class", () => {
     const container = document.createElement("div");
     const week = makeWeek([
       [

@@ -297,7 +297,7 @@ body {
   justify-content: space-between;
   align-items: baseline;
   padding: 0 var(--section-padding-x);
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.55rem;
   font-weight: 560;
   font-size: 1rem;
   letter-spacing: -0.018em;
@@ -802,8 +802,7 @@ body {
 }
 
 .item-done .item-title {
-  text-decoration: line-through;
-  text-decoration-color: var(--text-done);
+  color: var(--text-done);
 }
 
 .item-done .item-state {
@@ -815,8 +814,7 @@ body {
 }
 
 .item-skipped .item-title {
-  text-decoration: line-through;
-  text-decoration-color: var(--text-dim);
+  color: var(--text-dim);
 }
 
 .item-state.is-toggleable {
@@ -1179,8 +1177,6 @@ body {
 
 .checkbox-checked .checkbox-label {
   color: var(--text-dim);
-  text-decoration: line-through;
-  text-decoration-color: var(--text-done);
 }
 
 /* ── Instance override chip / note ────────────────────────────────── */
@@ -1869,8 +1865,6 @@ body {
 
 .edit-checkbox-done {
   opacity: 0.55;
-  text-decoration: line-through;
-  text-decoration-color: var(--text-done);
 }
 
 .edit-checkbox-remove {
@@ -2120,6 +2114,20 @@ body {
 }
 
 @media (max-width: 480px) {
+  .timed-item,
+  .scheduled-item,
+  .day-deadline-item,
+  .allday-item,
+  .checkbox-list {
+    border-left-color: transparent !important;
+  }
+
+  .overdue-item,
+  .deadline-item,
+  .someday-item {
+    --global-row-fringe-color: transparent !important;
+  }
+
   .agenda-header {
     align-items: center;
     justify-content: space-between;
