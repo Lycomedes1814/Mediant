@@ -611,7 +611,7 @@ body {
   font-family: var(--font-mono);
   font-size: 0.84rem;
   font-weight: 650;
-  color: color-mix(in srgb, var(--border-today) 48%, var(--text));
+  color: var(--deadline-urgency, var(--deadline-urgency-calm));
   min-width: 0;
 }
 
