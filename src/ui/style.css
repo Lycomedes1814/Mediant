@@ -346,6 +346,7 @@ body {
 }
 
 .allday-item {
+  --tag-fringe-color: transparent;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -384,11 +385,30 @@ body {
 .timed-item,
 .scheduled-item,
 .day-deadline-item {
+  --tag-fringe-color: transparent;
   display: grid;
   align-items: baseline;
   padding: 0.2rem var(--section-padding-x);
   border-left: 3px solid transparent;
   gap: 0 0.8rem;
+}
+
+[data-theme="light"] .allday-item.has-tag-fringe,
+[data-theme="light"] .timed-item.has-tag-fringe,
+[data-theme="light"] .scheduled-item.has-tag-fringe,
+[data-theme="light"] .day-deadline-item.has-tag-fringe,
+.allday-item.has-tag-fringe,
+.timed-item.has-tag-fringe,
+.scheduled-item.has-tag-fringe,
+.day-deadline-item.has-tag-fringe {
+  border-left-color: color-mix(in srgb, var(--tag-fringe-color) 20%, white);
+}
+
+[data-theme="dark"] .allday-item,
+[data-theme="dark"] .timed-item,
+[data-theme="dark"] .scheduled-item,
+[data-theme="dark"] .day-deadline-item {
+  border-left-color: var(--tag-fringe-color);
 }
 
 .timed-item {
@@ -486,6 +506,18 @@ body {
   top: 0.4rem;
   bottom: 0.4rem;
   width: var(--global-row-fringe-width);
+  background: var(--global-row-fringe-color);
+}
+
+.overdue-item.has-tag-fringe::before,
+.deadline-item.has-tag-fringe::before,
+.someday-item.has-tag-fringe::before {
+  background: color-mix(in srgb, var(--global-row-fringe-color) 20%, white);
+}
+
+[data-theme="dark"] .overdue-item.has-tag-fringe::before,
+[data-theme="dark"] .deadline-item.has-tag-fringe::before,
+[data-theme="dark"] .someday-item.has-tag-fringe::before {
   background: var(--global-row-fringe-color);
 }
 
@@ -2189,6 +2221,12 @@ body {
   .deadline-item,
   .someday-item {
     --global-row-fringe-color: transparent !important;
+  }
+
+  .overdue-item.has-tag-fringe::before,
+  .deadline-item.has-tag-fringe::before,
+  .someday-item.has-tag-fringe::before {
+    background: transparent !important;
   }
 
   .agenda-header {

@@ -606,11 +606,12 @@ function applyPrimaryTagFringe(row: HTMLElement, tags: readonly string[], mode: 
   if (!primaryTag) return;
 
   const color = getTagColor(primaryTag);
+  row.classList.add("has-tag-fringe");
   if (mode === "compact") {
     row.style.setProperty("--global-row-fringe-color", color);
     return;
   }
-  row.style.borderLeftColor = color;
+  row.style.setProperty("--tag-fringe-color", color);
 }
 
 // ── State badge ─────────────────────────────────────────────────────

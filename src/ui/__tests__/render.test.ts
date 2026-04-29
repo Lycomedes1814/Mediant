@@ -137,6 +137,7 @@ describe("renderAgenda", () => {
     expect(overdueNote?.textContent).toBe("Call before paying");
     expect(overdueNote?.classList.contains("overdue-note")).toBe(true);
     const firstOverdueRow = container.querySelectorAll<HTMLElement>(".overdue-section .overdue-item")[0];
+    expect(firstOverdueRow?.classList.contains("has-tag-fringe")).toBe(true);
     expect(firstOverdueRow?.style.getPropertyValue("--global-row-fringe-color")).toBe("#3366ff");
     const secondOverdueRow = container.querySelectorAll<HTMLElement>(".overdue-section .overdue-item")[1];
     expect(secondOverdueRow?.classList.contains("has-priority")).toBe(false);
@@ -149,6 +150,7 @@ describe("renderAgenda", () => {
     expect(deadlineNote?.textContent).toBe("Bring receipt");
     expect(deadlineNote?.classList.contains("deadline-note")).toBe(true);
     const firstDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[0];
+    expect(firstDeadlineRow?.classList.contains("has-tag-fringe")).toBe(true);
     expect(firstDeadlineRow?.classList.contains("has-priority")).toBe(false);
     expect(firstDeadlineRow?.style.getPropertyValue("--global-row-fringe-color")).toBe("#00aa88");
     const deadlineCheckboxes = Array.from(container.querySelectorAll<HTMLElement>(".deadlines-section .checkbox-item"));
@@ -168,6 +170,9 @@ describe("renderAgenda", () => {
     expect(deadlineChecklistToggle?.getAttribute("aria-expanded")).toBe("true");
     deadlineChecklistToggle!.click();
     expect(deadlineChecklist?.classList.contains("is-collapsed")).toBe(true);
+    const timedRow = container.querySelector<HTMLElement>(".timed-item");
+    expect(timedRow?.classList.contains("has-tag-fringe")).toBe(true);
+    expect(timedRow?.style.getPropertyValue("--tag-fringe-color")).toBe("#3366ff");
     const secondDeadlineRow = container.querySelectorAll<HTMLElement>(".deadlines-section .deadline-item")[1];
     expect(secondDeadlineRow?.classList.contains("has-priority")).toBe(false);
     expect(secondDeadlineRow?.querySelector(".item-title .item-priority")).toBeNull();

@@ -28,10 +28,13 @@ Three clearly separated stages — do not collapse them:
 | `src/org/parser.ts` | Line-by-line Org parser → `OrgEntry[]`. Delegates all timestamp work to `timestamp.ts`. Reads `:EXCEPTION-<date>:`, `:EXCEPTION-NOTE-<date>:`, and `:SERIES-UNTIL:` keys inside `:PROPERTIES:` drawers; every other drawer and every other property key is skipped. |
 | `src/org/model.ts` | Parser output types: `OrgEntry` (including `seriesUntil`), `OrgPlanning`, `TodoState`, `Priority`, `CheckboxItem`, `RecurrenceOverride`, `RecurrenceException`. |
 | `src/org/drawer.ts` | Property-drawer text mutation helpers (`upsertProperty`, `removeProperty`). Operate on raw source strings; preserve key order and other drawer content; used by the edit panel to write exception properties. |
+| `src/org/sourceEdit.ts` | Pure raw-source mutation helpers used by UI actions: replace an entry block while preserving body text, toggle TODO/DONE, advance repeating timestamps when marking done, toggle checkbox state, and update progress cookies. |
 | `src/agenda/model.ts` | Agenda/render types: `AgendaItem`, `AgendaDay`, `AgendaWeek`, `DeadlineItem`, `OverdueItem`, `SomedayItem`, `RenderCategory`, `AgendaItemOverride`. |
 | `src/agenda/generate.ts` | 7-day generation from a start date, recurrence expansion with exceptions (bounded to requested range), classification, sorting, overdue/someday collection. |
+| `src/dateLabels.ts` | Shared English day/month labels for agenda headers and date formatting. Keep display labels centralized here instead of duplicating arrays. |
 | `src/ui/render.ts` | DOM rendering from `AgendaWeek` + `DeadlineItem[]` + `OverdueItem[]`. Renders the per-occurrence override chip, instance note, active tag-filter state, and tag color-mode UI. |
 | `src/ui/tagColors.ts` | Dynamic tag color management. Auto-assigns from palette, persists in localStorage. |
+| `src/ui/notifications.ts` | Browser notification preference, permission request, and timer scheduling for timed events happening today. Notifications fire 1 hour before the start time and are rescheduled on render. |
 | `src/ui/style.css` | All styles. CSS grid layout with content-width time column. |
 | `src/main.ts` | Entry point. Probes `/api/source` on boot; if present, enters server mode (hydrates from the server, subscribes to `/api/events` for external file changes). Otherwise shows the textarea input screen backed by localStorage. Owns global keyboard shortcuts, tag-filter state, tag color mode, quick-capture overlay, add-item & edit-item panels, and the "This occurrence" section that writes exception properties via the drawer helpers. |
 | `server/cli.mjs` | Node CLI + HTTP server. `mediant <file.org> [--port N] [--daemon]`. Serves `dist/` plus `GET/PUT /api/source` (with `If-Match` version checks) and `GET /api/events` SSE backed by `fs.watch`. Node built-ins only, no deps. |
@@ -100,6 +103,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Today** indicated by blue border + small blue dot (not a text badge)
 - **Hide empty days** — toolbar toggle removes day blocks with no visible agenda items. If no day blocks remain, the day-card container is not rendered. Preference persists in localStorage (`mediant-hide-empty-days`).
 - **Tags** rendered as colored badge pills, right-aligned. Colors auto-assigned from a palette and persisted in localStorage (`mediant-tag-colors`).
+- **Tag color rendering** — tag badges and tag-colored left fringes share the same visual transform: light mode displays a softened `color-mix(... 20%, white)` version of the stored tag color, while dark mode uses the raw tag color. Render code should set CSS variables (`--tag-color`, `--tag-fringe-color`, `--global-row-fringe-color`) and let CSS handle theme transforms.
 - **Tag filtering** — clicking a tag toggles it in the active filter set. Filtering applies to the 7-day agenda, overdue section, upcoming deadlines, and someday section. Multiple selected tags use AND semantics: an item must contain every selected tag to remain visible.
 - **Tag color mode** — explicit toolbar toggle that repurposes tag clicks from filtering to recoloring. `Alt`-click on a tag opens its color picker directly without changing mode.
 - **Tag picker keyboard support** — in the add/edit panel, `ArrowUp`/`ArrowDown` move through tag suggestions, `Enter` selects the highlighted suggestion, and `Backspace` on an empty tag field removes the last selected pill.
@@ -110,6 +114,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Instance note** — `:EXCEPTION-NOTE-<date>:` renders as an italic one-liner directly under the occurrence, aligned with the row's title column.
 - **Now line** on today's card — orange line positioned proportionally within the timed section
 - **Navigation** — prev/next by 7-day increments, "Today" button returns to today as start date
+- **Notifications** — toolbar toggle requests browser notification permission and persists `mediant-notifications`. When enabled, the client schedules notifications for timed events that occur today, 1 hour before their start time; timers are cleared and rebuilt on render.
 - **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open add-item panel, `q` open quick capture, `c` toggle tag color mode, `h` toggle hide empty days, `x` clear active tag filters. Disabled while focus is inside text inputs, textareas, selects, or other editable controls.
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE), shown in source order so quick captures stay in capture order
 - **Quick capture** — fixed one-line overlay opened with `q`. Placeholder text is `Quick task capture`; `Enter` appends the text as an undated `TODO` child under top-level `* Tasks`, clears the field, and keeps focus ready for repeated capture. `Escape` or clicking outside the input exits. Captured Org-looking text is sanitized so priority cookies, trailing tags, progress cookies, and timestamps remain plain title text instead of changing agenda classification.
@@ -120,14 +125,19 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 
 ## Testing
 
-Tests across four suites:
+Tests across nine suites:
 
 - `src/org/__tests__/timestamp.test.ts` — parsing, helpers, recurrence expansion edge cases (month boundaries, leap years), per-occurrence exception application (cancelled / shift / reschedule, including midnight rollover in both directions)
 - `src/org/__tests__/parser.test.ts` — headings, states, tags, planning, timestamps, body text, drawers, checkbox items, progress cookies, `parseOverride` grammar, exception-key scanning inside PROPERTIES drawers, full integration
 - `src/org/__tests__/drawer.test.ts` — `upsertProperty` / `removeProperty` round-trips (create drawer in correct position, append/update/remove keys, drop empty drawer, idempotent writes)
+- `src/org/__tests__/sourceEdit.test.ts` — raw Org source rewrites for edit-panel saves, TODO/DONE toggles including repeater advancement, checkbox toggles, and progress-cookie updates
 - `src/agenda/__tests__/generate.test.ts` — classification, recurrence, sorting, 7-day structure, exception threading onto `AgendaItem`, full integration
+- `src/ui/__tests__/render.test.ts` — DOM structure, global sections, badges, tags, checklist collapse behavior, recurrence chips/notes, tag filtering state, and toolbar controls
+- `src/ui/__tests__/notifications.test.ts` — notification preference, permission handling, and scheduling behavior
+- `src/__tests__/main.test.ts` — browser-level integration for static mode, TODO toggles, series editing, occurrence exceptions, and persistence
+- `server/cli.test.ts` — CLI/server behavior for static serving, source API versioning, SSE behavior, and daemon plumbing
 
-Always run tests after changes to parser, timestamp, drawer, or agenda logic.
+Always run tests after changes to parser, timestamp, drawer, source-edit, agenda, rendering, notification, main integration, or server logic.
 
 ## Conventions
 
@@ -139,6 +149,7 @@ Always run tests after changes to parser, timestamp, drawer, or agenda logic.
 - Checkbox list items (`- [ ]`/`- [X]`) are captured into `checkboxItems`, not body text
 - `#+` keyword lines and `# ` comment lines inside entries are **skipped, not preserved as body**
 - Any `:UPPERCASENAME:...:END:` block is skipped **except** `:PROPERTIES:` drawers, where `:EXCEPTION-<date>:`, `:EXCEPTION-NOTE-<date>:`, and `:SERIES-UNTIL:` keys are read; every other property key is still ignored
+- Source rewrites are line-number based and operate on raw Org text. Keep reusable rewrite behavior in `src/org/sourceEdit.ts` or `src/org/drawer.ts` so it can be tested without DOM setup.
 
 ## Non-goals (v1)
 
