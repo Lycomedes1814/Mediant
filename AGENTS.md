@@ -39,6 +39,7 @@ Three clearly separated stages — do not collapse them:
 | `src/main.ts` | Entry point. Probes `/api/source` on boot; if present, enters server mode (hydrates from the server, subscribes to `/api/events` for external file changes). Otherwise shows the textarea input screen backed by localStorage. Owns global keyboard shortcuts, tag-filter state, tag color mode, quick-capture overlay, add-item & edit-item panels, and the "This occurrence" section that writes exception properties via the drawer helpers. |
 | `server/cli.mjs` | Node CLI + HTTP server. `mediant <file.org> [--port N] [--daemon]`. Serves `dist/` plus `GET/PUT /api/source` (with `If-Match` version checks) and `GET /api/events` SSE backed by `fs.watch`. Node built-ins only, no deps. |
 | `elisp/mediant-org-agenda.el` | Optional Emacs Org agenda integration. Global minor mode that runs on `org-agenda-finalize-hook`, reads Mediant exception properties from source headings, filters cancelled/cutoff occurrences, inserts moved synthetic agenda lines, and renders exception notes. |
+| `elisp/mediant-org-agenda-test.el` | ERT tests for the optional Org agenda integration. Uses temporary Org files and real `org-agenda-list` generation to verify exception display behavior. |
 
 ## Commands
 
@@ -50,6 +51,8 @@ npm run build         # build dist/ for the server to serve
 npm start <file.org>  # build + start the local server against a file
 emacs --batch -L elisp -f batch-byte-compile elisp/mediant-org-agenda.el
                       # byte-compile the optional Org agenda integration
+emacs --batch -L elisp -l elisp/mediant-org-agenda-test.el -f ert-run-tests-batch-and-exit
+                      # run ERT tests for the optional Org agenda integration
 ```
 
 ## Change workflow
@@ -130,7 +133,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 
 ## Testing
 
-Tests across nine suites:
+Tests across ten suites:
 
 - `src/org/__tests__/timestamp.test.ts` — parsing, helpers, recurrence expansion edge cases (month boundaries, leap years), per-occurrence exception application (cancelled / shift / reschedule, including midnight rollover in both directions)
 - `src/org/__tests__/parser.test.ts` — headings, states, tags, planning, timestamps, body text, drawers, checkbox items, progress cookies, `parseOverride` grammar, exception-key scanning inside PROPERTIES drawers, full integration
@@ -141,8 +144,9 @@ Tests across nine suites:
 - `src/ui/__tests__/notifications.test.ts` — notification preference, permission handling, and scheduling behavior
 - `src/__tests__/main.test.ts` — browser-level integration for static mode, TODO toggles, series editing, occurrence exceptions, and persistence
 - `server/cli.test.ts` — CLI/server behavior for static serving, source API versioning, SSE behavior, and daemon plumbing
+- `elisp/mediant-org-agenda-test.el` — ERT coverage for the optional Org agenda integration using real temporary Org agenda generation
 
-Always run tests after changes to parser, timestamp, drawer, source-edit, agenda, rendering, notification, main integration, or server logic.
+Always run tests after changes to parser, timestamp, drawer, source-edit, agenda, rendering, notification, main integration, server logic, or the optional Elisp integration.
 
 ## Conventions
 
