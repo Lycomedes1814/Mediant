@@ -1,8 +1,8 @@
 # Mediant
 
-A minimal, dependency-free web agenda for Org-mode files.
+A focused, dependency-free web agenda and editor for Org-mode files.
 
-Parses the subset of Org syntax needed for agenda views and renders a responsive rolling week view. Runs in two modes:
+Mediant parses a practical subset of Org syntax, renders a responsive rolling week view, and can edit common agenda workflows without trying to become a full Org implementation. It runs in two modes:
 
 - **Static mode** — paste Org content into a textarea, everything stays in `localStorage`. Zero-install, works from any static host.
 - **Server mode** — `mediant <file.org>` starts a local Node server that reads and writes a real `.org` file. The UI hydrates from the file on load and picks up external edits (e.g. from Emacs) live via SSE.
