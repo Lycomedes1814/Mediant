@@ -55,7 +55,14 @@ Because these ride on ordinary property-drawer syntax, files stay valid Org. Ema
 
 ### Optional Org agenda integration
 
-Add the repo's `elisp/` directory to Emacs's `load-path`, then enable the agenda finalization hook:
+Out of the box, Emacs treats `:EXCEPTION-…:` and `:SERIES-UNTIL:` as ordinary properties, so they round-trip safely but Org agenda still shows every base occurrence. The bundled Elisp package teaches Org agenda to honor them on display:
+
+- cancelled occurrences are hidden
+- shifted and rescheduled occurrences move to their target day/time
+- `EXCEPTION-NOTE` text renders as a sub-line under the occurrence
+- `SERIES-UNTIL` cuts the series at its exclusive end date
+
+To enable it, point Emacs at `elisp/` and turn on the global minor mode:
 
 ```elisp
 (add-to-list 'load-path "/path/to/Mediant/elisp")
@@ -63,7 +70,7 @@ Add the repo's `elisp/` directory to Emacs's `load-path`, then enable the agenda
 (mediant-org-agenda-mode 1)
 ```
 
-This is a v1 display integration for Org agenda. It does not add Emacs editing commands for exception properties; use Mediant's edit panel or edit the property drawer directly.
+The integration is display-only — there are no Emacs commands for creating or editing exception properties. To write them, use Mediant's edit panel or edit the property drawer by hand.
 
 ## Getting started
 
