@@ -74,6 +74,8 @@ npm test         # run all tests
 npm run build    # produce dist/
 ```
 
+`npm install` only pulls dev tooling: TypeScript, Vite (dev server + bundler), Vitest (test runner), and happy-dom (DOM for tests). The shipped runtime — the browser bundle and `server/cli.mjs` — uses no npm packages.
+
 ### Server mode
 
 To run against a real `.org` file:
