@@ -1,6 +1,6 @@
 # Mediant
 
-A focused, dependency-free web agenda and editor for Org-mode files.
+A focused web agenda and editor for Org-mode files.
 
 Mediant parses a practical subset of Org syntax, renders a responsive rolling week view, and can edit common agenda workflows without trying to become a full Org implementation. It runs in two modes:
 
@@ -8,8 +8,6 @@ Mediant parses a practical subset of Org syntax, renders a responsive rolling we
 - **Server mode** — `mediant <file.org>` starts a local Node server that reads and writes a real `.org` file. The UI hydrates from the file on load and picks up external edits (e.g. from Emacs) live via SSE.
 
 The server can run locally for near-instant sync with your editor, or on a VPS for mobile access (behind Tailscale, an SSH tunnel, or a reverse proxy — no built-in auth). Keep the `.org` file in sync between machines with Syncthing, Dropbox, git, or whatever you prefer.
-
-No framework dependencies. The server uses Node built-ins only — zero npm deps.
 
 ## Supported Org syntax
 
@@ -183,8 +181,7 @@ index.html             — Minimal shell with #agenda container
 - **Vite** — dev server and bundling
 - **Vitest** — 210 tests across parser, timestamp, agenda, and drawer suites
 - **HTML/CSS** — responsive week view with CSS grid
-- **Node** (built-ins only) — optional local server
-- Zero runtime npm dependencies
+- **Node** (built-ins only) — optional local server with no runtime npm dependencies
 
 ## Non-goals (v1)
 
