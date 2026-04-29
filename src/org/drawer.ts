@@ -4,8 +4,9 @@
  * These operate on raw Org source text (strings) and preserve
  * formatting: existing keys keep their order, other keys in the drawer
  * are untouched, and a freshly created drawer is placed deterministically
- * (immediately after any planning / standalone-timestamp lines that
- * follow the heading, before body text).
+ * (immediately after any planning lines that follow the heading, before
+ * body text or standalone active timestamp lines). This keeps newly
+ * created drawers compatible with Org's property APIs.
  *
  * The helpers live outside the parser on purpose — they're text
  * mutation utilities, not part of parsing. They take an `OrgEntry`
@@ -19,7 +20,6 @@ const HEADING_RE = /^\*+\s+/;
 const DRAWER_OPEN_RE = /^\s*:([A-Z_]+):\s*$/;
 const DRAWER_CLOSE_RE = /^\s*:END:\s*$/;
 const PLANNING_LINE_RE = /^\s*(?:SCHEDULED|DEADLINE|CLOSED):/;
-const TIMESTAMP_LINE_RE = /^\s*(?:<[^>]*>\s*)+$/;
 
 /**
  * Insert or update a `:key: value` line in the entry's PROPERTIES
@@ -125,15 +125,16 @@ function findPropertiesDrawer(
 }
 
 /**
- * Where to insert a fresh PROPERTIES drawer: after any planning or
- * standalone-timestamp lines directly following the heading, but
- * before body text.
+ * Where to insert a fresh PROPERTIES drawer: after planning lines
+ * directly following the heading, but before body text and standalone
+ * active timestamp lines. Org's property APIs only recognize property
+ * drawers in this early entry position.
  */
 function drawerInsertionPoint(lines: string[], start: number, end: number): number {
   let idx = start + 1;
   while (idx < end) {
     const line = lines[idx];
-    if (PLANNING_LINE_RE.test(line) || TIMESTAMP_LINE_RE.test(line)) {
+    if (PLANNING_LINE_RE.test(line)) {
       idx++;
       continue;
     }

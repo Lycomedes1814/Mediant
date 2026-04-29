@@ -14,7 +14,7 @@ describe("upsertProperty", () => {
     const { source, entry } = withEntry("** Event\n<2026-04-27 ma. 17:00>\nBody line.\n");
     const out = upsertProperty(source, entry, "EXCEPTION-2026-04-27", "cancelled");
     expect(out).toBe(
-      "** Event\n<2026-04-27 ma. 17:00>\n:PROPERTIES:\n:EXCEPTION-2026-04-27: cancelled\n:END:\nBody line.\n",
+      "** Event\n:PROPERTIES:\n:EXCEPTION-2026-04-27: cancelled\n:END:\n<2026-04-27 ma. 17:00>\nBody line.\n",
     );
   });
 
@@ -81,7 +81,15 @@ describe("upsertProperty", () => {
     const entries = parseOrg(src);
     const out = upsertProperty(src, entries[1], "EXCEPTION-2026-04-27", "cancelled");
     expect(out).toBe(
-      "** One\nBody1.\n** Two\n<2026-04-27 ma.>\n:PROPERTIES:\n:EXCEPTION-2026-04-27: cancelled\n:END:\nBody2.\n",
+      "** One\nBody1.\n** Two\n:PROPERTIES:\n:EXCEPTION-2026-04-27: cancelled\n:END:\n<2026-04-27 ma.>\nBody2.\n",
+    );
+  });
+
+  it("creates active-timestamp event drawers where Org property APIs recognize them", () => {
+    const { source, entry } = withEntry("** Event\n<2026-04-27 ma. 17:00 +1w>\n");
+    const out = upsertProperty(source, entry, "SERIES-UNTIL", "2026-05-04");
+    expect(out).toBe(
+      "** Event\n:PROPERTIES:\n:SERIES-UNTIL: 2026-05-04\n:END:\n<2026-04-27 ma. 17:00 +1w>\n",
     );
   });
 

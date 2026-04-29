@@ -170,62 +170,99 @@ Return a plist describing the override, or nil for invalid values."
 Return an alist keyed by base ISO date.  Each cdr is a plist with
 `:override' and/or `:note'."
   (let ((exceptions nil))
-    (when (and marker (marker-buffer marker))
-      (with-current-buffer (marker-buffer marker)
-        (save-excursion
-          (goto-char marker)
-          (dolist (prop (org-entry-properties nil 'standard))
-            (let ((name (car prop))
-                  (value (cdr prop)))
-              (cond
-               ((string-match "\\`EXCEPTION-\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}\\)\\'" name)
-                (let* ((date (match-string 1 name))
-                       (override (and (mediant-org-agenda--valid-date-p date)
-                                      (mediant-org-agenda-parse-exception-value value))))
-                  (when override
-                    (setq exceptions
-                          (mediant-org-agenda--merge-exception exceptions date :override override)))))
-               ((string-match "\\`EXCEPTION-NOTE-\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}\\)\\'" name)
-                (let ((date (match-string 1 name))
-                      (note (string-trim (or value ""))))
-                  (when (and (mediant-org-agenda--valid-date-p date)
-                             (not (string-empty-p note)))
-                    (setq exceptions
-                          (mediant-org-agenda--merge-exception exceptions date :note note)))))))))))
+    (dolist (prop (mediant-org-agenda--entry-property-pairs marker))
+      (let ((name (car prop))
+            (value (cdr prop)))
+        (cond
+         ((string-match "\\`EXCEPTION-\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}\\)\\'" name)
+          (let* ((date (match-string 1 name))
+                 (override (and (mediant-org-agenda--valid-date-p date)
+                                (mediant-org-agenda-parse-exception-value value))))
+            (when override
+              (setq exceptions
+                    (mediant-org-agenda--merge-exception exceptions date :override override)))))
+         ((string-match "\\`EXCEPTION-NOTE-\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}\\)\\'" name)
+          (let ((date (match-string 1 name))
+                (note (string-trim (or value ""))))
+            (when (and (mediant-org-agenda--valid-date-p date)
+                       (not (string-empty-p note)))
+              (setq exceptions
+                    (mediant-org-agenda--merge-exception exceptions date :note note))))))))
     exceptions))
 
 (defun mediant-org-agenda-read-series-until (&optional marker)
   "Read SERIES-UNTIL at MARKER.
 Return an ISO date string or nil."
-  (when (and marker (marker-buffer marker))
-    (with-current-buffer (marker-buffer marker)
-      (save-excursion
-        (goto-char marker)
-        (let ((value (org-entry-get nil "SERIES-UNTIL")))
-          (when (and value (mediant-org-agenda--valid-date-p (string-trim value)))
-            (string-trim value)))))))
+  (cdr (cl-find-if
+        (lambda (prop)
+          (and (string= (car prop) "SERIES-UNTIL")
+               (mediant-org-agenda--valid-date-p (string-trim (cdr prop)))))
+        (mediant-org-agenda--entry-property-pairs marker))))
+
+(defun mediant-org-agenda--entry-property-pairs (&optional marker)
+  "Return raw PROPERTIES drawer pairs for the entry at MARKER.
+Unlike `org-entry-properties', this scans any PROPERTIES drawer in
+the entry body so it can read drawers produced by Mediant after a
+bare active timestamp."
+  (let ((pairs nil))
+    (when (and marker (marker-buffer marker))
+      (with-current-buffer (marker-buffer marker)
+        (save-excursion
+          (goto-char marker)
+          (when (org-before-first-heading-p)
+            (user-error "Mediant marker is before first Org heading"))
+          (org-back-to-heading t)
+          (let ((end (save-excursion (or (outline-next-heading) (point-max))))
+                (in-properties nil))
+            (forward-line 1)
+            (while (< (point) end)
+              (cond
+               ((and (not in-properties)
+                     (looking-at-p "^[ \t]*:PROPERTIES:[ \t]*$"))
+                (setq in-properties t))
+               ((and in-properties
+                     (looking-at-p "^[ \t]*:END:[ \t]*$"))
+                (setq in-properties nil))
+               ((and in-properties
+                     (looking-at "^[ \t]*:\\([^:\n]+\\):[ \t]*\\(.*?\\)[ \t]*$"))
+                (push (cons (upcase (match-string 1))
+                            (match-string 2))
+                      pairs)))
+              (forward-line 1))))))
+    (nreverse pairs)))
+
+(defun mediant-org-agenda--line-property (prop)
+  "Return text property PROP from anywhere on the current agenda line."
+  (or (get-text-property (point) prop)
+      (let ((pos (line-beginning-position))
+            (end (line-end-position))
+            value)
+        (while (and (< pos end) (not value))
+          (setq value (get-text-property pos prop))
+          (setq pos (next-single-property-change pos prop nil end)))
+        value)))
 
 (defun mediant-org-agenda--line-marker ()
   "Return the Org marker for the current agenda line, or nil."
-  (or (get-text-property (point) 'org-hd-marker)
-      (get-text-property (point) 'org-marker)))
+  (or (mediant-org-agenda--line-property 'org-hd-marker)
+      (mediant-org-agenda--line-property 'org-marker)))
 
 (defun mediant-org-agenda--line-date ()
   "Return the agenda line absolute date at point, or nil."
   (mediant-org-agenda--date-prop-to-abs
-   (or (get-text-property (point) 'date)
-       (get-text-property (point) 'ts-date)
-       (get-text-property (point) 'day))))
+   (or (mediant-org-agenda--line-property 'date)
+       (mediant-org-agenda--line-property 'ts-date)
+       (mediant-org-agenda--line-property 'day))))
 
 (defun mediant-org-agenda--line-time-minutes ()
   "Return the agenda line time in minutes after midnight, or nil."
-  (let ((tod (get-text-property (point) 'time-of-day)))
+  (let ((tod (mediant-org-agenda--line-property 'time-of-day)))
     (when (integerp tod)
       (+ (* 60 (/ tod 100)) (% tod 100)))))
 
 (defun mediant-org-agenda--recurring-line-p ()
   "Return non-nil if the current agenda line came from a repeating timestamp."
-  (let ((marker (get-text-property (point) 'org-marker)))
+  (let ((marker (mediant-org-agenda--line-property 'org-marker)))
     (when (and marker (marker-buffer marker))
       (with-current-buffer (marker-buffer marker)
         (save-excursion

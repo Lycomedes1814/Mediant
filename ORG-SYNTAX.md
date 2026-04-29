@@ -156,6 +156,8 @@ Syntax that Mediant layers on top of standard Org. These use ordinary Org constr
 
 Currently there are two extensions: **recurrence exceptions** and **series end dates**.
 
+When Mediant creates a new `:PROPERTIES:` drawer, it writes it in the Org-compatible property position: immediately after the heading and any planning lines, before body text or standalone active timestamp lines. The parser still reads Mediant extension keys from any `:PROPERTIES:` drawer inside an entry so older files continue to work, but new writes should preserve compatibility with Org's property APIs.
+
 ### Recurrence exceptions
 
 Standard Org repeaters (`+1w`, `+1m`, etc.) produce an unbroken series — every occurrence is identical except for the date. Mediant adds two property-drawer key families that let an entry with a repeating timestamp deviate from the base series on a single occurrence (skip it, shift it, move it, or pin a one-off note to it) without giving up the repeater.
@@ -259,6 +261,7 @@ These constructs are recognized and silently skipped. They will not produce entr
 ```
 
 - Everything between `:PROPERTIES:` and `:END:` is skipped **except** `:EXCEPTION-…:`, `:EXCEPTION-NOTE-…:`, and `:SERIES-UNTIL:` keys. See *Mediant-specific extensions* above.
+- Newly-created drawers are written immediately after the heading and planning lines, before body text or standalone active timestamp lines, so Org's property APIs recognize them.
 
 ### Logbook drawers
 
