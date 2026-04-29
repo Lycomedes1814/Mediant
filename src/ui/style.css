@@ -320,6 +320,20 @@ body {
   letter-spacing: -0.018em;
 }
 
+.day-header[data-action="add-on-date"] {
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.day-header[data-action="add-on-date"]:hover .date-label {
+  color: var(--border-today);
+}
+
+.day-header[data-action="add-on-date"]:focus-visible {
+  outline: 2px solid var(--border-today);
+  outline-offset: 0.2rem;
+}
+
 .day-header .date-label {
   color: var(--text);
 }

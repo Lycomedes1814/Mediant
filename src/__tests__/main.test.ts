@@ -212,6 +212,19 @@ describe("main.ts integration", () => {
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await flush();
 
+    const wednesdayHeader = Array.from(document.querySelectorAll<HTMLElement>(".day-header"))
+      .find(header => header.dataset.date === "2026-04-22") ?? null;
+    expect(wednesdayHeader).not.toBeNull();
+    wednesdayHeader!.click();
+    await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
+    expect(document.querySelector<HTMLElement>(".te-header span")?.textContent).toBe("Add item");
+    expect(document.querySelector<HTMLInputElement>("input[name='add-type']:checked")?.value).toBe("event");
+    const whenInput = document.querySelector<HTMLInputElement>("#add-when");
+    expect(whenInput?.value).toBe("22/04/2026");
+    expect(whenInput?.closest(".add-field")?.querySelector<HTMLElement>(".datetime-preview")?.textContent).toBe("Wed 22 Apr 2026");
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await flush();
+
     keydownHandler!(makeKeydownEvent("n", document.body));
     await flush();
     expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("27 April – 3 May 2026");

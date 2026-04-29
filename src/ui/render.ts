@@ -369,12 +369,17 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
 
   // Header
   const header = el("header", "day-header");
+  header.dataset.action = "add-on-date";
+  header.dataset.date = formatDateKey(day.date);
+  header.tabIndex = 0;
+  header.setAttribute("role", "button");
   const label = el("span", "date-label");
   let dayText = `${DAY_NAMES[day.date.getDay()]} ${day.date.getDate()} ${MONTH_NAMES[day.date.getMonth()]}`;
   if (day.date.getDay() === 1) {
     dayText += ` (W${getISOWeek(day.date)})`;
   }
   label.textContent = dayText;
+  header.setAttribute("aria-label", `Add event on ${dayText}`);
   header.appendChild(label);
 
   if (isToday) {

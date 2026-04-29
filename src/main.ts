@@ -1396,7 +1396,7 @@ function appendOrgText(orgText: string): void {
   void persistSource(appendAgendaItemToSource(currentSource, orgText));
 }
 
-function openAddPanel(): void {
+function openAddPanel(prefillDate: string | null = null): void {
   if (!addPanelEl || !addOverlayEl || !addPanelRefs) return;
   rememberFocusBeforePanelOpen();
 
@@ -1416,7 +1416,7 @@ function openAddPanel(): void {
 
   const refs = addPanelRefs;
   refs.titleInput.value = "";
-  refs.when.input.value = "";
+  refs.when.input.value = isoToDisplayDate(prefillDate ?? "");
   refs.sched.input.value = "";
   refs.dead.input.value = "";
   syncDateTimeInput(refs.when);
@@ -2103,6 +2103,8 @@ function setupNavigation(): void {
         btn.blur();
         lastPanelFocusEl = null;
       }
+    } else if (action === "add-on-date") {
+      openAddPanel(btn.dataset.date ?? null);
     } else if (action === "toggle-tag-color-mode") {
       toggleTagColorMode();
     } else if (action === "toggle-hide-empty-days") {

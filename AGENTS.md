@@ -101,6 +101,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
   - Scheduled tasks inline with events (time → TODO badge → title)
 - **DONE items** rendered at `opacity: 0.7` in muted text (`var(--text-done)`)
 - **Today** indicated by blue border + small blue dot (not a text badge)
+- **Day headings** are clickable/focusable controls. Activating a day heading opens the add-item panel in Event mode with that day prefilled in the When field.
 - **Hide empty days** — toolbar toggle removes day blocks with no visible agenda items. If no day blocks remain, the day-card container is not rendered. Preference persists in localStorage (`mediant-hide-empty-days`).
 - **Tags** rendered as colored badge pills, right-aligned. Colors auto-assigned from a palette and persisted in localStorage (`mediant-tag-colors`).
 - **Tag color rendering** — tag badges and tag-colored left fringes share the same visual transform: light mode displays a softened `color-mix(... 20%, white)` version of the stored tag color, while dark mode uses the raw tag color. Render code should set CSS variables (`--tag-color`, `--tag-fringe-color`, `--global-row-fringe-color`) and let CSS handle theme transforms.

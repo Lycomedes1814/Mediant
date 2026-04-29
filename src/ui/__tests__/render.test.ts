@@ -126,6 +126,12 @@ describe("renderAgenda", () => {
       "days-card",
       "someday-section",
     ]);
+    const firstDayHeader = container.querySelector<HTMLElement>(".day-header");
+    expect(firstDayHeader?.dataset.action).toBe("add-on-date");
+    expect(firstDayHeader?.dataset.date).toBe("2026-04-20");
+    expect(firstDayHeader?.tabIndex).toBe(0);
+    expect(firstDayHeader?.getAttribute("role")).toBe("button");
+    expect(firstDayHeader?.getAttribute("aria-label")).toBe("Add event on Monday 20 April (W17)");
 
     expect(container.querySelector(".overdue-header")?.textContent).toBe("Overdue");
     expect(container.querySelector(".deadlines-header")).toBeNull();
