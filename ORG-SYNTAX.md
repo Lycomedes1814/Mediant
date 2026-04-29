@@ -77,17 +77,20 @@ Detailed account of how Mediant handles Org-mode syntax. Four categories:
 
 ```org
 <2026-04-07 ti. 15:15-16:00 +1w>
-<2026-04-06 ma. +1y>
-<2026-04-08 on. 18:00-21:00 +1w>
+<2026-04-06 ma. .+1d>
+<2026-04-08 on. ++1w>
 ```
 
 - Appended inside the timestamp before the closing `>`.
-- Format: `+Nunit` where N is a positive integer and unit is one of:
+- Format: `<mark>Nunit` where the mark is `+`, `.+`, or `++`, N is a positive integer, and unit is one of:
   - `d` — daily
   - `w` — weekly
   - `m` — monthly
   - `y` — yearly
-- Only the `+` (cumulate) repeater type is supported. `.+` and `++` repeater types are **not** supported.
+- All three marks generate the same forward-from-base series for agenda display. They differ only when toggling a TODO to DONE in the edit panel:
+  - `+` (cumulate) — advance by exactly one interval.
+  - `.+` (catch-up) — anchor to today and step forward by one interval.
+  - `++` (restart) — step forward by interval until the next occurrence is past today.
 
 ### SCHEDULED
 
@@ -188,12 +191,12 @@ SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>
 
 **Rules and edge cases:**
 
-- All other property keys inside the drawer are still gracefully ignored — only `EXCEPTION-…` and `EXCEPTION-NOTE-…` keys are read. Exception properties inside other drawers (e.g. `:LOGBOOK:`) are not parsed.
+- All other property keys inside the drawer are still gracefully ignored — only `EXCEPTION-…`, `EXCEPTION-NOTE-…`, and `SERIES-UNTIL` keys are read. Exception properties inside other drawers (e.g. `:LOGBOOK:`) are not parsed.
 - Exceptions on a non-repeating timestamp are parsed but **inert**: expansion never runs, so they never apply. Don't rely on this as a way to rewrite a one-off; edit the timestamp instead.
 - Each `:EXCEPTION-<date>:` value is validated against the grammar above on parse. An unrecognized value is silently dropped (the occurrence renders as normal); a matching `:EXCEPTION-NOTE-<date>:` on the same date is still honoured.
 - The edit panel's "This occurrence" controls are the UI surface for these properties and always write the unshifted base date, so property values round-trip cleanly. The skip and stop-repeat toggles, move date/time field, note field, and Clear override action persist immediately; there is no separate Move or Save note step.
 
-**Interop with Emacs:** the file remains valid Org. Plain Emacs treats `:EXCEPTION-2026-05-04:` as just another property and gives the entry its normal repeating-timestamp agenda behaviour. To make Org agenda interpret these properties, load `elisp/mediant-org-agenda.el` and enable `mediant-org-agenda-mode`. The v1 integration is display-only: it hides cancelled occurrences, moves shifted/rescheduled occurrences, and renders notes, but it does not provide Emacs commands for editing exception properties.
+**Interop with Emacs:** the file remains valid Org. Plain Emacs treats `:EXCEPTION-2026-05-04:` as just another property and gives the entry its normal repeating-timestamp agenda behaviour. To make Org agenda interpret these properties, load `elisp/mediant-org-agenda.el` and enable `mediant-org-agenda-mode`. The integration is display-only: it hides cancelled occurrences, moves shifted/rescheduled occurrences, and renders notes (and applies `SERIES-UNTIL` — see below), but does not provide Emacs commands for editing exception properties.
 
 ### Series end date
 
@@ -357,15 +360,6 @@ print("hello")
 ## Unsupported (may cause unexpected behavior)
 
 These constructs are **not recognized** by the parser. If present, they may be misinterpreted (e.g., treated as body text when they shouldn't be, or partially parsed incorrectly).
-
-### `.+` and `++` repeater types
-
-```org
-<2026-04-07 ti. .+1w>
-<2026-04-07 ti. ++1w>
-```
-
-- Only `+` repeaters are supported. `.+` and `++` will not be parsed as repeaters — the timestamp will be treated as non-repeating.
 
 ### Diary sexp timestamps
 

@@ -89,13 +89,13 @@ emacs --batch -L elisp -l elisp/mediant-org-agenda-test.el -f ert-run-tests-batc
 
 See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and unsupported syntax.
 
-**Supported (standard Org):** headings, TODO/DONE, priority cookies (`[#A]`/`[#B]`/`[#C]`), tags, active timestamps, time ranges, repeaters (+Nd/w/m/y), SCHEDULED, DEADLINE, body text, checkbox lists (`- [ ]`/`- [X]`), progress cookies (`[2/3]`/`[66%]`).
+**Supported (standard Org):** headings, TODO/DONE, priority cookies (`[#A]`/`[#B]`/`[#C]`), tags, active timestamps, time ranges, repeaters (`+`/`.+`/`++`, units `d`/`w`/`m`/`y`), SCHEDULED, DEADLINE, body text, checkbox lists (`- [ ]`/`- [X]`), progress cookies (`[2/3]`/`[66%]`).
 
 **Mediant-specific extensions:** per-occurrence recurrence exceptions via `:EXCEPTION-<date>:` / `:EXCEPTION-NOTE-<date>:` (keyed on the *unshifted* base date), plus `:SERIES-UNTIL:` for an exclusive end date on a repeating series. `SERIES-UNTIL` is evaluated on the repeater's base slots, not the final moved-to date, which is what makes split-series handoff work cleanly. Both ride on ordinary Org property-drawer syntax, so files remain valid Org (Emacs opens and edits them without complaint — it just treats the keys as arbitrary properties).
 
 **Gracefully ignored:** file keywords (#+), inactive timestamps, drawers (including property drawers — only the `:EXCEPTION-…:`, `:EXCEPTION-NOTE-…:`, and `:SERIES-UNTIL:` extension keys are read), comments, links, inline markup, plain lists, tables.
 
-**Not supported:** .+/++ repeaters, diary sexp, custom TODO keywords, tag inheritance, habits, clocking.
+**Not supported:** diary sexp, custom TODO keywords, tag inheritance, habits, clocking.
 
 ## UI structure
 

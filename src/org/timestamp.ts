@@ -153,18 +153,19 @@ export function isTimed(ts: OrgTimestamp): boolean {
 // ── Recurrence expansion ─────────────────────────────────────────────
 
 /**
- * Recurrence semantics (v1, cumulate repeater only):
+ * Recurrence semantics for agenda display:
  *
- *   +Nd  — every N days from the base date
- *   +Nw  — every N*7 days from the base date
- *   +Nm  — same day-of-month, every N months from the base date.
+ *   Nd  — every N days from the base date
+ *   Nw  — every N*7 days from the base date
+ *   Nm  — same day-of-month, every N months from the base date.
  *          If the target month has fewer days, clamp to that month's
  *          last valid day (e.g., Jan 31 + 1m → Feb 28 in non-leap years).
- *   +Ny  — same month-and-day, every N years from the base date.
+ *   Ny  — same month-and-day, every N years from the base date.
  *          Leap day (Feb 29) + 1y in a non-leap year → Mar 1.
  *
- * Only the simple cumulate (+) repeater is supported.
- * The .+ (catch-up) and ++ (restart) types are not recognized.
+ * All three repeater marks (`+`, `.+`, `++`) generate the same
+ * forward-from-base series here. They diverge only when advancing on
+ * TODO → DONE; that logic lives in `nextRepeaterDate` in `sourceEdit.ts`.
  */
 
 /**
