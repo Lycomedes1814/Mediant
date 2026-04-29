@@ -153,6 +153,53 @@ TIMESTAMP defaults to a weekly 2026-04-21 17:00 timestamp."
     (should (string-match-p "17:00[.]+ One-off" text))
     (should-not (string-match-p "Hidden note" text))))
 
+(ert-deftest mediant-org-agenda-test-cancelled-with-note-suppresses-both ()
+  (let ((text (mediant-org-agenda-test--agenda-text
+               (mediant-org-agenda-test--active-event
+                "Yoga"
+                ":EXCEPTION-2026-04-28: cancelled\n:EXCEPTION-NOTE-2026-04-28: Bring water\n")
+               "2026-04-20"
+               10)))
+    (should (= 1 (mediant-org-agenda-test--count-matches "17:00[.]+ Yoga" text)))
+    (should-not (string-match-p "Bring water" text))
+    (should-not (string-match-p "↪" text))))
+
+(ert-deftest mediant-org-agenda-test-shift-across-midnight-negative-moves-to-prev-agenda-day ()
+  (let ((text (mediant-org-agenda-test--agenda-text
+               (mediant-org-agenda-test--active-event
+                "Early Yoga"
+                ":EXCEPTION-2026-04-28: shift -1h\n"
+                "<2026-04-21 Tue 00:30 +1w>")
+               "2026-04-27"
+               2)))
+    (should (string-match-p "Monday.*27 April 2026" text))
+    (should-not (string-match-p "00:30[.]+ Early Yoga" text))
+    (should (string-match-p "23:30[.]+ Early Yoga" text))
+    (should (string-match-p "↪" text))))
+
+(ert-deftest mediant-org-agenda-test-shift-same-day-replaces-original ()
+  (let ((text (mediant-org-agenda-test--agenda-text
+               (mediant-org-agenda-test--active-event
+                "Yoga"
+                ":EXCEPTION-2026-04-28: shift +30m\n")
+               "2026-04-28"
+               1)))
+    (should (= 1 (mediant-org-agenda-test--count-matches "Yoga" text)))
+    (should-not (string-match-p "17:00[.]+ Yoga" text))
+    (should (string-match-p "↪ .*17:30[.]+ Yoga" text))))
+
+(ert-deftest mediant-org-agenda-test-series-until-wins-over-later-exception ()
+  (let ((text (mediant-org-agenda-test--agenda-text
+               (mediant-org-agenda-test--active-event
+                "Yoga"
+                ":SERIES-UNTIL: 2026-04-28\n:EXCEPTION-2026-04-28: reschedule 2026-05-05 18:00\n")
+               "2026-04-20"
+               20)))
+    (should (= 1 (mediant-org-agenda-test--count-matches "17:00[.]+ Yoga" text)))
+    (should (string-match-p "Tuesday    21 April 2026" text))
+    (should-not (string-match-p "18:00[.]+ Yoga" text))
+    (should-not (string-match-p "↪" text))))
+
 (ert-deftest mediant-org-agenda-test-invalid-exception-values-are-ignored ()
   (let ((text (mediant-org-agenda-test--agenda-text
                (mediant-org-agenda-test--active-event

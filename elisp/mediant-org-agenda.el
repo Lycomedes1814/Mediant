@@ -307,7 +307,7 @@ If LINE has no visible time, prefix a compact START marker."
   (let ((time (if end (format "%s-%s" start end) start)))
     (cond
      ((not start) line)
-     ((string-match "[0-2][0-9]:[0-5][0-9]\\(?:-[0-2][0-9]:[0-5][0-9]\\)?" line)
+     ((string-match "[ 0-2][0-9]:[0-5][0-9]\\(?:-[ 0-2][0-9]:[0-5][0-9]\\)?" line)
       (replace-match time t t line))
      (t (concat time "...... " line)))))
 
