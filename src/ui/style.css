@@ -662,11 +662,6 @@ body {
 
 .deadline-item .item-state {
   flex: 0 0 auto;
-  font-size: 0.6625rem;
-  color: var(--text-dim);
-  background: transparent;
-  opacity: 0.68;
-  padding-inline: 0.08rem;
 }
 
 .deadline-item .item-title {
