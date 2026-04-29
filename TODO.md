@@ -8,11 +8,6 @@
 - [ ] Subscribe to ICS URLs
 - [ ] Serve ICS endpoint
 - [ ] Time-grid view
-- [ ] Toggle inline display/editing of subtasks
-
-## Quick-capture follow-up
-
-- [ ] Decide whether captured text should accept lightweight prefixes later, e.g. `#tag`, `!A`, or `tomorrow`
 
 ## This and future operations
 
