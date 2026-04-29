@@ -595,14 +595,10 @@ body {
 /* ── Deadline items ───────────────────────────────────────────────── */
 
 .deadline-item {
-  --global-row-fringe-color: transparent;
   grid-template-columns: 4.35ch minmax(0, 1fr) auto;
   padding: 0.68rem var(--section-padding-x);
+  padding-left: calc(var(--section-padding-x) + var(--global-row-fringe-width));
   gap: 0 0.72rem;
-}
-
-.deadline-item::before {
-  display: none;
 }
 
 .deadline-item + .deadline-item {
