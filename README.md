@@ -53,7 +53,19 @@ SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>
 - A reschedule keyed to `:EXCEPTION-2026-06-01:` or any later base slot is ignored, because that slot no longer exists in the series.
 - A reschedule keyed to an earlier valid slot may still land after `2026-06-01`, which is what makes split-series handoff work cleanly.
 
-Because these ride on ordinary property-drawer syntax, files stay valid Org — Emacs opens and edits them without complaint, it just won't interpret the extensions. See [ORG-SYNTAX.md](ORG-SYNTAX.md#mediant-specific-extensions) for the full grammar, edge cases, and interop notes.
+Because these ride on ordinary property-drawer syntax, files stay valid Org. Emacs opens and edits them without complaint; load the optional `elisp/mediant-org-agenda.el` integration if you want Org agenda to hide cancelled occurrences, move shifted/rescheduled occurrences, show notes, and apply `SERIES-UNTIL`. See [ORG-SYNTAX.md](ORG-SYNTAX.md#mediant-specific-extensions) for the full grammar, edge cases, and interop notes.
+
+### Optional Org agenda integration
+
+Add the repo's `elisp/` directory to Emacs's `load-path`, then enable the agenda finalization hook:
+
+```elisp
+(add-to-list 'load-path "/path/to/Mediant/elisp")
+(require 'mediant-org-agenda)
+(mediant-org-agenda-mode 1)
+```
+
+This is a v1 display integration for Org agenda. It does not add Emacs editing commands for exception properties; use Mediant's edit panel or edit the property drawer directly.
 
 ## Getting started
 

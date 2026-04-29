@@ -38,6 +38,7 @@ Three clearly separated stages — do not collapse them:
 | `src/ui/style.css` | All styles. CSS grid layout with content-width time column. |
 | `src/main.ts` | Entry point. Probes `/api/source` on boot; if present, enters server mode (hydrates from the server, subscribes to `/api/events` for external file changes). Otherwise shows the textarea input screen backed by localStorage. Owns global keyboard shortcuts, tag-filter state, tag color mode, quick-capture overlay, add-item & edit-item panels, and the "This occurrence" section that writes exception properties via the drawer helpers. |
 | `server/cli.mjs` | Node CLI + HTTP server. `mediant <file.org> [--port N] [--daemon]`. Serves `dist/` plus `GET/PUT /api/source` (with `If-Match` version checks) and `GET /api/events` SSE backed by `fs.watch`. Node built-ins only, no deps. |
+| `elisp/mediant-org-agenda.el` | Optional Emacs Org agenda integration. Global minor mode that runs on `org-agenda-finalize-hook`, reads Mediant exception properties from source headings, filters cancelled/cutoff occurrences, inserts moved synthetic agenda lines, and renders exception notes. |
 
 ## Commands
 
@@ -47,6 +48,8 @@ npm run test:watch    # vitest in watch mode
 npx vite              # dev server (serves index.html)
 npm run build         # build dist/ for the server to serve
 npm start <file.org>  # build + start the local server against a file
+emacs --batch -L elisp -f batch-byte-compile elisp/mediant-org-agenda.el
+                      # byte-compile the optional Org agenda integration
 ```
 
 ## Change workflow

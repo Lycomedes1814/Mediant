@@ -191,7 +191,7 @@ SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>
 - Each `:EXCEPTION-<date>:` value is validated against the grammar above on parse. An unrecognized value is silently dropped (the occurrence renders as normal); a matching `:EXCEPTION-NOTE-<date>:` on the same date is still honoured.
 - The edit panel's "This occurrence" controls are the UI surface for these properties and always write the unshifted base date, so property values round-trip cleanly. The skip and stop-repeat toggles, move date/time field, note field, and Clear override action persist immediately; there is no separate Move or Save note step.
 
-**Interop with Emacs:** the file remains valid Org. Emacs will show `:EXCEPTION-2026-05-04:` as just another property and give the entry its normal repeating-timestamp agenda behaviour — the cancelled/shifted/rescheduled occurrence will appear at its original slot in Emacs's agenda. Edit the base timestamp in Emacs, not the exception properties, if you want Emacs's view to agree with Mediant's.
+**Interop with Emacs:** the file remains valid Org. Plain Emacs treats `:EXCEPTION-2026-05-04:` as just another property and gives the entry its normal repeating-timestamp agenda behaviour. To make Org agenda interpret these properties, load `elisp/mediant-org-agenda.el` and enable `mediant-org-agenda-mode`. The v1 integration is display-only: it hides cancelled occurrences, moves shifted/rescheduled occurrences, and renders notes, but it does not provide Emacs commands for editing exception properties.
 
 ### Series end date
 
@@ -215,7 +215,7 @@ SCHEDULED: <2026-04-27 ma. 17:00-18:00 +1w>
 - A malformed value (anything other than `YYYY-MM-DD`) is silently dropped.
 - Only one `:SERIES-UNTIL:` per heading. Multiple active timestamps on the same heading share the single end date — one heading is one series.
 
-**Interop with Emacs:** Emacs ignores `:SERIES-UNTIL:` and will keep generating occurrences past the date in its own agenda. To bring Emacs's view in line, trim the base timestamp or split the heading there.
+**Interop with Emacs:** plain Emacs ignores `:SERIES-UNTIL:` and will keep generating occurrences past the date in its own agenda. The optional `elisp/mediant-org-agenda.el` integration applies the same exclusive, base-slot cutoff during Org agenda finalization.
 
 ---
 
