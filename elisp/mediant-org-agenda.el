@@ -74,7 +74,7 @@
   :group 'mediant-org-agenda)
 
 (defface mediant-org-agenda-moved
-  '((t :inherit org-agenda-done))
+  '((t :inherit default))
   "Face used for moved Mediant synthetic agenda lines."
   :group 'mediant-org-agenda)
 
