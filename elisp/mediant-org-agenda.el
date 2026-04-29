@@ -63,7 +63,7 @@
   :type 'boolean
   :group 'mediant-org-agenda)
 
-(defcustom mediant-org-agenda-moved-prefix "Moved: "
+(defcustom mediant-org-agenda-moved-prefix "  ↪ "
   "Prefix added to moved synthetic agenda lines."
   :type 'string
   :group 'mediant-org-agenda)
