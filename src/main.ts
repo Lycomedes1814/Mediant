@@ -32,6 +32,7 @@ let agendaLoaded = false;
 let activeTagFilters = new Set<string>();
 let tagColorEditMode = false;
 let hideEmptyDays = localStorage.getItem("mediant-hide-empty-days") === "true";
+let hideCompletedAndSkipped = localStorage.getItem("mediant-hide-completed") === "true";
 
 let quickCaptureOverlayEl: HTMLElement | null = null;
 let quickCaptureInputEl: HTMLInputElement | null = null;
@@ -1764,6 +1765,12 @@ function toggleHideEmptyDays(): void {
   render();
 }
 
+function toggleHideCompletedAndSkipped(): void {
+  hideCompletedAndSkipped = !hideCompletedAndSkipped;
+  localStorage.setItem("mediant-hide-completed", hideCompletedAndSkipped ? "true" : "false");
+  render();
+}
+
 function isTypingTarget(target: EventTarget | null): boolean {
   const el = target instanceof HTMLElement ? target : null;
   if (!el) return false;
@@ -1771,7 +1778,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return Boolean(el.closest("input, textarea, select, [contenteditable='true']"));
 }
 
-type ShortcutAction = "next" | "prev" | "today" | "add" | "quick-capture" | "color-mode" | "hide-empty-days" | "clear-filters";
+type ShortcutAction = "next" | "prev" | "today" | "add" | "quick-capture" | "color-mode" | "hide-empty-days" | "hide-completed" | "clear-filters";
 
 const SHORTCUT_ACTIONS: Record<string, ShortcutAction> = {
   n: "next",
@@ -1781,6 +1788,7 @@ const SHORTCUT_ACTIONS: Record<string, ShortcutAction> = {
   q: "quick-capture",
   c: "color-mode",
   h: "hide-empty-days",
+  d: "hide-completed",
   x: "clear-filters",
 };
 
@@ -1834,6 +1842,9 @@ async function init(): Promise<void> {
     } else if (action === "hide-empty-days") {
       e.preventDefault();
       toggleHideEmptyDays();
+    } else if (action === "hide-completed") {
+      e.preventDefault();
+      toggleHideCompletedAndSkipped();
     } else if (action === "clear-filters") {
       e.preventDefault();
       clearTagFilters();
@@ -2055,6 +2066,7 @@ function render(): void {
     activeTagFilters: [...activeTagFilters].sort(),
     tagColorEditMode,
     hideEmptyDays,
+    hideCompletedAndSkipped,
   });
 
   // Schedule notifications for today's timed events
@@ -2113,6 +2125,8 @@ function setupNavigation(): void {
       toggleTagColorMode();
     } else if (action === "toggle-hide-empty-days") {
       toggleHideEmptyDays();
+    } else if (action === "toggle-hide-completed") {
+      toggleHideCompletedAndSkipped();
     } else if (action === "toggle-tag-filter") {
       const tag = btn.dataset.tag;
       if (tag) toggleTagFilter(tag);

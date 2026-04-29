@@ -176,8 +176,9 @@ index.html             — Minimal shell with #agenda container
 - **DONE items** rendered at reduced opacity in muted text
 - **Today** indicated by blue card border and small dot marker
 - **Hide empty days** — the `Hide empty days` toggle removes days with no visible agenda items from the rolling week view. This is useful with tag filters; if every day is hidden, the day-card container is hidden too. The preference is stored in `localStorage`.
+- **Hide completed & skipped** — the `Hide completed & skipped` toggle drops DONE entries and skipped recurrence occurrences from the day cards and the someday section. Pairs naturally with `Hide empty days` to collapse the view down to outstanding work. The preference is stored in `localStorage`.
 - **Week navigation** with prev/next/today buttons
-- **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open the add-item panel, `q` open quick capture, `c` toggle tag color mode, `h` toggle hide empty days, `x` clear active tag filters. Shortcuts are disabled while typing in form fields.
+- **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open the add-item panel, `q` open quick capture, `c` toggle tag color mode, `h` toggle hide empty days, `d` toggle hide completed & skipped, `x` clear active tag filters. Shortcuts are disabled while typing in form fields.
 - **Now line** on today's timed section
 - **Add-item panel** for creating TODO tasks and events from the UI. New TODOs are appended under `* Tasks`; new events are appended under `* Events`.
 - **Edit-item panel** for updating an existing entry in place (preserves body text). Edits autosave as fields change; there is no separate Save step. Clicking a recurring occurrence reveals a "This occurrence" section alongside the series fields, where skip/stop-repeat toggles, the move date/time field, the note field, and Clear override write exception properties keyed on the unshifted base date.
@@ -212,6 +213,7 @@ Mediant uses your browser's `localStorage` for the following:
 | `mediant-org-source` | Pasted Org content (static mode only — ignored in server mode) |
 | `mediant-tag-colors` | Tag-to-color assignments, so tag colors stay consistent |
 | `mediant-hide-empty-days` | Whether empty days are hidden in the agenda view |
+| `mediant-hide-completed` | Whether DONE entries and skipped occurrences are hidden in day cards and someday |
 | `theme` | Light/dark mode preference |
 
 In static mode all data stays in the browser. In server mode the Org source lives in the file you passed to the CLI; tag colors and theme are still browser-local.

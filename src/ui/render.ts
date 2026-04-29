@@ -14,6 +14,7 @@ export interface RenderAgendaOptions {
   readonly activeTagFilters?: readonly string[];
   readonly tagColorEditMode?: boolean;
   readonly hideEmptyDays?: boolean;
+  readonly hideCompletedAndSkipped?: boolean;
 }
 
 interface ToggleButtonOptions {
@@ -98,6 +99,8 @@ function renderAgendaBase(
   const endDate = week[6].date;
   container.appendChild(renderHeader(startDate, endDate, options));
 
+  const hideCompleted = options.hideCompletedAndSkipped ?? false;
+
   // Overdue section (before deadlines — most urgent)
   if (overdue.length > 0) {
     container.appendChild(renderOverdue(overdue));
@@ -110,9 +113,15 @@ function renderAgendaBase(
 
   // Days card (all 7 days in one container, divided by thin rules)
   const daysCard = el("section", "days-card");
+  const filteredWeek: AgendaDay[] = hideCompleted
+    ? week.map(day => ({
+        date: day.date,
+        items: day.items.filter(item => item.entry.todo !== "DONE" && !item.skipped),
+      }))
+    : [...week];
   const visibleDays = options.hideEmptyDays
-    ? week.filter(day => day.items.length > 0)
-    : week;
+    ? filteredWeek.filter(day => day.items.length > 0)
+    : filteredWeek;
   if (visibleDays.length > 0) {
     for (const day of visibleDays) {
       daysCard.appendChild(renderDay(day, today));
@@ -121,8 +130,11 @@ function renderAgendaBase(
   }
 
   // Someday section
-  if (someday.length > 0) {
-    container.appendChild(renderSomeday(someday));
+  const visibleSomeday = hideCompleted
+    ? someday.filter(item => item.entry.todo !== "DONE")
+    : someday;
+  if (visibleSomeday.length > 0) {
+    container.appendChild(renderSomeday(visibleSomeday));
   }
 
   for (const key of checkboxListCollapseState.keys()) {
@@ -197,6 +209,17 @@ function createHideEmptyDaysToggle(options: RenderAgendaOptions): HTMLButtonElem
   return hideEmptyDaysBtn;
 }
 
+function createHideCompletedToggle(options: RenderAgendaOptions): HTMLButtonElement {
+  const btn = el("button", "hide-completed-toggle");
+  const label = options.hideCompletedAndSkipped ? "Show completed & skipped" : "Hide completed & skipped";
+  btn.textContent = label;
+  btn.dataset.action = "toggle-hide-completed";
+  btn.setAttribute("aria-label", label);
+  btn.setAttribute("aria-pressed", options.hideCompletedAndSkipped ? "true" : "false");
+  if (options.hideCompletedAndSkipped) btn.classList.add("is-on");
+  return btn;
+}
+
 function renderSettingsMenu(options: RenderAgendaOptions): HTMLElement {
   const menu = document.createElement("details");
   menu.className = "agenda-settings-menu";
@@ -210,6 +233,7 @@ function renderSettingsMenu(options: RenderAgendaOptions): HTMLElement {
   panel.append(
     createColorModeToggle(options),
     createHideEmptyDaysToggle(options),
+    createHideCompletedToggle(options),
     createNotificationToggle({ label: true }),
     createThemeToggle({ label: true }),
   );

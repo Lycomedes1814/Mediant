@@ -269,6 +269,42 @@ describe("renderAgenda", () => {
     expect(toggle?.classList.contains("is-on")).toBe(true);
   });
 
+  it("hides completed and skipped items when requested", () => {
+    const container = document.createElement("div");
+    const week = makeWeek([
+      [
+        makeItem({ title: "Open task", date: new Date(2026, 3, 20, 9, 0), startTime: "09:00", entry: makeEntry({ title: "Open task", todo: "TODO" }) }),
+        makeItem({ title: "Finished", date: new Date(2026, 3, 20, 10, 0), startTime: "10:00", entry: makeEntry({ title: "Finished", todo: "DONE" }) }),
+        makeItem({ title: "Skipped", date: new Date(2026, 3, 20, 11, 0), startTime: "11:00", skipped: true }),
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+    ]);
+    const someday: SomedayItem[] = [
+      { entry: makeEntry({ title: "Pending idea", todo: "TODO", sourceLineNumber: 30 }) },
+      { entry: makeEntry({ title: "Done idea", todo: "DONE", sourceLineNumber: 31 }) },
+    ];
+
+    renderAgenda(container, week, [], [], someday, new Date(2026, 3, 20, 8, 30), {
+      hideCompletedAndSkipped: true,
+    });
+
+    const titles = Array.from(container.querySelectorAll<HTMLElement>(".days-card .item-title")).map((el) => el.textContent);
+    expect(titles).toEqual(["Open task"]);
+
+    const somedayTitles = Array.from(container.querySelectorAll<HTMLElement>(".someday-section .item-title")).map((el) => el.textContent);
+    expect(somedayTitles).toEqual(["Pending idea"]);
+
+    const toggle = container.querySelector<HTMLButtonElement>(".hide-completed-toggle");
+    expect(toggle?.textContent).toBe("Show completed & skipped");
+    expect(toggle?.getAttribute("aria-pressed")).toBe("true");
+    expect(toggle?.classList.contains("is-on")).toBe(true);
+  });
+
   it("hides the days card when every day is hidden", () => {
     const container = document.createElement("div");
 
