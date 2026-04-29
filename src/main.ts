@@ -678,7 +678,7 @@ function makeTagPicker(label: string, id: string): TagPicker {
     for (const tag of selected) {
       const pill = document.createElement("span");
       pill.className = "tag-picker-pill";
-      pill.style.background = getTagColor(tag);
+      pill.style.setProperty("--tag-color", getTagColor(tag));
 
       const text = document.createElement("span");
       text.textContent = tag;
@@ -714,7 +714,7 @@ function makeTagPicker(label: string, id: string): TagPicker {
       opt.textContent = tag;
       const swatch = document.createElement("span");
       swatch.className = "tag-picker-swatch";
-      swatch.style.background = getTagColor(tag);
+      swatch.style.setProperty("--tag-color", getTagColor(tag));
       opt.prepend(swatch);
       const select = (): void => {
         selected.push(tag);

@@ -281,9 +281,13 @@ describe("main.ts integration", () => {
     tagInput!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
     await flush();
 
-    const selectedTags = Array.from(document.querySelectorAll<HTMLElement>(".tag-picker-pill span"))
-      .map(el => el.textContent)
-      .filter((text): text is string => Boolean(text));
+    const selectedPills = Array.from(document.querySelectorAll<HTMLElement>(".tag-picker-pill"));
+    const selectedTags = selectedPills.flatMap(pill =>
+      Array.from(pill.querySelectorAll<HTMLElement>("span")).map(el => el.textContent).filter((text): text is string => Boolean(text)),
+    );
+    const workPill = selectedPills.find(pill => pill.textContent?.includes("work")) ?? null;
+    expect(workPill?.style.getPropertyValue("--tag-color")).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(workPill?.style.background).toBe("");
     expect(selectedTags).toContain("work");
 
     titleInput!.value = "Yoga deluxe";
