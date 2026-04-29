@@ -326,7 +326,9 @@ body {
 }
 
 .day-header[data-action="add-on-date"]:hover .date-label {
-  color: var(--border-today);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
 }
 
 .day-header[data-action="add-on-date"]:focus-visible {

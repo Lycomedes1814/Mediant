@@ -2105,6 +2105,10 @@ function setupNavigation(): void {
       }
     } else if (action === "add-on-date") {
       openAddPanel(btn.dataset.date ?? null);
+      if (btn instanceof HTMLElement) {
+        btn.blur();
+        lastPanelFocusEl = null;
+      }
     } else if (action === "toggle-tag-color-mode") {
       toggleTagColorMode();
     } else if (action === "toggle-hide-empty-days") {
