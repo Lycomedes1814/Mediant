@@ -2074,7 +2074,7 @@ function render(): void {
   const notifItems: { title: string; dateStr: string; startTime: string }[] = [];
   for (const day of filteredWeek) {
     for (const item of day.items) {
-      if (item.startTime) {
+      if (item.startTime && !item.skipped) {
         const d = item.date;
         const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         if (ds === todayStr) {
