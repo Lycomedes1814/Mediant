@@ -2,7 +2,7 @@
 
 A focused web agenda and editor for Org-mode files.
 
-Mediant parses a practical subset of Org syntax, renders a responsive rolling week view, and can edit common agenda workflows without trying to become a full Org implementation. It runs in two modes:
+Mediant parses a practical subset of Org syntax, renders a responsive rolling agenda view, and can edit common agenda workflows without trying to become a full Org implementation. It runs in two modes:
 
 - **Static mode** — paste Org content into a textarea, everything stays in `localStorage`. Zero-install, works from any static host.
 - **Server mode** — `mediant <file.org>` starts a local Node server that reads and writes a real `.org` file. The UI hydrates from the file on load and picks up external edits (e.g. from Emacs) live via SSE.
@@ -124,11 +124,11 @@ Three clearly separated stages:
 
 ```
   .org file → Parser (src/org/) → Agenda (src/agenda/) → UI (src/ui/)
-              OrgEntry[]           AgendaWeek             HTML/CSS
+              OrgEntry[]           AgendaDay[]            HTML/CSS
 ```
 
 - **Parser types** reflect Org source faithfully (headings, timestamps, planning, tags, checkbox items, progress cookies, body)
-- **Agenda types** reflect UI needs (render categories, week/day grouping, deadline collection)
+- **Agenda types** reflect UI needs (render categories, day grouping, deadline collection)
 - Classification into display categories happens at the agenda stage, never during parsing
 
 ## Project structure
@@ -143,10 +143,10 @@ src/
     __tests__/         — Timestamp, parser, and drawer tests
   agenda/
     model.ts           — Render types (AgendaItem, AgendaDay, AgendaWeek, DeadlineItem, OverdueItem, SomedayItem)
-    generate.ts        — Week generation, classification, sorting, deadline collection
+    generate.ts        — Range generation, classification, sorting, deadline collection
     __tests__/         — Agenda generation tests
   ui/
-    render.ts          — DOM rendering from AgendaWeek + DeadlineItem[] + OverdueItem[]
+    render.ts          — DOM rendering from AgendaDay[] + DeadlineItem[] + OverdueItem[]
     tagColors.ts       — Dynamic tag color management (auto-assign, localStorage)
     style.css          — All styles (CSS grid layout, responsive)
   main.ts              — Entry point: probes server, hydrates, wires parse → generate → render
@@ -159,7 +159,7 @@ index.html             — Minimal shell with #agenda container
 
 - **Overdue section** at the top — TODO items past their DEADLINE or SCHEDULED date, sorted most overdue first, with a clickable TODO badge before each title
 - **Upcoming deadlines** section below overdue (global, sorted by due date), labeled as `Today` or compact day counts like `12d`, with urgency colors that progress from red to orange to yellow to a calmer tone as the due date gets farther away
-- **Day cards** (7 consecutive days starting from today) each containing:
+- **Day cards** (7 consecutive days by default, or 30 days with the month-ahead toggle) each containing:
   - All-day events (holidays, birthdays) in a subtle grouped section
   - Timed events with a monospace, content-width time column, tag-colored left border, tag badges (colors auto-assigned from a palette, persisted in localStorage)
   - Scheduled tasks inline (time → TODO/DONE badge → title)
@@ -175,10 +175,11 @@ index.html             — Minimal shell with #agenda container
 - **Quick capture** — press `q` to open a fixed one-line capture overlay. `Enter` appends the text as an undated `TODO` under `* Tasks`, clears the field, and keeps focus ready for the next task. `Escape` or clicking outside the field closes it.
 - **DONE items** rendered at reduced opacity in muted text
 - **Today** indicated by blue card border and small dot marker
-- **Hide empty days** — the `Hide empty days` toggle removes days with no visible agenda items from the rolling week view. This is useful with tag filters; if every day is hidden, the day-card container is hidden too. The preference is stored in `localStorage`.
+- **Hide empty days** — the `Hide empty days` toggle removes days with no visible agenda items from the active range. This is useful with tag filters; if every day is hidden, the day-card container is hidden too. The preference is stored in `localStorage`.
 - **Hide completed & skipped** — the `Hide completed & skipped` toggle drops DONE entries and skipped recurrence occurrences from the day cards and the someday section. Pairs naturally with `Hide empty days` to collapse the view down to outstanding work. The preference is stored in `localStorage`.
-- **Week navigation** with prev/next/today buttons
-- **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open the add-item panel, `q` open quick capture, `c` toggle tag color mode, `h` toggle hide empty days, `d` toggle hide completed & skipped, `x` clear active tag filters. Shortcuts are disabled while typing in form fields.
+- **Month-ahead view** — a settings toggle expands the day cards from 7 days to 30 days. Prev/next navigation moves by the active range length, and the preference is stored in `localStorage`.
+- **Range navigation** with prev/next/today buttons
+- **Keyboard shortcuts** — `n` next range, `p` previous range, `t` jump to today, `a` open the add-item panel, `q` open quick capture, `c` toggle tag color mode, `h` toggle hide empty days, `d` toggle hide completed & skipped, `m` toggle month-ahead view, `x` clear active tag filters. Shortcuts are disabled while typing in form fields.
 - **Now line** on today's timed section
 - **Add-item panel** for creating TODO tasks and events from the UI. New TODOs are appended under `* Tasks`; new events are appended under `* Events`.
 - **Edit-item panel** for updating an existing entry in place (preserves body text). Edits autosave as fields change; there is no separate Save step. Clicking a recurring occurrence reveals a "This occurrence" section alongside the series fields, where skip/stop-repeat toggles, the move date/time field, the note field, and Clear override write exception properties keyed on the unshifted base date.
@@ -190,7 +191,7 @@ index.html             — Minimal shell with #agenda container
 - **TypeScript** — parser, data model, agenda generation, rendering
 - **Vite** — dev server and bundling
 - **Vitest** — 210 tests across parser, timestamp, agenda, and drawer suites
-- **HTML/CSS** — responsive week view with CSS grid
+- **HTML/CSS** — responsive agenda view with CSS grid
 - **Node** (built-ins only) — optional local server with no runtime npm dependencies
 
 ## Non-goals (v1)
@@ -214,6 +215,7 @@ Mediant uses your browser's `localStorage` for the following:
 | `mediant-tag-colors` | Tag-to-color assignments, so tag colors stay consistent |
 | `mediant-hide-empty-days` | Whether empty days are hidden in the agenda view |
 | `mediant-hide-completed` | Whether DONE entries and skipped occurrences are hidden in day cards and someday |
+| `mediant-month-ahead` | Whether the agenda shows 30 days instead of 7 |
 | `theme` | Light/dark mode preference |
 
 In static mode all data stays in the browser. In server mode the Org source lives in the file you passed to the CLI; tag colors and theme are still browser-local.

@@ -1,11 +1,11 @@
 /**
- * DOM rendering: AgendaWeek + DeadlineItem[] → HTML.
+ * DOM rendering: AgendaDay[] + DeadlineItem[] → HTML.
  *
  * Reads from the agenda data model, writes to the DOM.
  * No parsing or date logic here — that belongs to earlier stages.
  */
 
-import type { AgendaWeek, AgendaDay, AgendaItem, DeadlineItem, OverdueItem, SomedayItem } from "../agenda/model.ts";
+import type { AgendaDay, AgendaItem, DeadlineItem, OverdueItem, SomedayItem } from "../agenda/model.ts";
 import { getTagColor, setTagColor, TAG_DEFAULT_COLOR } from "./tagColors.ts";
 import { notificationsEnabled, setNotificationsEnabled, requestPermission, clearScheduled, scheduleNotifications } from "./notifications.ts";
 import { DAY_NAMES, MONTH_NAMES } from "../dateLabels.ts";
@@ -15,6 +15,7 @@ export interface RenderAgendaOptions {
   readonly tagColorEditMode?: boolean;
   readonly hideEmptyDays?: boolean;
   readonly hideCompletedAndSkipped?: boolean;
+  readonly monthAhead?: boolean;
 }
 
 interface ToggleButtonOptions {
@@ -82,7 +83,7 @@ export function createNotificationToggle(options: ToggleButtonOptions = {}): HTM
 
 function renderAgendaBase(
   container: HTMLElement,
-  week: AgendaWeek,
+  week: readonly AgendaDay[],
   deadlines: DeadlineItem[],
   overdue: OverdueItem[],
   someday: SomedayItem[],
@@ -94,9 +95,11 @@ function renderAgendaBase(
   renderedCheckboxListKeys = new Set();
   container.innerHTML = "";
 
+  if (week.length === 0) return;
+
   // Header
   const startDate = week[0].date;
-  const endDate = week[6].date;
+  const endDate = week[week.length - 1].date;
   container.appendChild(renderHeader(startDate, endDate, options));
 
   const hideCompleted = options.hideCompletedAndSkipped ?? false;
@@ -111,7 +114,7 @@ function renderAgendaBase(
     container.appendChild(renderDeadlines(deadlines));
   }
 
-  // Days card (all 7 days in one container, divided by thin rules)
+  // Days card (the visible date range in one container, divided by thin rules)
   const daysCard = el("section", "days-card");
   const filteredWeek: AgendaDay[] = hideCompleted
     ? week.map(day => ({
@@ -151,7 +154,7 @@ function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptio
 
   const prevBtn = el("button", "nav-arrow");
   prevBtn.innerHTML = "&larr;";
-  prevBtn.setAttribute("aria-label", "Previous 7 days");
+  prevBtn.setAttribute("aria-label", options.monthAhead ? "Previous 30 days" : "Previous 7 days");
   prevBtn.dataset.action = "prev";
 
   const title = el("span", "nav-title");
@@ -161,7 +164,7 @@ function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptio
 
   const nextBtn = el("button", "nav-arrow");
   nextBtn.innerHTML = "&rarr;";
-  nextBtn.setAttribute("aria-label", "Next 7 days");
+  nextBtn.setAttribute("aria-label", options.monthAhead ? "Next 30 days" : "Next 7 days");
   nextBtn.dataset.action = "next";
 
   const todayBtn = el("button", "agenda-nav-today");
@@ -220,6 +223,17 @@ function createHideCompletedToggle(options: RenderAgendaOptions): HTMLButtonElem
   return btn;
 }
 
+function createMonthAheadToggle(options: RenderAgendaOptions): HTMLButtonElement {
+  const btn = el("button", "month-ahead-toggle");
+  const label = options.monthAhead ? "Show 7 days" : "Show next month";
+  btn.textContent = label;
+  btn.dataset.action = "toggle-month-ahead";
+  btn.setAttribute("aria-label", label);
+  btn.setAttribute("aria-pressed", options.monthAhead ? "true" : "false");
+  if (options.monthAhead) btn.classList.add("is-on");
+  return btn;
+}
+
 function renderSettingsMenu(options: RenderAgendaOptions): HTMLElement {
   const menu = document.createElement("details");
   menu.className = "agenda-settings-menu";
@@ -234,6 +248,7 @@ function renderSettingsMenu(options: RenderAgendaOptions): HTMLElement {
     createColorModeToggle(options),
     createHideEmptyDaysToggle(options),
     createHideCompletedToggle(options),
+    createMonthAheadToggle(options),
     createNotificationToggle({ label: true }),
     createThemeToggle({ label: true }),
   );
@@ -881,7 +896,7 @@ function renderTag(
 
 export function renderAgenda(
   container: HTMLElement,
-  week: AgendaWeek,
+  week: readonly AgendaDay[],
   deadlines: DeadlineItem[],
   overdue: OverdueItem[],
   someday: SomedayItem[],

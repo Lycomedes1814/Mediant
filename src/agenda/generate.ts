@@ -1,5 +1,5 @@
 /**
- * Agenda generation: transforms OrgEntry[] into a rolling 7-day view.
+ * Agenda generation: transforms OrgEntry[] into a rolling day range.
  *
  * This is where Org semantics get classified into render categories.
  * The parser output (OrgEntry) stays faithful to Org; this module
@@ -14,10 +14,11 @@
  *   | DEADLINE planning  | Either    | "deadline"   |
  *   | SCHEDULED planning | Either    | "scheduled"  |
  *
- * Recurrence expansion is always bounded to the requested 7-day range.
+ * Recurrence expansion is always bounded to the requested day range.
  * DONE entries are included (the UI renders them as dimmed grey).
  *
- * Range semantics: startDate 00:00:00 through startDate+6 23:59:59, local time.
+ * Range semantics: startDate 00:00:00 through the final requested day
+ * at 23:59:59, local time.
  */
 
 import type { OrgEntry, RecurrenceOverride } from "../org/model.ts";
@@ -32,20 +33,29 @@ import type { AgendaItem, AgendaItemOverride, AgendaDay, AgendaWeek, DeadlineIte
 // ── Public API ───────────────────────────────────────────────────────
 
 /**
- * Generate a 7-day agenda from parsed Org entries.
+ * Generate an agenda spanning `dayCount` consecutive days from `startDate`.
  *
  * @param entries - parsed OrgEntry[] from the parser
- * @param startDate - first day of the 7-day range
- * @returns AgendaWeek (7 consecutive days starting from startDate), each day with sorted items
+ * @param startDate - first day of the range
+ * @param dayCount - number of consecutive days to include (must be >= 1)
+ * @returns readonly AgendaDay[] of length `dayCount`, each day with sorted items
  */
-export function generateWeek(entries: OrgEntry[], startDate: Date): AgendaWeek {
+export function generateAgenda(
+  entries: OrgEntry[],
+  startDate: Date,
+  dayCount: number,
+): readonly AgendaDay[] {
+  if (!Number.isInteger(dayCount) || dayCount < 1) {
+    throw new RangeError("dayCount must be a positive integer");
+  }
+
   const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
   const end = new Date(start);
-  end.setDate(end.getDate() + 6);
+  end.setDate(end.getDate() + dayCount - 1);
   end.setHours(23, 59, 59, 999);
 
   const days: AgendaDay[] = [];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < dayCount; i++) {
     const date = new Date(start);
     date.setDate(date.getDate() + i);
     days.push({ date, items: [] });
@@ -69,12 +79,23 @@ export function generateWeek(entries: OrgEntry[], startDate: Date): AgendaWeek {
   }
 
   // Sort items within each day
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < dayCount; i++) {
     const sorted = [...days[i].items].sort(compareItems);
     days[i] = { date: days[i].date, items: sorted };
   }
 
-  return days as unknown as AgendaWeek;
+  return days;
+}
+
+/**
+ * Generate a 7-day agenda from parsed Org entries.
+ *
+ * @param entries - parsed OrgEntry[] from the parser
+ * @param startDate - first day of the 7-day range
+ * @returns AgendaWeek (7 consecutive days starting from startDate), each day with sorted items
+ */
+export function generateWeek(entries: OrgEntry[], startDate: Date): AgendaWeek {
+  return generateAgenda(entries, startDate, 7) as unknown as AgendaWeek;
 }
 
 /**
@@ -195,7 +216,7 @@ function collectOccurrences(
   );
   for (const occ of occurrences) {
     const dayIndex = dayOffsetIndex(occ.date, rangeStart);
-    if (dayIndex < 0 || dayIndex > 6) continue;
+    if (dayIndex < 0 || dayIndex >= days.length) continue;
     (days[dayIndex].items as AgendaItem[]).push(buildAgendaItem(entry, ts, category, occ));
   }
 }

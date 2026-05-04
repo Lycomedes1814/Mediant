@@ -7,5 +7,8 @@ export default defineConfig(({ mode }) => {
     server: {
       allowedHosts: env.VITE_ALLOWED_HOST ? [env.VITE_ALLOWED_HOST] : [],
     },
+    test: {
+      setupFiles: ["src/test/setup.ts"],
+    },
   };
 });

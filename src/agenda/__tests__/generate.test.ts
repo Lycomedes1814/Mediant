@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { collectDeadlines, collectOverdueItems, collectSomedayItems, generateWeek } from "../generate.ts";
+import { collectDeadlines, collectOverdueItems, collectSomedayItems, generateAgenda, generateWeek } from "../generate.ts";
 import { parseOrg } from "../../org/parser.ts";
 import type { OrgEntry } from "../../org/model.ts";
 
@@ -56,6 +56,32 @@ describe("7-day structure", () => {
     for (const day of week) {
       expect(day.items).toHaveLength(0);
     }
+  });
+});
+
+// ── generateAgenda (variable day count) ─────────────────────────────
+
+describe("generateAgenda", () => {
+  it("returns the requested number of consecutive days", () => {
+    const days = generateAgenda([], APRIL_6, 30);
+    expect(days).toHaveLength(30);
+    expect(days[0].date.getDate()).toBe(6);
+    expect(days[0].date.getMonth()).toBe(3); // April
+    // 30 days from April 6 → May 5
+    expect(days[29].date.getDate()).toBe(5);
+    expect(days[29].date.getMonth()).toBe(4); // May
+  });
+
+  it("classifies occurrences across the full window", () => {
+    const entries = parseOrg("** Class\n<2026-05-04 ma. 09:00-10:00>\n");
+    const days = generateAgenda(entries, APRIL_6, 30);
+    // April 6 = index 0 → May 4 = index 28
+    expect(days[28].items).toHaveLength(1);
+    expect(days[28].items[0].category).toBe("timed");
+  });
+
+  it("rejects non-positive day counts", () => {
+    expect(() => generateAgenda([], APRIL_6, 0)).toThrow(RangeError);
   });
 });
 

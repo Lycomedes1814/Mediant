@@ -619,6 +619,7 @@ describe("renderAgenda", () => {
     renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 8, 0), {
       activeTagFilters: ["work"],
       tagColorEditMode: true,
+      monthAhead: true,
     });
 
     const filterRow = container.querySelector(".active-tag-filters");
@@ -629,6 +630,8 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".timed-item .tag[data-tag='work']")?.classList.contains("is-color-editable")).toBe(true);
     expect(container.querySelector(".timed-item .tag[data-tag='work'] .tag-color-edit-icon")?.textContent).toBe("🖌");
     expect(container.querySelector(".agenda-settings-menu .agenda-settings-summary")?.textContent).toBe("Settings");
+    expect(container.querySelector(".agenda-settings-menu .month-ahead-toggle")?.textContent).toBe("Show 7 days");
+    expect(container.querySelector(".agenda-settings-menu .month-ahead-toggle")?.classList.contains("is-on")).toBe(true);
     expect(container.querySelector(".agenda-settings-menu .notification-toggle.is-labeled")?.textContent).toBe("Enable notifications");
     expect(container.querySelector(".agenda-settings-menu .theme-toggle.is-labeled")?.textContent).toBe("Dark theme");
   });

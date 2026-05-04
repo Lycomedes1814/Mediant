@@ -10,9 +10,9 @@ import {
   toggleDoneInSource,
 } from "./org/sourceEdit.ts";
 import { stepDate } from "./org/timestamp.ts";
-import { generateWeek, collectDeadlines, collectOverdueItems, collectSomedayItems } from "./agenda/generate.ts";
+import { generateAgenda, collectDeadlines, collectOverdueItems, collectSomedayItems } from "./agenda/generate.ts";
 import { renderAgenda, createThemeToggle, openTagColorPicker } from "./ui/render.ts";
-import type { AgendaWeek } from "./agenda/model.ts";
+import type { AgendaDay } from "./agenda/model.ts";
 import { getTagColor } from "./ui/tagColors.ts";
 import { scheduleNotifications } from "./ui/notifications.ts";
 import { DAY_ABBREVS, MONTH_ABBREVS } from "./dateLabels.ts";
@@ -20,6 +20,7 @@ import { DAY_ABBREVS, MONTH_ABBREVS } from "./dateLabels.ts";
 // ── Constants ───────────────────────────────────────────────────────
 
 const MAX_INPUT_BYTES = 4 * 1024 * 1024; // 4 MB
+const MONTH_AHEAD_DAYS = 30;
 
 // ── State ────────────────────────────────────────────────────────────
 
@@ -33,6 +34,7 @@ let activeTagFilters = new Set<string>();
 let tagColorEditMode = false;
 let hideEmptyDays = localStorage.getItem("mediant-hide-empty-days") === "true";
 let hideCompletedAndSkipped = localStorage.getItem("mediant-hide-completed") === "true";
+let monthAhead = localStorage.getItem("mediant-month-ahead") === "true";
 
 let quickCaptureOverlayEl: HTMLElement | null = null;
 let quickCaptureInputEl: HTMLInputElement | null = null;
@@ -1716,10 +1718,11 @@ function closeAddPanel(): void {
 }
 
 function navigateWeek(direction: "prev" | "next" | "today"): void {
+  const step = monthAhead ? MONTH_AHEAD_DAYS : 7;
   if (direction === "prev") {
-    currentStart.setDate(currentStart.getDate() - 7);
+    currentStart.setDate(currentStart.getDate() - step);
   } else if (direction === "next") {
-    currentStart.setDate(currentStart.getDate() + 7);
+    currentStart.setDate(currentStart.getDate() + step);
   } else {
     currentStart = todayMidnight();
   }
@@ -1731,11 +1734,11 @@ function entryMatchesTagFilters(entry: Pick<OrgEntry, "tags">): boolean {
   return [...activeTagFilters].every(tag => entry.tags.includes(tag));
 }
 
-function filterWeekByTags(week: AgendaWeek): AgendaWeek {
+function filterWeekByTags(week: readonly AgendaDay[]): readonly AgendaDay[] {
   return week.map(day => ({
     ...day,
     items: day.items.filter(item => entryMatchesTagFilters(item.entry)),
-  })) as unknown as AgendaWeek;
+  }));
 }
 
 function filterByTags<T extends { entry: Pick<OrgEntry, "tags"> }>(items: T[]): T[] {
@@ -1771,6 +1774,12 @@ function toggleHideCompletedAndSkipped(): void {
   render();
 }
 
+function toggleMonthAhead(): void {
+  monthAhead = !monthAhead;
+  localStorage.setItem("mediant-month-ahead", monthAhead ? "true" : "false");
+  render();
+}
+
 function isTypingTarget(target: EventTarget | null): boolean {
   const el = target instanceof HTMLElement ? target : null;
   if (!el) return false;
@@ -1778,7 +1787,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return Boolean(el.closest("input, textarea, select, [contenteditable='true']"));
 }
 
-type ShortcutAction = "next" | "prev" | "today" | "add" | "quick-capture" | "color-mode" | "hide-empty-days" | "hide-completed" | "clear-filters";
+type ShortcutAction = "next" | "prev" | "today" | "add" | "quick-capture" | "color-mode" | "hide-empty-days" | "hide-completed" | "month-ahead" | "clear-filters";
 
 const SHORTCUT_ACTIONS: Record<string, ShortcutAction> = {
   n: "next",
@@ -1789,6 +1798,7 @@ const SHORTCUT_ACTIONS: Record<string, ShortcutAction> = {
   c: "color-mode",
   h: "hide-empty-days",
   d: "hide-completed",
+  m: "month-ahead",
   x: "clear-filters",
 };
 
@@ -1845,6 +1855,9 @@ async function init(): Promise<void> {
     } else if (action === "hide-completed") {
       e.preventDefault();
       toggleHideCompletedAndSkipped();
+    } else if (action === "month-ahead") {
+      e.preventDefault();
+      toggleMonthAhead();
     } else if (action === "clear-filters") {
       e.preventDefault();
       clearTagFilters();
@@ -2053,7 +2066,8 @@ function render(): void {
 
   agendaLoaded = true;
   const today = new Date();
-  const week = generateWeek(entries, currentStart);
+  const dayCount = monthAhead ? MONTH_AHEAD_DAYS : 7;
+  const week = generateAgenda(entries, currentStart, dayCount);
   const deadlines = collectDeadlines(entries, today);
   const overdue = collectOverdueItems(entries, today);
   const someday = collectSomedayItems(entries);
@@ -2067,6 +2081,7 @@ function render(): void {
     tagColorEditMode,
     hideEmptyDays,
     hideCompletedAndSkipped,
+    monthAhead,
   });
 
   // Schedule notifications for today's timed events
@@ -2127,6 +2142,8 @@ function setupNavigation(): void {
       toggleHideEmptyDays();
     } else if (action === "toggle-hide-completed") {
       toggleHideCompletedAndSkipped();
+    } else if (action === "toggle-month-ahead") {
+      toggleMonthAhead();
     } else if (action === "toggle-tag-filter") {
       const tag = btn.dataset.tag;
       if (tag) toggleTagFilter(tag);

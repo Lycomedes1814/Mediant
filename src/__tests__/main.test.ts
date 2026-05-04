@@ -199,6 +199,25 @@ describe("main.ts integration", () => {
     await flush();
     expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
 
+    keydownHandler!(makeKeydownEvent("m", document.body));
+    await flush();
+    expect(localStorage.getItem("mediant-month-ahead")).toBe("true");
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20 April – 19 May 2026");
+    expect(document.querySelectorAll(".day-block")).toHaveLength(30);
+
+    keydownHandler!(makeKeydownEvent("n", document.body));
+    await flush();
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20 May – 18 June 2026");
+
+    keydownHandler!(makeKeydownEvent("m", document.body));
+    await flush();
+    expect(localStorage.getItem("mediant-month-ahead")).toBe("false");
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 May 2026");
+
+    keydownHandler!(makeKeydownEvent("t", document.body));
+    await flush();
+    expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");
+
     keydownHandler!(makeKeydownEvent("a", document.body));
     await waitFor(() => document.querySelector(".add-panel.is-open") !== null);
     expect(document.querySelector<HTMLElement>(".te-header span")?.textContent).toBe("Add item");
@@ -522,6 +541,7 @@ describe("main.ts integration", () => {
     keydownHandler!(makeKeydownEvent("t", typingTitleInput!));
     keydownHandler!(makeKeydownEvent("a", typingTitleInput!));
     keydownHandler!(makeKeydownEvent("q", typingTitleInput!));
+    keydownHandler!(makeKeydownEvent("m", typingTitleInput!));
     keydownHandler!(makeKeydownEvent("x", typingTitleInput!));
     await flush();
     expect(document.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("20–26 April 2026");

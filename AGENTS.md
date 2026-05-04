@@ -2,7 +2,7 @@
 
 ## Project overview
 
-Mediant is a minimal Org-mode parser and agenda viewer. It parses a focused subset of Org syntax and renders a responsive rolling 7-day agenda in HTML/CSS. It runs in two modes: a **static mode** where users paste Org content into a textarea (localStorage-backed), and a **server mode** where a local Node CLI (`mediant <file.org>`) serves the UI and streams the configured Org file over `/api/source` + SSE. No framework dependencies.
+Mediant is a minimal Org-mode parser and agenda viewer. It parses a focused subset of Org syntax and renders a responsive rolling agenda in HTML/CSS, with a 7-day default and optional 30-day month-ahead view. It runs in two modes: a **static mode** where users paste Org content into a textarea (localStorage-backed), and a **server mode** where a local Node CLI (`mediant <file.org>`) serves the UI and streams the configured Org file over `/api/source` + SSE. No framework dependencies.
 
 ## Architecture
 
@@ -11,13 +11,14 @@ Three clearly separated stages — do not collapse them:
 ```
   .org file → Parser (org/) → Agenda (agenda/)    → UI (ui/)
               OrgEntry[]       AgendaWeek            HTML/CSS
+                               AgendaDay[]
                                DeadlineItem[]
                                OverdueItem[]
                                SomedayItem[]
 ```
 
 - **Parser output types** (`src/org/`) reflect Org source faithfully
-- **Agenda types** (`src/agenda/`) reflect UI needs (render categories, 7-day structure)
+- **Agenda types** (`src/agenda/`) reflect UI needs (render categories, day-range structure)
 - Classification into display categories happens at the agenda stage, never during parsing
 
 ## Key source files
@@ -30,9 +31,9 @@ Three clearly separated stages — do not collapse them:
 | `src/org/drawer.ts` | Property-drawer text mutation helpers (`upsertProperty`, `removeProperty`). Operate on raw source strings; preserve key order and other drawer content; used by the edit panel to write exception properties. |
 | `src/org/sourceEdit.ts` | Pure raw-source mutation helpers used by UI actions: replace an entry block while preserving body text, toggle TODO/DONE, advance repeating timestamps when marking done, toggle checkbox state, and update progress cookies. |
 | `src/agenda/model.ts` | Agenda/render types: `AgendaItem`, `AgendaDay`, `AgendaWeek`, `DeadlineItem`, `OverdueItem`, `SomedayItem`, `RenderCategory`, `AgendaItemOverride`. |
-| `src/agenda/generate.ts` | 7-day generation from a start date, recurrence expansion with exceptions (bounded to requested range), classification, sorting, overdue/someday collection. |
+| `src/agenda/generate.ts` | Range generation from a start date, recurrence expansion with exceptions (bounded to requested range), classification, sorting, overdue/someday collection. |
 | `src/dateLabels.ts` | Shared English day/month labels for agenda headers and date formatting. Keep display labels centralized here instead of duplicating arrays. |
-| `src/ui/render.ts` | DOM rendering from `AgendaWeek` + `DeadlineItem[]` + `OverdueItem[]`. Renders the per-occurrence override chip, instance note, active tag-filter state, and tag color-mode UI. |
+| `src/ui/render.ts` | DOM rendering from `AgendaDay[]` + `DeadlineItem[]` + `OverdueItem[]`. Renders the per-occurrence override chip, instance note, active tag-filter state, and tag color-mode UI. |
 | `src/ui/tagColors.ts` | Dynamic tag color management. Auto-assigns from palette, persists in localStorage. |
 | `src/ui/notifications.ts` | Browser notification preference, permission request, and timer scheduling for timed events happening today. Notifications fire 1 hour before the start time and are rescheduled on render. |
 | `src/ui/style.css` | All styles. CSS grid layout with content-width time column. |
@@ -101,7 +102,7 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 
 - **Overdue section** at the very top — TODO items past their DEADLINE or SCHEDULED date, sorted most overdue first. Shows days overdue + kind badge (DEADLINE/SCHEDULED) + clickable TODO badge before the title. Red-accented border and labels.
 - **Upcoming deadlines section** below overdue (global, not per-day). Due text is rendered as `Today` or compact day counts like `12d`, with urgency colors that progress from red to orange to yellow to a calmer tone as the due date gets farther away.
-- **Day cards** (7 consecutive days starting from today), each containing:
+- **Day cards** (7 consecutive days by default, or 30 days with the month-ahead toggle), each containing:
   - All-day section (holidays, birthdays — no label, title flush left)
   - Deadline items (DEADLINE badge + title, time shown if present)
   - Timed events (time column + title + tag badges, tag-colored left border)
@@ -111,9 +112,10 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Day headings** are clickable/focusable controls. Activating a day heading opens the add-item panel in Event mode with that day prefilled in the When field.
 - **Hide empty days** — toolbar toggle removes day blocks with no visible agenda items. If no day blocks remain, the day-card container is not rendered. Preference persists in localStorage (`mediant-hide-empty-days`).
 - **Hide completed & skipped** — toolbar toggle filters out DONE entries and `skipped` (cancelled-occurrence) items from the day cards, and drops DONE entries from the someday section. Filtering happens in `renderAgendaBase` after tag filtering, so it composes with `Hide empty days` (filtered days that fall to zero items collapse). Overdue and upcoming-deadlines collectors already restrict to TODO/non-cancelled items, so they need no extra filter. Preference persists in localStorage (`mediant-hide-completed`).
+- **Month-ahead view** — settings toggle expands the day-card range from 7 days to 30 days. Prev/next navigation moves by the active range length. Preference persists in localStorage (`mediant-month-ahead`).
 - **Tags** rendered as colored badge pills, right-aligned. Colors auto-assigned from a palette and persisted in localStorage (`mediant-tag-colors`).
 - **Tag color rendering** — tag badges, tag picker pills/swatches, and tag-colored left fringes share the same visual transform: light mode displays a softened `color-mix(... 20%, white)` version of the stored tag color, while dark mode uses the raw tag color. Render code should set CSS variables (`--tag-color`, `--tag-fringe-color`, `--global-row-fringe-color`) and let CSS handle theme transforms.
-- **Tag filtering** — clicking a tag toggles it in the active filter set. Filtering applies to the 7-day agenda, overdue section, upcoming deadlines, and someday section. Multiple selected tags use AND semantics: an item must contain every selected tag to remain visible.
+- **Tag filtering** — clicking a tag toggles it in the active filter set. Filtering applies to the visible agenda range, overdue section, upcoming deadlines, and someday section. Multiple selected tags use AND semantics: an item must contain every selected tag to remain visible.
 - **Tag color mode** — explicit toolbar toggle that repurposes tag clicks from filtering to recoloring. `Alt`-click on a tag opens its color picker directly without changing mode.
 - **Tag picker keyboard support** — in the add/edit panel, `ArrowUp`/`ArrowDown` move through tag suggestions, `Enter` selects the highlighted suggestion, and `Backspace` on an empty tag field removes the last selected pill.
 - **Priority badges** — `[#A]`/`[#B]`/`[#C]` rendered as small colored badges (red/amber/blue) nested inside the item title so the row grid templates stay fixed. Do not duplicate priority in metadata rows; it should appear before the title everywhere.
@@ -122,9 +124,9 @@ See `ORG-SYNTAX.md` for the full breakdown of supported, gracefully ignored, and
 - **Recurrence-exception chip** — shifted or rescheduled occurrences show a small muted chip nested before the title: `← Moved` / `→ Moved` (arrow direction reflects whether the occurrence moved earlier or later than the base slot). Skipped occurrences are de-emphasised instead of badged: a `•` glyph prefixes the title, the row drops to opacity 0.55, and the title shifts to muted text; the word "Skipped" lives only in the tooltip / aria-label. Tooltip carries the detail (`+45m`, `from 2026-05-11 17:00-18:00`, `Skipped occurrence`).
 - **Instance note** — `:EXCEPTION-NOTE-<date>:` renders as an italic one-liner directly under the occurrence, aligned with the row's title column.
 - **Now line** on today's card — orange line positioned proportionally within the timed section
-- **Navigation** — prev/next by 7-day increments, "Today" button returns to today as start date
+- **Navigation** — prev/next by the active range length, "Today" button returns to today as start date
 - **Notifications** — toolbar toggle requests browser notification permission and persists `mediant-notifications`. When enabled, the client schedules notifications for timed events that occur today, 1 hour before their start time; timers are cleared and rebuilt on render.
-- **Keyboard shortcuts** — `n` next week, `p` previous week, `t` jump to today, `a` open add-item panel, `q` open quick capture, `c` toggle tag color mode, `h` toggle hide empty days, `d` toggle hide completed & skipped, `x` clear active tag filters. Disabled while focus is inside text inputs, textareas, selects, or other editable controls.
+- **Keyboard shortcuts** — `n` next range, `p` previous range, `t` jump to today, `a` open add-item panel, `q` open quick capture, `c` toggle tag color mode, `h` toggle hide empty days, `d` toggle hide completed & skipped, `m` toggle month-ahead view, `x` clear active tag filters. Disabled while focus is inside text inputs, textareas, selects, or other editable controls.
 - **Someday section** at the bottom — undated TODO items (no timestamps, no SCHEDULED/DEADLINE), shown in source order so quick captures stay in capture order
 - **Quick capture** — fixed one-line overlay opened with `q`. Placeholder text is `Quick task capture`; `Enter` appends the text as an undated `TODO` child under top-level `* Tasks`, clears the field, and keeps focus ready for repeated capture. `Escape` or clicking outside the input exits. Captured Org-looking text is sanitized so priority cookies, trailing tags, progress cookies, and timestamps remain plain title text instead of changing agenda classification.
 - **Add-item panel** — slide-in panel for creating TODO tasks and events. Defaults to Event because quick capture covers low-friction TODO entry. New TODOs append under top-level `* Tasks`; new events append under top-level `* Events`. Generates Org text and appends to the active source (server file or localStorage).
@@ -140,7 +142,7 @@ Tests across ten suites:
 - `src/org/__tests__/parser.test.ts` — headings, states, tags, planning, timestamps, body text, drawers, checkbox items, progress cookies, `parseOverride` grammar, exception-key scanning inside PROPERTIES drawers, full integration
 - `src/org/__tests__/drawer.test.ts` — `upsertProperty` / `removeProperty` round-trips (create drawer in correct position, append/update/remove keys, drop empty drawer, idempotent writes)
 - `src/org/__tests__/sourceEdit.test.ts` — raw Org source rewrites for edit-panel saves, TODO/DONE toggles including repeater advancement, checkbox toggles, and progress-cookie updates
-- `src/agenda/__tests__/generate.test.ts` — classification, recurrence, sorting, 7-day structure, exception threading onto `AgendaItem`, full integration
+- `src/agenda/__tests__/generate.test.ts` — classification, recurrence, sorting, day-range structure, exception threading onto `AgendaItem`, full integration
 - `src/ui/__tests__/render.test.ts` — DOM structure, global sections, badges, tags, checklist collapse behavior, recurrence chips/notes, tag filtering state, and toolbar controls
 - `src/ui/__tests__/notifications.test.ts` — notification preference, permission handling, and scheduling behavior
 - `src/__tests__/main.test.ts` — browser-level integration for static mode, TODO toggles, series editing, occurrence exceptions, and persistence
@@ -151,7 +153,7 @@ Always run tests after changes to parser, timestamp, drawer, source-edit, agenda
 
 ## Conventions
 
-- 7-day range runs **startDate 00:00 through startDate+6 23:59:59** (local time)
+- Agenda ranges run **startDate 00:00 through final visible day 23:59:59** (local time)
 - Source line numbers are **1-based**
 - Body text is a **single string** with lines joined by `\n`, leading whitespace trimmed
 - Planning lines only accepted **immediately after a heading** (or another planning line)
