@@ -225,7 +225,7 @@ function createHideCompletedToggle(options: RenderAgendaOptions): HTMLButtonElem
 
 function createMonthAheadToggle(options: RenderAgendaOptions): HTMLButtonElement {
   const btn = el("button", "month-ahead-toggle");
-  const label = options.monthAhead ? "Show 7 days" : "Show next month";
+  const label = options.monthAhead ? "Show 7 days" : "Show 30 days";
   btn.textContent = label;
   btn.dataset.action = "toggle-month-ahead";
   btn.setAttribute("aria-label", label);

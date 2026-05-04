@@ -635,6 +635,17 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".agenda-settings-menu .notification-toggle.is-labeled")?.textContent).toBe("Enable notifications");
     expect(container.querySelector(".agenda-settings-menu .theme-toggle.is-labeled")?.textContent).toBe("Dark theme");
   });
+
+  it("labels the month-ahead toggle as 30 days when inactive", () => {
+    const container = document.createElement("div");
+    const week = makeWeek([[], [], [], [], [], [], []]);
+
+    renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 8, 0));
+
+    const toggle = container.querySelector(".agenda-settings-menu .month-ahead-toggle");
+    expect(toggle?.textContent).toBe("Show 30 days");
+    expect(toggle?.classList.contains("is-on")).toBe(false);
+  });
 });
 
 describe("UI toggles", () => {
