@@ -74,6 +74,20 @@ describe("main.ts integration", () => {
     await waitFor(() => document.querySelector(".days-card") !== null);
 
     expect(document.querySelectorAll(".day-block")).toHaveLength(7);
+    expect(document.querySelector(".scheduled-item .tag[data-tag='work']")).not.toBeNull();
+    const hideTagsBtn = document.querySelector<HTMLButtonElement>(".hide-tags-toggle");
+    expect(hideTagsBtn).not.toBeNull();
+    hideTagsBtn!.click();
+    await flush();
+    expect(localStorage.getItem("mediant-hide-tags")).toBe("true");
+    expect(document.querySelector(".hide-tags-toggle")?.classList.contains("is-on")).toBe(true);
+    expect(document.querySelector(".scheduled-item .tag[data-tag='work']")).toBeNull();
+    expect(document.querySelector(".scheduled-item")?.classList.contains("has-tag-fringe")).toBe(false);
+    document.querySelector<HTMLButtonElement>(".hide-tags-toggle")!.click();
+    await flush();
+    expect(localStorage.getItem("mediant-hide-tags")).toBe("false");
+    expect(document.querySelector(".scheduled-item .tag[data-tag='work']")).not.toBeNull();
+
     const hideEmptyDaysBtn = document.querySelector<HTMLButtonElement>(".hide-empty-days-toggle");
     expect(hideEmptyDaysBtn).not.toBeNull();
     hideEmptyDaysBtn!.click();

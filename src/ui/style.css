@@ -1042,8 +1042,10 @@ body {
 }
 
 .tag-color-mode-toggle,
+.hide-tags-toggle,
 .hide-empty-days-toggle,
 .hide-completed-toggle,
+.month-ahead-toggle,
 .clear-tag-filters {
   border: 1px solid var(--border);
   border-radius: 999px;

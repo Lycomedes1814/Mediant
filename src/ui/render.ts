@@ -13,6 +13,7 @@ import { DAY_NAMES, MONTH_NAMES } from "../dateLabels.ts";
 export interface RenderAgendaOptions {
   readonly activeTagFilters?: readonly string[];
   readonly tagColorEditMode?: boolean;
+  readonly hideTags?: boolean;
   readonly hideEmptyDays?: boolean;
   readonly hideCompletedAndSkipped?: boolean;
   readonly monthAhead?: boolean;
@@ -188,6 +189,17 @@ function createHideEmptyDaysToggle(options: RenderAgendaOptions): HTMLButtonElem
   return hideEmptyDaysBtn;
 }
 
+function createHideTagsToggle(options: RenderAgendaOptions): HTMLButtonElement {
+  const btn = el("button", "hide-tags-toggle");
+  const label = options.hideTags ? "Show tags" : "Hide tags";
+  btn.textContent = label;
+  btn.dataset.action = "toggle-hide-tags";
+  btn.setAttribute("aria-label", label);
+  btn.setAttribute("aria-pressed", options.hideTags ? "true" : "false");
+  if (options.hideTags) btn.classList.add("is-on");
+  return btn;
+}
+
 function createHideCompletedToggle(options: RenderAgendaOptions): HTMLButtonElement {
   const btn = el("button", "hide-completed-toggle");
   const label = options.hideCompletedAndSkipped ? "Show completed & skipped" : "Hide completed & skipped";
@@ -222,6 +234,7 @@ function renderSettingsMenu(options: RenderAgendaOptions): HTMLElement {
   const panel = el("div", "agenda-settings-panel");
   panel.append(
     createColorModeToggle(options),
+    createHideTagsToggle(options),
     createHideEmptyDaysToggle(options),
     createHideCompletedToggle(options),
     createMonthAheadToggle(options),
@@ -621,6 +634,7 @@ function renderItemForCategory(
 }
 
 function applyPrimaryTagFringe(row: HTMLElement, tags: readonly string[], mode: "border" | "compact" = "border"): void {
+  if (currentRenderOptions.hideTags) return;
   const primaryTag = tags[0];
   if (!primaryTag) return;
 
@@ -802,14 +816,18 @@ function getCheckboxLayoutClass(item: AgendaItem): string {
   return item.entry.todo ? "checkbox-list-timed-state" : "checkbox-list-timed";
 }
 
-function optionsForTags(): Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode"> {
+function optionsForTags(): Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode" | "hideTags"> {
   return currentRenderOptions;
 }
 
-let currentRenderOptions: Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode"> = {};
+let currentRenderOptions: Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode" | "hideTags"> = {};
 
-function renderTags(tags: readonly string[], options: Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode">): HTMLElement {
+function renderTags(tags: readonly string[], options: Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode" | "hideTags">): HTMLElement {
   const badges = el("span", "tag-badges");
+  if (options.hideTags) {
+    badges.hidden = true;
+    return badges;
+  }
   for (const tag of tags) {
     badges.appendChild(renderTag(tag, {
       selected: (options.activeTagFilters ?? []).includes(tag),
@@ -881,6 +899,7 @@ export function renderAgenda(
   currentRenderOptions = {
     activeTagFilters: options.activeTagFilters ?? [],
     tagColorEditMode: options.tagColorEditMode ?? false,
+    hideTags: options.hideTags ?? false,
   };
   renderAgendaBase(container, week, deadlines, overdue, someday, today, options);
   currentRenderOptions = {};

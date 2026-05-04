@@ -32,6 +32,7 @@ let serverVersion: string | null = null;
 let agendaLoaded = false;
 let activeTagFilters = new Set<string>();
 let tagColorEditMode = false;
+let hideTags = localStorage.getItem("mediant-hide-tags") === "true";
 let hideEmptyDays = localStorage.getItem("mediant-hide-empty-days") === "true";
 let hideCompletedAndSkipped = localStorage.getItem("mediant-hide-completed") === "true";
 let monthAhead = localStorage.getItem("mediant-month-ahead") === "true";
@@ -1762,6 +1763,12 @@ function toggleTagColorMode(): void {
   render();
 }
 
+function toggleHideTags(): void {
+  hideTags = !hideTags;
+  localStorage.setItem("mediant-hide-tags", hideTags ? "true" : "false");
+  render();
+}
+
 function toggleHideEmptyDays(): void {
   hideEmptyDays = !hideEmptyDays;
   localStorage.setItem("mediant-hide-empty-days", hideEmptyDays ? "true" : "false");
@@ -2079,6 +2086,7 @@ function render(): void {
   renderAgenda(container, filteredWeek, filteredDeadlines, filteredOverdue, filteredSomeday, today, {
     activeTagFilters: [...activeTagFilters].sort(),
     tagColorEditMode,
+    hideTags,
     hideEmptyDays,
     hideCompletedAndSkipped,
     monthAhead,
@@ -2138,6 +2146,8 @@ function setupNavigation(): void {
       }
     } else if (action === "toggle-tag-color-mode") {
       toggleTagColorMode();
+    } else if (action === "toggle-hide-tags") {
+      toggleHideTags();
     } else if (action === "toggle-hide-empty-days") {
       toggleHideEmptyDays();
     } else if (action === "toggle-hide-completed") {

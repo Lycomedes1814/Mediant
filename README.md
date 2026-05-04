@@ -175,6 +175,7 @@ index.html             — Minimal shell with #agenda container
 - **Quick capture** — press `q` to open a fixed one-line capture overlay. `Enter` appends the text as an undated `TODO` under `* Tasks`, clears the field, and keeps focus ready for the next task. `Escape` or clicking outside the field closes it.
 - **DONE items** rendered at reduced opacity in muted text
 - **Today** indicated by blue card border and small dot marker
+- **Hide tags** — the `Hide tags` toggle removes agenda tag badges and tag-colored row fringes while preserving active tag filters in the header. The preference is stored in `localStorage`.
 - **Hide empty days** — the `Hide empty days` toggle removes days with no visible agenda items from the active range. This is useful with tag filters; if every day is hidden, the day-card container is hidden too. The preference is stored in `localStorage`.
 - **Hide completed & skipped** — the `Hide completed & skipped` toggle drops DONE entries and skipped recurrence occurrences from the day cards and the someday section. Pairs naturally with `Hide empty days` to collapse the view down to outstanding work. The preference is stored in `localStorage`.
 - **Month-ahead view** — a settings toggle expands the day cards from 7 days to 30 days. Prev/next navigation moves by the active range length, and the preference is stored in `localStorage`.
@@ -213,6 +214,7 @@ Mediant uses your browser's `localStorage` for the following:
 |---|---|
 | `mediant-org-source` | Pasted Org content (static mode only — ignored in server mode) |
 | `mediant-tag-colors` | Tag-to-color assignments, so tag colors stay consistent |
+| `mediant-hide-tags` | Whether agenda tag badges and tag-colored row fringes are hidden |
 | `mediant-hide-empty-days` | Whether empty days are hidden in the agenda view |
 | `mediant-hide-completed` | Whether DONE entries and skipped occurrences are hidden in day cards and someday |
 | `mediant-month-ahead` | Whether the agenda shows 30 days instead of 7 |

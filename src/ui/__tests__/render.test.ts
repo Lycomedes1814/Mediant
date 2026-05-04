@@ -304,6 +304,33 @@ describe("renderAgenda", () => {
     expect(toggle?.classList.contains("is-on")).toBe(true);
   });
 
+  it("hides agenda tag badges and tag fringes when requested", () => {
+    const container = document.createElement("div");
+    const week = makeWeek([
+      [makeItem({ title: "Tagged event", date: new Date(2026, 3, 20, 14, 0), startTime: "14:00", tags: ["work"] })],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+    ]);
+
+    renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 12, 30), {
+      activeTagFilters: ["work"],
+      hideTags: true,
+    });
+
+    expect(container.querySelector(".timed-item .tag[data-tag='work']")).toBeNull();
+    expect(container.querySelector(".timed-item")?.classList.contains("has-tag-fringe")).toBe(false);
+    expect(container.querySelector(".active-tag-filters .tag[data-tag='work']")).not.toBeNull();
+
+    const toggle = container.querySelector<HTMLButtonElement>(".hide-tags-toggle");
+    expect(toggle?.textContent).toBe("Show tags");
+    expect(toggle?.getAttribute("aria-pressed")).toBe("true");
+    expect(toggle?.classList.contains("is-on")).toBe(true);
+  });
+
   it("hides the days card when every day is hidden", () => {
     const container = document.createElement("div");
 
