@@ -37,12 +37,11 @@ vi.mock("../tagColors.ts", () => ({
   TAG_DEFAULT_COLOR: "#999999",
 }));
 
-import { createNotificationToggle, createThemeToggle, renderAgenda } from "../render.ts";
+import { createNotificationToggle, renderAgenda } from "../render.ts";
 
 describe("renderAgenda", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
-    document.documentElement.removeAttribute("data-theme");
     localStorage.clear();
     notificationsState.enabled = false;
     notificationFns.clearScheduled.mockClear();
@@ -633,7 +632,6 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".agenda-settings-menu .month-ahead-toggle")?.textContent).toBe("Show 7 days");
     expect(container.querySelector(".agenda-settings-menu .month-ahead-toggle")?.classList.contains("is-on")).toBe(true);
     expect(container.querySelector(".agenda-settings-menu .notification-toggle.is-labeled")?.textContent).toBe("Enable notifications");
-    expect(container.querySelector(".agenda-settings-menu .theme-toggle.is-labeled")?.textContent).toBe("Dark theme");
   });
 
   it("labels the month-ahead toggle as 30 days when inactive", () => {
@@ -651,35 +649,11 @@ describe("renderAgenda", () => {
 describe("UI toggles", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
-    document.documentElement.removeAttribute("data-theme");
     localStorage.clear();
     notificationsState.enabled = false;
     notificationFns.clearScheduled.mockClear();
     notificationFns.requestPermission.mockClear();
     notificationFns.setNotificationsEnabled.mockClear();
-  });
-
-  it("theme toggle updates the document theme and localStorage", () => {
-    const toggle = createThemeToggle();
-    expect(toggle.textContent).toBe("☾");
-
-    toggle.click();
-    expect(document.documentElement.dataset.theme).toBe("dark");
-    expect(localStorage.getItem("theme")).toBe("dark");
-    expect(toggle.textContent).toBe("☀");
-
-    toggle.click();
-    expect(document.documentElement.dataset.theme).toBeUndefined();
-    expect(localStorage.getItem("theme")).toBe("light");
-    expect(toggle.textContent).toBe("☾");
-  });
-
-  it("labeled theme toggle shows the current theme state", () => {
-    const toggle = createThemeToggle({ label: true });
-    expect(toggle.textContent).toBe("Dark theme");
-
-    toggle.click();
-    expect(toggle.textContent).toBe("Light theme");
   });
 
   it("notification toggle enables notifications, then disables and clears timers", async () => {

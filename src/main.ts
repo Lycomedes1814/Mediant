@@ -11,7 +11,7 @@ import {
 } from "./org/sourceEdit.ts";
 import { stepDate } from "./org/timestamp.ts";
 import { generateAgenda, collectDeadlines, collectOverdueItems, collectSomedayItems } from "./agenda/generate.ts";
-import { renderAgenda, createThemeToggle, openTagColorPicker } from "./ui/render.ts";
+import { renderAgenda, openTagColorPicker } from "./ui/render.ts";
 import type { AgendaDay } from "./agenda/model.ts";
 import { getTagColor } from "./ui/tagColors.ts";
 import { scheduleNotifications } from "./ui/notifications.ts";
@@ -1932,7 +1932,7 @@ function showInput(): void {
 
   const headerRight = document.createElement("div");
   headerRight.className = "input-header-right";
-  headerRight.append(ghLink, createThemeToggle());
+  headerRight.append(ghLink);
 
   const header = document.createElement("div");
   header.className = "input-header";
@@ -2181,7 +2181,4 @@ function todayMidnight(): Date {
 
 // ── Go ───────────────────────────────────────────────────────────────
 
-if (localStorage.getItem("theme") === "dark") {
-  document.documentElement.dataset.theme = "dark";
-}
 void init();

@@ -22,30 +22,6 @@ interface ToggleButtonOptions {
   readonly label?: boolean;
 }
 
-export function createThemeToggle(options: ToggleButtonOptions = {}): HTMLButtonElement {
-  const btn = document.createElement("button");
-  btn.className = options.label ? "theme-toggle is-labeled" : "theme-toggle";
-  const update = () => {
-    const isDark = document.documentElement.dataset.theme === "dark";
-    const nextThemeLabel = isDark ? "Light theme" : "Dark theme";
-    btn.textContent = options.label ? nextThemeLabel : isDark ? "\u2600" : "\u263E";
-    btn.setAttribute("aria-label", options.label ? nextThemeLabel : "Toggle dark mode");
-  };
-  update();
-  btn.addEventListener("click", () => {
-    const isDark = document.documentElement.dataset.theme === "dark";
-    if (isDark) {
-      delete document.documentElement.dataset.theme;
-      localStorage.setItem("theme", "light");
-    } else {
-      document.documentElement.dataset.theme = "dark";
-      localStorage.setItem("theme", "dark");
-    }
-    update();
-  });
-  return btn;
-}
-
 export function createNotificationToggle(options: ToggleButtonOptions = {}): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.className = options.label ? "notification-toggle is-labeled" : "notification-toggle";
@@ -250,7 +226,6 @@ function renderSettingsMenu(options: RenderAgendaOptions): HTMLElement {
     createHideCompletedToggle(options),
     createMonthAheadToggle(options),
     createNotificationToggle({ label: true }),
-    createThemeToggle({ label: true }),
   );
   menu.appendChild(panel);
 

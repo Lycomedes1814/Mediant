@@ -24,7 +24,6 @@ describe("main.ts integration", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 3, 20, 10, 0, 0));
     document.body.innerHTML = '<div id="agenda"></div>';
-    document.documentElement.removeAttribute("data-theme");
     localStorage.clear();
     notificationMocks.scheduleNotifications.mockClear();
     notificationMocks.clearScheduled.mockClear();
