@@ -75,6 +75,12 @@ describe("main.ts integration", () => {
 
     expect(document.querySelectorAll(".day-block")).toHaveLength(7);
     expect(document.querySelector(".scheduled-item .tag[data-tag='work']")).not.toBeNull();
+    const settingsMenu = document.querySelector<HTMLDetailsElement>(".agenda-settings-menu");
+    expect(settingsMenu).not.toBeNull();
+    settingsMenu!.open = true;
+    document.body.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(settingsMenu!.open).toBe(false);
+
     document.querySelector<HTMLButtonElement>(".tag-color-mode-toggle")!.click();
     await flush();
     expect(document.querySelector(".tag-color-mode-toggle")?.classList.contains("is-on")).toBe(true);

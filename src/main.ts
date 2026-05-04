@@ -2112,9 +2112,19 @@ function render(): void {
 
 // ── Navigation ───────────────────────────────────────────────────────
 
+function closeSettingsMenusForClick(target: EventTarget | null): void {
+  const targetEl = target instanceof Element ? target : null;
+  document.querySelectorAll<HTMLDetailsElement>(".agenda-settings-menu[open]").forEach((menu) => {
+    if (!targetEl || !menu.contains(targetEl)) menu.open = false;
+  });
+}
+
 function setupNavigation(): void {
   document.addEventListener("click", (e) => {
-    const tagEl = (e.target as HTMLElement).closest<HTMLElement>(".tag[data-tag]");
+    closeSettingsMenusForClick(e.target);
+
+    const targetEl = e.target instanceof HTMLElement ? e.target : null;
+    const tagEl = targetEl?.closest<HTMLElement>(".tag[data-tag]");
     if (tagEl) {
       const tag = tagEl.dataset.tag;
       if (!tag) return;
@@ -2126,7 +2136,7 @@ function setupNavigation(): void {
       }
     }
 
-    const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-action]");
+    const btn = targetEl?.closest<HTMLElement>("[data-action]");
     if (!btn) return;
     const action = btn.dataset.action;
     if (!action) return;
