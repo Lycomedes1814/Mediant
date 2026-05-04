@@ -1765,6 +1765,7 @@ function toggleTagColorMode(): void {
 
 function toggleHideTags(): void {
   hideTags = !hideTags;
+  if (hideTags) tagColorEditMode = false;
   localStorage.setItem("mediant-hide-tags", hideTags ? "true" : "false");
   render();
 }

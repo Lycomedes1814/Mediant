@@ -329,6 +329,7 @@ describe("renderAgenda", () => {
     expect(toggle?.textContent).toBe("Show tags");
     expect(toggle?.getAttribute("aria-pressed")).toBe("true");
     expect(toggle?.classList.contains("is-on")).toBe(true);
+    expect(container.querySelector(".agenda-settings-menu .tag-color-mode-toggle")).toBeNull();
   });
 
   it("hides the days card when every day is hidden", () => {

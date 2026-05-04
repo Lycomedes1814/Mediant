@@ -232,8 +232,10 @@ function renderSettingsMenu(options: RenderAgendaOptions): HTMLElement {
   menu.appendChild(summary);
 
   const panel = el("div", "agenda-settings-panel");
+  if (!options.hideTags) {
+    panel.appendChild(createColorModeToggle(options));
+  }
   panel.append(
-    createColorModeToggle(options),
     createHideTagsToggle(options),
     createHideEmptyDaysToggle(options),
     createHideCompletedToggle(options),

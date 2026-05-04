@@ -75,17 +75,23 @@ describe("main.ts integration", () => {
 
     expect(document.querySelectorAll(".day-block")).toHaveLength(7);
     expect(document.querySelector(".scheduled-item .tag[data-tag='work']")).not.toBeNull();
+    document.querySelector<HTMLButtonElement>(".tag-color-mode-toggle")!.click();
+    await flush();
+    expect(document.querySelector(".tag-color-mode-toggle")?.classList.contains("is-on")).toBe(true);
+
     const hideTagsBtn = document.querySelector<HTMLButtonElement>(".hide-tags-toggle");
     expect(hideTagsBtn).not.toBeNull();
     hideTagsBtn!.click();
     await flush();
     expect(localStorage.getItem("mediant-hide-tags")).toBe("true");
     expect(document.querySelector(".hide-tags-toggle")?.classList.contains("is-on")).toBe(true);
+    expect(document.querySelector(".tag-color-mode-toggle")).toBeNull();
     expect(document.querySelector(".scheduled-item .tag[data-tag='work']")).toBeNull();
     expect(document.querySelector(".scheduled-item")?.classList.contains("has-tag-fringe")).toBe(false);
     document.querySelector<HTMLButtonElement>(".hide-tags-toggle")!.click();
     await flush();
     expect(localStorage.getItem("mediant-hide-tags")).toBe("false");
+    expect(document.querySelector(".tag-color-mode-toggle")?.classList.contains("is-on")).toBe(false);
     expect(document.querySelector(".scheduled-item .tag[data-tag='work']")).not.toBeNull();
 
     const hideEmptyDaysBtn = document.querySelector<HTMLButtonElement>(".hide-empty-days-toggle");
