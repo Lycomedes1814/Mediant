@@ -2059,6 +2059,13 @@ body {
   border-color: color-mix(in srgb, #dc3545 40%, var(--border));
 }
 
+.add-delete-btn.is-armed,
+.add-delete-btn.is-armed:hover {
+  background: #dc3545;
+  color: #fff;
+  border-color: #dc3545;
+}
+
 .add-panel.is-editing .add-delete-btn {
   display: inline-block;
 }

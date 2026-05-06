@@ -57,6 +57,8 @@ let addPanelEl: HTMLElement | null = null;
 let addOverlayEl: HTMLElement | null = null;
 let addPanelTitleEl: HTMLElement | null = null;
 let addPanelSaveBtnEl: HTMLButtonElement | null = null;
+let addPanelDeleteBtnEl: HTMLButtonElement | null = null;
+let deleteArmedTimer: number | null = null;
 let lastPanelFocusEl: HTMLElement | null = null;
 let editingLine: number | null = null;
 let editingBaseDate: string | null = null;
@@ -458,10 +460,15 @@ function buildAddPanel(): void {
   deleteBtn.type = "button";
   deleteBtn.addEventListener("click", () => {
     if (editingLine === null) return;
-    if (!confirm("Delete this item?")) return;
+    if (!deleteBtn.classList.contains("is-armed")) {
+      armDeleteBtn();
+      return;
+    }
+    disarmDeleteBtn();
     deleteOrgBlock(editingLine);
     closeAddPanel();
   });
+  addPanelDeleteBtnEl = deleteBtn;
 
   const btnRow = document.createElement("div");
   btnRow.className = "add-btn-row";
@@ -1403,6 +1410,7 @@ function appendOrgText(orgText: string): void {
 function openAddPanel(prefillDate: string | null = null): void {
   if (!addPanelEl || !addOverlayEl || !addPanelRefs) return;
   rememberFocusBeforePanelOpen();
+  disarmDeleteBtn();
 
   editingLine = null;
   editingBaseDate = null;
@@ -1455,6 +1463,7 @@ function tsToDateTimeDisplay(ts: { date: string; startTime: string | null; endTi
 function openEditPanel(sourceLine: number, baseDate: string | null = null): void {
   if (!addPanelEl || !addOverlayEl || !addPanelRefs) return;
   rememberFocusBeforePanelOpen();
+  disarmDeleteBtn();
 
   const entry = entries.find(e => e.sourceLineNumber === sourceLine);
   if (!entry) return;
@@ -1713,9 +1722,28 @@ async function clearException(which: "override" | "note"): Promise<void> {
 
 function closeAddPanel(): void {
   if (!addPanelEl || !addOverlayEl) return;
+  disarmDeleteBtn();
   addOverlayEl.classList.remove("is-open");
   addPanelEl.classList.remove("is-open");
   restoreFocusAfterPanelClose();
+}
+
+function armDeleteBtn(): void {
+  if (!addPanelDeleteBtnEl) return;
+  addPanelDeleteBtnEl.classList.add("is-armed");
+  addPanelDeleteBtnEl.textContent = "Tap again to delete";
+  if (deleteArmedTimer !== null) clearTimeout(deleteArmedTimer);
+  deleteArmedTimer = window.setTimeout(disarmDeleteBtn, 3000);
+}
+
+function disarmDeleteBtn(): void {
+  if (deleteArmedTimer !== null) {
+    clearTimeout(deleteArmedTimer);
+    deleteArmedTimer = null;
+  }
+  if (!addPanelDeleteBtnEl) return;
+  addPanelDeleteBtnEl.classList.remove("is-armed");
+  addPanelDeleteBtnEl.textContent = "Delete";
 }
 
 function navigateWeek(direction: "prev" | "next" | "today"): void {
