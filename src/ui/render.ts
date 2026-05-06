@@ -561,13 +561,16 @@ function renderItem(
 
   if (badges.some((el) => el.classList.contains("item-state"))) {
     row.classList.add("has-state");
+    if (badges.some((el) => el.classList.contains("is-ring-style"))) row.classList.add("has-ring-state");
   }
 
   if (badge) {
     children.push(...badges);
   } else if (item.entry.todo) {
     row.classList.add("has-state");
-    children.push(renderStateBadge(item.entry));
+    const stateBadge = renderStateBadge(item.entry);
+    if (stateBadge.classList.contains("is-ring-style")) row.classList.add("has-ring-state");
+    children.push(stateBadge);
   }
 
   if (!showPriority && item.entry.priority) {

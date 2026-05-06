@@ -797,6 +797,10 @@ body {
   font-size: 0.90625rem;
 }
 
+.day-deadline-item.has-ring-state {
+  column-gap: 0.45rem;
+}
+
 .day-deadline-item.has-time {
   grid-template-columns: auto auto auto 1fr auto;
 }

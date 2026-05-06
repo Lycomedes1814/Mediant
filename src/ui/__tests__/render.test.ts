@@ -580,6 +580,13 @@ describe("renderAgenda", () => {
           entry: makeEntry({ title: "Finished", todo: "DONE", sourceLineNumber: 42 }),
           sourceLineNumber: 42,
         }),
+        makeItem({
+          title: "Due",
+          date: new Date(2026, 3, 20, 11, 0),
+          category: "deadline",
+          entry: makeEntry({ title: "Due", todo: "TODO", sourceLineNumber: 43 }),
+          sourceLineNumber: 43,
+        }),
       ],
       [],
       [],
@@ -594,9 +601,11 @@ describe("renderAgenda", () => {
     });
 
     const states = Array.from(container.querySelectorAll<HTMLElement>(".item-state"));
-    expect(states.map(state => state.textContent)).toEqual(["TODO", "DONE"]);
+    expect(states.map(state => state.textContent)).toEqual(["TODO", "DONE", "TODO"]);
+    expect(container.querySelector<HTMLElement>(".timed-item")?.classList.contains("has-ring-state")).toBe(true);
+    expect(container.querySelector<HTMLElement>(".day-deadline-item")?.classList.contains("has-ring-state")).toBe(true);
     expect(states.every(state => state.classList.contains("is-ring-style"))).toBe(true);
-    expect(states.map(state => state.dataset.state)).toEqual(["TODO", "DONE"]);
+    expect(states.map(state => state.dataset.state)).toEqual(["TODO", "DONE", "TODO"]);
     expect(states.every(state => state.querySelector(".item-state-ring") !== null)).toBe(true);
     expect(states[1]?.closest(".item-done")).not.toBeNull();
     expect(container.querySelector<HTMLButtonElement>(".todo-badge-style-toggle")?.textContent).toBe("Show TODO text");
