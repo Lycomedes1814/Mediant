@@ -396,6 +396,7 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
   for (const item of items) {
     const row = el("div", "someday-item");
     if (item.entry.todo === "DONE") row.classList.add("item-done");
+    if (usesRingState(item.entry)) row.classList.add("has-ring-state");
     applyPrimaryTagFringe(row, item.entry.tags, "compact");
 
     const state = renderStateBadge(item.entry, "TODO");

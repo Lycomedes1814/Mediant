@@ -879,6 +879,10 @@ body {
   gap: 0 0.65rem;
 }
 
+.someday-item.has-ring-state {
+  column-gap: 0.5rem;
+}
+
 .someday-item + .someday-item {
   margin-top: 0.15rem;
 }
@@ -1315,6 +1319,11 @@ body {
 
 .checkbox-list.is-collapsed .checkbox-list-items {
   display: none;
+}
+
+.checkbox-list.is-collapsed {
+  padding-top: 0;
+  margin-bottom: 0;
 }
 
 .checkbox-item {
