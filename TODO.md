@@ -2,7 +2,6 @@
 
 ## General
 - [ ] Multilingual support
-- [ ] Month view
 - [ ] Mobile notifications
 - [ ] ICS import/export
 - [ ] Subscribe to ICS URLs
