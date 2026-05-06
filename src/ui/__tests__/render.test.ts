@@ -55,7 +55,10 @@ describe("renderAgenda", () => {
   it("renders overdue, deadlines, days, and someday sections in order", () => {
     const container = document.createElement("div");
     const week = makeWeek([
-      [makeItem({ title: "Today event", date: new Date(2026, 3, 20, 14, 0), startTime: "14:00", tags: ["work"] })],
+      [
+        makeItem({ title: "All-day event", date: new Date(2026, 3, 20), category: "all-day" }),
+        makeItem({ title: "Today event", date: new Date(2026, 3, 20, 14, 0), startTime: "14:00", tags: ["work"] }),
+      ],
       [],
       [],
       [],
@@ -133,6 +136,9 @@ describe("renderAgenda", () => {
     expect(firstDayHeader?.tabIndex).toBe(0);
     expect(firstDayHeader?.getAttribute("role")).toBe("button");
     expect(firstDayHeader?.getAttribute("aria-label")).toBe("Add event on Monday 20 April (W17)");
+    const allDayMarker = container.querySelector<HTMLElement>(".allday-item .item-all-day-marker");
+    expect(allDayMarker?.getAttribute("aria-label")).toBe("All-day");
+    expect(allDayMarker?.querySelector("svg")).not.toBeNull();
 
     expect(container.querySelector(".overdue-header")?.textContent).toBe("Overdue");
     expect(container.querySelector(".deadlines-header")).toBeNull();
@@ -522,9 +528,9 @@ describe("renderAgenda", () => {
     expect(notes).toHaveLength(2);
     expect(notes.map(note => note.textContent)).toEqual(["Pack sunscreen", "Use printed notes"]);
     expect(notes[0].classList.contains("note-layout-allday")).toBe(true);
-    expect(notes[0].classList.contains("note-title-col-1")).toBe(true);
+    expect(notes[0].classList.contains("note-title-col-2")).toBe(true);
     expect(notes[1].classList.contains("note-layout-allday-with-state")).toBe(true);
-    expect(notes[1].classList.contains("note-title-col-2")).toBe(true);
+    expect(notes[1].classList.contains("note-title-col-3")).toBe(true);
   });
 
   it("renders in-calendar deadlines with a clickable todo badge before the title", () => {

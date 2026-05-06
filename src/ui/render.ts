@@ -568,6 +568,9 @@ function renderItem(
     row.classList.add("has-state");
     if (badges.some((el) => el.classList.contains("is-ring-style"))) row.classList.add("has-ring-state");
   }
+  if (badges.some((el) => el.classList.contains("item-all-day-marker"))) {
+    row.classList.add("has-all-day-marker");
+  }
 
   if (badge) {
     children.push(...badges);
@@ -643,8 +646,8 @@ function renderGlobalInstanceNote(note: string, layoutClass: string): HTMLElemen
 function buildInstanceNoteClassName(item: AgendaItem): string {
   const byCategory = {
     "all-day": item.entry.todo
-      ? ["note-layout-allday-with-state", "note-title-col-2"]
-      : ["note-layout-allday", "note-title-col-1"],
+      ? ["note-layout-allday-with-state", "note-title-col-3"]
+      : ["note-layout-allday", "note-title-col-2"],
     timed: ["note-layout-timed", item.entry.todo ? "note-title-col-3" : "note-title-col-2"],
     scheduled: item.startTime
       ? ["note-layout-with-time", "note-title-col-3"]
@@ -661,7 +664,11 @@ function renderItemForCategory(
   checkboxListId: string | null = null,
   checkboxListKey: string | null = null,
 ): HTMLElement {
-  if (item.category === "all-day") return renderItem(item, "allday-item");
+  if (item.category === "all-day") {
+    const badges = [renderAllDayMarker()];
+    if (item.entry.todo) badges.push(renderStateBadge(item.entry));
+    return renderItem(item, "allday-item", badges);
+  }
   if (item.category === "timed") return renderItem(item, "timed-item", undefined, "always", true, checkboxListId, checkboxListKey);
   if (item.category === "scheduled") {
     return renderItem(item, "scheduled-item", renderStateBadge(item.entry, "TODO"), "optional", true, checkboxListId, checkboxListKey);
@@ -672,6 +679,14 @@ function renderItemForCategory(
   const row = renderItem(item, "day-deadline-item", [kind, renderStateBadge(item.entry, "TODO")], "optional", true, checkboxListId, checkboxListKey);
   if (item.entry.checkboxItems.length > 0) row.classList.add("has-checkbox-list");
   return row;
+}
+
+function renderAllDayMarker(): HTMLElement {
+  const marker = el("span", "item-all-day-marker");
+  marker.title = t("allDay");
+  marker.setAttribute("aria-label", t("allDay"));
+  marker.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>`;
+  return marker;
 }
 
 function applyPrimaryTagFringe(row: HTMLElement, tags: readonly string[], mode: "border" | "compact" = "border"): void {

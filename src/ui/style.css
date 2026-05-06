@@ -379,6 +379,34 @@ body {
   font-size: 0.90625rem;
 }
 
+.allday-item.has-all-day-marker {
+  grid-template-columns: auto 1fr auto;
+}
+
+.allday-item.has-all-day-marker.has-state {
+  grid-template-columns: auto auto 1fr auto;
+}
+
+.item-all-day-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  color: var(--text-dim);
+  opacity: 0.78;
+}
+
+.item-all-day-marker svg {
+  width: 0.92rem;
+  height: 0.92rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .item-state {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
@@ -1431,12 +1459,12 @@ body {
 }
 
 .note-layout-allday {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto 1fr auto;
   column-gap: 0.75rem;
 }
 
 .note-layout-allday-with-state {
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
   column-gap: 0.75rem;
 }
 
@@ -2717,6 +2745,21 @@ body {
     gap: 0.125rem;
   }
 
+  .allday-item.has-all-day-marker,
+  .allday-item.has-all-day-marker.has-state {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 0.5rem;
+  }
+
+  .allday-item.has-all-day-marker.has-state {
+    grid-template-columns: auto auto 1fr;
+  }
+
+  .allday-item.has-all-day-marker .tag-badges {
+    grid-column: 1 / -1;
+  }
 
   .add-panel {
     width: 100%;
