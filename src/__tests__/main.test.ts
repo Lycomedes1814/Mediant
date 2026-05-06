@@ -282,6 +282,12 @@ describe("main.ts integration", () => {
     const whenInput = document.querySelector<HTMLInputElement>("#add-when");
     expect(whenInput?.value).toBe("22/04/2026");
     expect(whenInput?.closest(".add-field")?.querySelector<HTMLElement>(".datetime-preview")?.textContent).toBe("Wed 22 Apr 2026");
+    whenInput!.value = "søn";
+    whenInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(whenInput?.closest(".add-field")?.querySelector<HTMLElement>(".datetime-preview")?.textContent).toBe("Sun 26 Apr 2026");
+    whenInput!.value = "man";
+    whenInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(whenInput?.closest(".add-field")?.querySelector<HTMLElement>(".datetime-preview")?.textContent).toBe("Mon 27 Apr 2026");
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await flush();
 

@@ -909,7 +909,7 @@ function makeTextInput(label: string, id: string): { container: HTMLElement; inp
  * Expand shorthand date input to YYYY-MM-DD. Accepts:
  *   DD, DD/MM, DD/MM/YYYY — numeric forms (month/year default to today's)
  *   +N                    — N days from today (N >= 0)
- *   mon..sun              — next occurrence of that weekday, strictly forward
+ *   mon..sun, man..søn    — next occurrence of that weekday, strictly forward
  */
 function expandDate(raw: string): string {
   if (!raw) return "";
@@ -970,8 +970,23 @@ function expandDate(raw: string): string {
     return fmt(target);
   }
 
-  const weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-  const idx = weekdays.indexOf(raw.toLowerCase());
+  const weekdayIndexes: Readonly<Record<string, number>> = {
+    sun: 0,
+    mon: 1,
+    tue: 2,
+    wed: 3,
+    thu: 4,
+    fri: 5,
+    sat: 6,
+    søn: 0,
+    man: 1,
+    tir: 2,
+    ons: 3,
+    tor: 4,
+    fre: 5,
+    lør: 6,
+  };
+  const idx = weekdayIndexes[raw.toLowerCase()] ?? -1;
   if (idx >= 0) {
     const delta = ((idx - now.getDay() + 7) % 7) || 7;
     const target = new Date(now);
