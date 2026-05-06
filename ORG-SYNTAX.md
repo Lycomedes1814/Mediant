@@ -253,7 +253,7 @@ These constructs are recognized and silently skipped. They will not produce entr
 <2026-04-07 ti.>--<2026-04-09 to.>
 ```
 
-- Two timestamps connected by `--`. Recognized but **not** supported in v1. The line is treated as body text.
+- Two timestamps connected by `--`. Mediant currently parses this as a single active timestamp on the opening date and stores the closing date as parser metadata. It does **not** yet render the event across every spanned day.
 
 ### Property drawers
 

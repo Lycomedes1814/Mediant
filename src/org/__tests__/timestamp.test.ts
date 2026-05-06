@@ -19,6 +19,7 @@ describe("parseTimestamps", () => {
     expect(results).toHaveLength(1);
     expect(results[0]).toEqual({
       date: "2026-04-05",
+      endDate: null,
       startTime: null,
       endTime: null,
       repeater: null,
@@ -39,6 +40,24 @@ describe("parseTimestamps", () => {
     expect(results).toHaveLength(1);
     expect(results[0].startTime).toBe("15:15");
     expect(results[0].endTime).toBe("16:00");
+  });
+
+  it("parses an Org day range as one timestamp on the initial day", () => {
+    const raw = "<2026-04-07 ti.>--<2026-04-09 to.>";
+    const results = parseTimestamps(raw);
+    expect(results).toHaveLength(1);
+    expect(results[0].date).toBe("2026-04-07");
+    expect(results[0].endDate).toBe("2026-04-09");
+    expect(results[0].raw).toBe(raw);
+  });
+
+  it("keeps the opening endpoint time for a timed Org day range", () => {
+    const results = parseTimestamps("<2026-04-07 ti. 09:00>--<2026-04-09 to. 17:00>");
+    expect(results).toHaveLength(1);
+    expect(results[0].date).toBe("2026-04-07");
+    expect(results[0].endDate).toBe("2026-04-09");
+    expect(results[0].startTime).toBe("09:00");
+    expect(results[0].endTime).toBeNull();
   });
 
   it("parses a weekly repeater", () => {

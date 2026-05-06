@@ -873,6 +873,7 @@ function makeEntry(overrides: Partial<AgendaItem["entry"]> & { title: string }) 
 function makeTimestamp(date: string) {
   return {
     date,
+    endDate: null,
     startTime: null,
     endTime: null,
     repeater: null,

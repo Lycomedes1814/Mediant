@@ -44,6 +44,7 @@ export interface OrgRepeater {
  */
 export interface OrgTimestamp {
   readonly date: string;
+  readonly endDate: string | null;
   readonly startTime: string | null;
   readonly endTime: string | null;
   readonly repeater: OrgRepeater | null;
@@ -61,13 +62,17 @@ export interface OrgTimestamp {
  *   2 — start time "15:15" (optional)
  *   3 — end time "16:00" (optional, from range like 15:15-16:00)
  *   4 — repeater "+1w" / ".+1w" / "++1w" (optional)
+ *   5 — end date from an Org day range like `<start>--<end>` (optional)
+ *   6 — range end start time (currently parsed but not surfaced)
+ *   7 — range end end time (currently parsed but not surfaced)
+ *   8 — range end repeater (currently parsed but not surfaced)
  *
  * Day names (ti., sø., Sat, etc.) are consumed by \S+ but not
  * captured — the date string is authoritative. We use \S+ rather
  * than \w+ because \w does not match non-ASCII characters like ø.
  */
 export const TIMESTAMP_RE =
-  /<(\d{4}-\d{2}-\d{2})\s+\S+\s*(?:(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?)?\s*((?:\.\+|\+\+|\+)\d+[dwmy])?\s*>/g;
+  /<(\d{4}-\d{2}-\d{2})\s+\S+\s*(?:(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?)?\s*((?:\.\+|\+\+|\+)\d+[dwmy])?\s*>(?:--<(\d{4}-\d{2}-\d{2})\s+\S+\s*(?:(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?)?\s*((?:\.\+|\+\+|\+)\d+[dwmy])?\s*>)?/g;
 
 // ── Parsing ──────────────────────────────────────────────────────────
 
@@ -89,6 +94,7 @@ export function timestampFromMatch(match: RegExpMatchArray): OrgTimestamp {
   const repeater = match[4] ? parseRepeater(match[4]) : null;
   return {
     date: match[1],
+    endDate: match[5] ?? null,
     startTime: match[2] ?? null,
     endTime: match[3] ?? null,
     repeater,

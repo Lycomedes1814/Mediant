@@ -155,6 +155,15 @@ describe("planning", () => {
     expect(entries[0].planning[0].timestamp.startTime).toBe("12:00");
   });
 
+  it("parses planning day ranges from the initial day", () => {
+    const entries = parseOrg(
+      "** TODO Trip\nSCHEDULED: <2026-04-14 ti.>--<2026-04-16 to.>\n",
+    );
+    expect(entries[0].planning).toHaveLength(1);
+    expect(entries[0].planning[0].timestamp.date).toBe("2026-04-14");
+    expect(entries[0].planning[0].timestamp.endDate).toBe("2026-04-16");
+  });
+
   it("parses both SCHEDULED and DEADLINE on one entry", () => {
     const entries = parseOrg(
       "** TODO Task\nSCHEDULED: <2026-04-14 ti.>\nDEADLINE: <2026-05-05 ti.>\n",
@@ -200,6 +209,14 @@ describe("active timestamps", () => {
     const entries = parseOrg("** Holiday\n<2026-04-05 sø.>\n");
     expect(entries[0].timestamps).toHaveLength(1);
     expect(entries[0].timestamps[0].startTime).toBeNull();
+  });
+
+  it("parses standalone day ranges as one timestamp on the initial day", () => {
+    const entries = parseOrg("** Retreat\n<2026-04-07 ti.>--<2026-04-09 to.>\n");
+    expect(entries[0].timestamps).toHaveLength(1);
+    expect(entries[0].timestamps[0].date).toBe("2026-04-07");
+    expect(entries[0].timestamps[0].endDate).toBe("2026-04-09");
+    expect(entries[0].body).toBe("");
   });
 
   it("parses timestamp with repeater", () => {

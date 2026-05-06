@@ -72,7 +72,7 @@ const PLANNING_LINE_RE = /^\s*(?:SCHEDULED|DEADLINE):/;
  * Org writes both on the same line, space-separated, so a single line may
  * contribute multiple planning entries.
  */
-const PLANNING_PAIR_RE = /(SCHEDULED|DEADLINE):\s*(<[^>]*>)/g;
+const PLANNING_PAIR_RE = /(SCHEDULED|DEADLINE):\s*(<[^>]*>(?:--<[^>]*>)?)/g;
 
 /** Matches lines that are entirely a drawer boundary. Group 1 = drawer name. */
 const DRAWER_OPEN_RE = /^\s*:([A-Z_]+):\s*$/;
