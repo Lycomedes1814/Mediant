@@ -162,7 +162,7 @@ const messages = {
     changeColorForTag: "Endre farge for etikett {tag}",
 
     addEventOn: "Legg til hendelse {date}",
-    weekAbbrev: "u",
+    weekAbbrev: "U",
     overdue: "Forfalt",
     deadline: "FRIST",
     overdueScheduled: "PLANLAGT",

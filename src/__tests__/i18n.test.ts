@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach } from "vitest";
 import { t, getLocale, setLocale } from "../i18n.ts";
+import { formatDayMonth, formatDayNumber } from "../dateLabels.ts";
 
 describe("i18n", () => {
   beforeEach(() => {
@@ -35,5 +36,14 @@ describe("i18n", () => {
     expect(localStorage.getItem("mediant-locale")).toBe("nb");
     setLocale("en");
     expect(localStorage.getItem("mediant-locale")).toBe("en");
+  });
+
+  it("formats Norwegian day numbers with an ordinal period", () => {
+    expect(formatDayNumber(10)).toBe("10");
+    expect(formatDayMonth(new Date(2026, 4, 10))).toBe("10 May");
+
+    setLocale("nb");
+    expect(formatDayNumber(10)).toBe("10.");
+    expect(formatDayMonth(new Date(2026, 4, 10))).toBe("10. mai");
   });
 });

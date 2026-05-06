@@ -8,7 +8,7 @@
 import type { AgendaDay, AgendaItem, DeadlineItem, OverdueItem, SomedayItem } from "../agenda/model.ts";
 import { getTagColor, setTagColor, TAG_DEFAULT_COLOR } from "./tagColors.ts";
 import { notificationsEnabled, setNotificationsEnabled, requestPermission, clearScheduled, scheduleNotifications } from "./notifications.ts";
-import { DAY_NAMES, MONTH_NAMES } from "../dateLabels.ts";
+import { DAY_NAMES, MONTH_NAMES, formatDayMonth, formatDayNumber } from "../dateLabels.ts";
 import { t, type Locale, getLocale, setLocale, SUPPORTED_LOCALES } from "../i18n.ts";
 
 export interface RenderAgendaOptions {
@@ -421,7 +421,7 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
   header.tabIndex = 0;
   header.setAttribute("role", "button");
   const label = el("span", "date-label");
-  let dayText = `${DAY_NAMES[day.date.getDay()]} ${day.date.getDate()} ${MONTH_NAMES[day.date.getMonth()]}`;
+  let dayText = `${DAY_NAMES[day.date.getDay()]} ${formatDayMonth(day.date)}`;
   if (day.date.getDay() === 1) {
     dayText += ` (${t("weekAbbrev")}${getISOWeek(day.date)})`;
   }
@@ -970,12 +970,12 @@ function formatDateRange(start: Date, end: Date): string {
   const sameMonth = start.getMonth() === end.getMonth();
   const sameYear = start.getFullYear() === end.getFullYear();
   if (sameMonth && sameYear) {
-    return `${start.getDate()}–${end.getDate()} ${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()}`;
+    return `${formatDayNumber(start.getDate())}–${formatDayNumber(end.getDate())} ${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()}`;
   }
   if (sameYear) {
-    return `${start.getDate()} ${MONTH_NAMES[start.getMonth()]} – ${end.getDate()} ${MONTH_NAMES[end.getMonth()]} ${start.getFullYear()}`;
+    return `${formatDayMonth(start)} – ${formatDayMonth(end)} ${start.getFullYear()}`;
   }
-  return `${start.getDate()} ${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()} – ${end.getDate()} ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
+  return `${formatDayMonth(start)} ${start.getFullYear()} – ${formatDayMonth(end)} ${end.getFullYear()}`;
 }
 
 function formatDateKey(date: Date): string {

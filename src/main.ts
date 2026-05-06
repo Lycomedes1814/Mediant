@@ -15,7 +15,7 @@ import { renderAgenda, openTagColorPicker } from "./ui/render.ts";
 import type { AgendaDay } from "./agenda/model.ts";
 import { getTagColor } from "./ui/tagColors.ts";
 import { scheduleNotifications } from "./ui/notifications.ts";
-import { DAY_ABBREVS, MONTH_ABBREVS } from "./dateLabels.ts";
+import { DAY_ABBREVS, MONTH_ABBREVS, formatDayNumber } from "./dateLabels.ts";
 import { t } from "./i18n.ts";
 
 // ── Constants ───────────────────────────────────────────────────────
@@ -1105,7 +1105,7 @@ function formatPreviewDate(date: string): string {
   if (!Number.isFinite(dt.getTime())) return "";
   const dayName = DAY_ABBREVS[dt.getDay()];
   const monthName = MONTH_ABBREVS[dt.getMonth()];
-  return `${dayName} ${day} ${monthName} ${year}`;
+  return `${dayName} ${formatDayNumber(day)} ${monthName} ${year}`;
 }
 
 function formatDateTimePreview(raw: string, fallbackDate?: string): string {
@@ -1589,9 +1589,9 @@ function formatDateKey(date: Date): string {
 function formatOccurrenceHeader(baseDate: string, base: { startTime: string | null; endTime: string | null } | null): string {
   const [y, m, d] = baseDate.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
-  const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()];
-  const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dt.getMonth()];
-  let out = `${dayName} ${dt.getDate()} ${monthName} ${y}`;
+  const dayName = DAY_ABBREVS[dt.getDay()];
+  const monthName = MONTH_ABBREVS[dt.getMonth()];
+  let out = `${dayName} ${formatDayNumber(dt.getDate())} ${monthName} ${y}`;
   if (base?.startTime) {
     out += base.endTime ? `, ${base.startTime}–${base.endTime}` : `, ${base.startTime}`;
   }
@@ -1614,9 +1614,9 @@ function describeOverride(override: RecurrenceOverride, baseDate: string | null 
   if (!sameDate) {
   const [y, mo, d] = override.date.split("-").map(Number);
     const dt = new Date(y, mo - 1, d);
-    const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()];
-    const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dt.getMonth()];
-    out += ` ${dayName} ${dt.getDate()} ${monthName}`;
+    const dayName = DAY_ABBREVS[dt.getDay()];
+    const monthName = MONTH_ABBREVS[dt.getMonth()];
+    out += ` ${dayName} ${formatDayNumber(dt.getDate())} ${monthName}`;
   }
   if (override.startTime) {
     out += sameDate

@@ -38,6 +38,7 @@ vi.mock("../tagColors.ts", () => ({
 }));
 
 import { createNotificationToggle, renderAgenda } from "../render.ts";
+import { setLocale } from "../../i18n.ts";
 
 describe("renderAgenda", () => {
   beforeEach(() => {
@@ -48,6 +49,7 @@ describe("renderAgenda", () => {
     notificationFns.requestPermission.mockClear();
     notificationFns.setNotificationsEnabled.mockClear();
     tagFns.setTagColor.mockClear();
+    setLocale("en");
   });
 
   it("renders overdue, deadlines, days, and someday sections in order", () => {
@@ -266,6 +268,29 @@ describe("renderAgenda", () => {
     expect(toggle?.textContent).toBe("Show empty days");
     expect(toggle?.getAttribute("aria-pressed")).toBe("true");
     expect(toggle?.classList.contains("is-on")).toBe(true);
+  });
+
+  it("renders Norwegian date labels with an ordinal period", () => {
+    setLocale("nb");
+    const container = document.createElement("div");
+    const week = makeWeek([
+      [makeItem({ title: "Søndag", date: new Date(2026, 4, 10, 14, 0), startTime: "14:00" })],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+    ], new Date(2026, 4, 10));
+
+    renderAgenda(container, week, [], [], [], new Date(2026, 4, 10, 12, 30));
+
+    expect(container.querySelector<HTMLElement>(".nav-week-date")?.textContent).toBe("10.–16. mai 2026");
+    expect(container.querySelector<HTMLElement>(".date-label")?.textContent).toBe("søndag 10. mai");
+    expect(container.querySelector<HTMLElement>(".day-header")?.getAttribute("aria-label")).toBe("Legg til hendelse søndag 10. mai");
+
+    renderAgenda(container, makeWeek([[], [makeItem({ title: "Mandag", date: new Date(2026, 4, 11) })]], new Date(2026, 4, 10)), [], [], [], new Date(2026, 4, 10, 12, 30));
+    expect(container.querySelectorAll<HTMLElement>(".date-label")[1]?.textContent).toBe("mandag 11. mai (U20)");
   });
 
   it("hides completed and skipped items when requested", () => {
@@ -714,8 +739,8 @@ describe("UI toggles", () => {
   });
 });
 
-function makeWeek(days: AgendaItem[][]): AgendaWeek {
-  const start = new Date(2026, 3, 20);
+function makeWeek(days: AgendaItem[][], startDate = new Date(2026, 3, 20)): AgendaWeek {
+  const start = startDate;
   const makeDay = (index: number) => {
     const date = new Date(start);
     date.setDate(start.getDate() + index);

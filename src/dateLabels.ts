@@ -45,3 +45,11 @@ export const MONTH_NAMES = new Proxy([] as readonly string[], {
     return Reflect.get(pickByLocale(MONTH_NAMES_EN, MONTH_NAMES_NB), prop);
   },
 });
+
+export function formatDayNumber(day: number): string {
+  return getLocale() === "nb" ? `${day}.` : String(day);
+}
+
+export function formatDayMonth(date: Date, monthNames: readonly string[] = MONTH_NAMES): string {
+  return `${formatDayNumber(date.getDate())} ${monthNames[date.getMonth()]}`;
+}
