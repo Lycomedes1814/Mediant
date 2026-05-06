@@ -178,6 +178,7 @@ index.html             — Minimal shell with #agenda container
 - **Hide tags** — the `Hide tags` toggle removes agenda tag badges and tag-colored row fringes while preserving active tag filters in the header. The tag color-mode setting is hidden while tags are hidden. The preference is stored in `localStorage`.
 - **Hide empty days** — the `Hide empty days` toggle removes days with no visible agenda items from the active range. This is useful with tag filters; if every day is hidden, the day-card container is hidden too. The preference is stored in `localStorage`.
 - **Hide completed & skipped** — the `Hide completed & skipped` toggle drops DONE entries and skipped recurrence occurrences from the day cards and the someday section. Pairs naturally with `Hide empty days` to collapse the view down to outstanding work. The preference is stored in `localStorage`.
+- **TODO badge style** — the `Show TODO rings` / `Show TODO text` toggle switches TODO/DONE badges between text badges and compact rings. In ring mode, open TODO items show an empty ring and DONE items show a filled ring. The preference is stored in `localStorage`.
 - **Month-ahead view** — a settings toggle expands the day cards from 7 days to 30 days. Prev/next navigation moves by the active range length, and the preference is stored in `localStorage`.
 - **Range navigation** with prev/next/today buttons
 - **Keyboard shortcuts** — `n` next range, `p` previous range, `t` jump to today, `a` open the add-item panel, `q` open quick capture, `c` toggle tag color mode, `h` toggle hide empty days, `d` toggle hide completed & skipped, `m` toggle month-ahead view, `x` clear active tag filters. Shortcuts are disabled while typing in form fields.
@@ -217,6 +218,7 @@ Mediant uses your browser's `localStorage` for the following:
 | `mediant-hide-tags` | Whether agenda tag badges and tag-colored row fringes are hidden |
 | `mediant-hide-empty-days` | Whether empty days are hidden in the agenda view |
 | `mediant-hide-completed` | Whether DONE entries and skipped occurrences are hidden in day cards and someday |
+| `mediant-todo-badge-rings` | Whether TODO/DONE badges render as rings instead of text |
 | `mediant-month-ahead` | Whether the agenda shows 30 days instead of 7 |
 | `theme` | Light/dark mode preference |
 

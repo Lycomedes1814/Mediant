@@ -908,6 +908,40 @@ body {
   filter: brightness(1.15);
 }
 
+.item-state.is-ring-style {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  min-width: 1rem;
+  padding: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: transparent;
+  font-size: 0;
+  line-height: 1;
+}
+
+.item-state-ring {
+  width: 0.86rem;
+  height: 0.86rem;
+  border: 2px solid color-mix(in srgb, var(--text-dim) 58%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.item-done .item-state.is-ring-style {
+  opacity: 1;
+}
+
+.item-done .item-state-ring {
+  border-color: var(--text-done);
+  background: var(--text-done);
+  box-shadow: inset 0 0 0 2px var(--bg);
+}
+
 /* ── Priority badges ──────────────────────────────────────────────── */
 
 .item-priority {
@@ -1047,6 +1081,7 @@ body {
 .hide-tags-toggle,
 .hide-empty-days-toggle,
 .hide-completed-toggle,
+.todo-badge-style-toggle,
 .month-ahead-toggle,
 .language-toggle,
 .clear-tag-filters {

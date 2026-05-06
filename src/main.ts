@@ -36,6 +36,7 @@ let tagColorEditMode = false;
 let hideTags = localStorage.getItem("mediant-hide-tags") === "true";
 let hideEmptyDays = localStorage.getItem("mediant-hide-empty-days") === "true";
 let hideCompletedAndSkipped = localStorage.getItem("mediant-hide-completed") === "true";
+let todoBadgeRings = localStorage.getItem("mediant-todo-badge-rings") === "true";
 let monthAhead = localStorage.getItem("mediant-month-ahead") === "true";
 
 let quickCaptureOverlayEl: HTMLElement | null = null;
@@ -1815,6 +1816,12 @@ function toggleHideCompletedAndSkipped(): void {
   render();
 }
 
+function toggleTodoBadgeStyle(): void {
+  todoBadgeRings = !todoBadgeRings;
+  localStorage.setItem("mediant-todo-badge-rings", todoBadgeRings ? "true" : "false");
+  render();
+}
+
 function toggleMonthAhead(): void {
   monthAhead = !monthAhead;
   localStorage.setItem("mediant-month-ahead", monthAhead ? "true" : "false");
@@ -2123,6 +2130,7 @@ function render(): void {
     hideTags,
     hideEmptyDays,
     hideCompletedAndSkipped,
+    todoBadgeRings,
     monthAhead,
   });
 
@@ -2196,6 +2204,8 @@ function setupNavigation(): void {
       toggleHideEmptyDays();
     } else if (action === "toggle-hide-completed") {
       toggleHideCompletedAndSkipped();
+    } else if (action === "toggle-todo-badge-style") {
+      toggleTodoBadgeStyle();
     } else if (action === "toggle-month-ahead") {
       toggleMonthAhead();
     } else if (action === "toggle-tag-filter") {

@@ -564,6 +564,44 @@ describe("renderAgenda", () => {
     expect(state?.previousElementSibling).toBe(kind);
   });
 
+  it("can render todo badges as rings with done items filled", () => {
+    const container = document.createElement("div");
+    const week = makeWeek([
+      [
+        makeItem({
+          title: "Open",
+          date: new Date(2026, 3, 20, 9, 0),
+          entry: makeEntry({ title: "Open", todo: "TODO", sourceLineNumber: 41 }),
+          sourceLineNumber: 41,
+        }),
+        makeItem({
+          title: "Finished",
+          date: new Date(2026, 3, 20, 10, 0),
+          entry: makeEntry({ title: "Finished", todo: "DONE", sourceLineNumber: 42 }),
+          sourceLineNumber: 42,
+        }),
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+    ]);
+
+    renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 8, 0), {
+      todoBadgeRings: true,
+    });
+
+    const states = Array.from(container.querySelectorAll<HTMLElement>(".item-state"));
+    expect(states.map(state => state.textContent)).toEqual(["TODO", "DONE"]);
+    expect(states.every(state => state.classList.contains("is-ring-style"))).toBe(true);
+    expect(states.map(state => state.dataset.state)).toEqual(["TODO", "DONE"]);
+    expect(states.every(state => state.querySelector(".item-state-ring") !== null)).toBe(true);
+    expect(states[1]?.closest(".item-done")).not.toBeNull();
+    expect(container.querySelector<HTMLButtonElement>(".todo-badge-style-toggle")?.textContent).toBe("Show TODO text");
+  });
+
   it("marks scheduled todo rows with priority as stateful so the desktop grid stays on one line", () => {
     const container = document.createElement("div");
     const week = makeWeek([
@@ -684,6 +722,7 @@ describe("renderAgenda", () => {
     expect(container.querySelector(".agenda-settings-menu .agenda-settings-summary")?.textContent).toBe("Settings");
     expect(container.querySelector(".agenda-settings-menu .month-ahead-toggle")?.textContent).toBe("Show 7 days");
     expect(container.querySelector(".agenda-settings-menu .month-ahead-toggle")?.classList.contains("is-on")).toBe(true);
+    expect(container.querySelector(".agenda-settings-menu .todo-badge-style-toggle")?.textContent).toBe("Show TODO rings");
     expect(container.querySelector(".agenda-settings-menu .notification-toggle.is-labeled")?.textContent).toBe("Enable notifications");
   });
 

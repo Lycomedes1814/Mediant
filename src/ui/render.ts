@@ -17,6 +17,7 @@ export interface RenderAgendaOptions {
   readonly hideTags?: boolean;
   readonly hideEmptyDays?: boolean;
   readonly hideCompletedAndSkipped?: boolean;
+  readonly todoBadgeRings?: boolean;
   readonly monthAhead?: boolean;
 }
 
@@ -214,6 +215,17 @@ function createHideCompletedToggle(options: RenderAgendaOptions): HTMLButtonElem
   return btn;
 }
 
+function createTodoBadgeStyleToggle(options: RenderAgendaOptions): HTMLButtonElement {
+  const btn = el("button", "todo-badge-style-toggle");
+  const label = options.todoBadgeRings ? t("showTodoText") : t("showTodoRings");
+  btn.textContent = label;
+  btn.dataset.action = "toggle-todo-badge-style";
+  btn.setAttribute("aria-label", label);
+  btn.setAttribute("aria-pressed", options.todoBadgeRings ? "true" : "false");
+  if (options.todoBadgeRings) btn.classList.add("is-on");
+  return btn;
+}
+
 function createMonthAheadToggle(options: RenderAgendaOptions): HTMLButtonElement {
   const btn = el("button", "month-ahead-toggle");
   const label = options.monthAhead ? t("show7Days") : t("show30Days");
@@ -256,6 +268,7 @@ function renderSettingsMenu(options: RenderAgendaOptions): HTMLElement {
     createHideTagsToggle(options),
     createHideEmptyDaysToggle(options),
     createHideCompletedToggle(options),
+    createTodoBadgeStyleToggle(options),
     createMonthAheadToggle(options),
     createNotificationToggle({ label: true }),
     createLanguageToggle(),
@@ -683,6 +696,13 @@ function renderStateBadge(
     state.setAttribute("tabindex", "0");
     state.setAttribute("aria-label", entry.todo === "TODO" ? t("markDone") : t("markNotDone"));
   }
+  if (currentRenderOptions.todoBadgeRings && state.textContent) {
+    state.classList.add("is-ring-style");
+    state.dataset.state = state.textContent;
+    const ring = el("span", "item-state-ring");
+    ring.setAttribute("aria-hidden", "true");
+    state.prepend(ring);
+  }
   return state;
 }
 
@@ -840,7 +860,7 @@ function optionsForTags(): Pick<RenderAgendaOptions, "activeTagFilters" | "tagCo
   return currentRenderOptions;
 }
 
-let currentRenderOptions: Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode" | "hideTags"> = {};
+let currentRenderOptions: Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode" | "hideTags" | "todoBadgeRings"> = {};
 
 function renderTags(tags: readonly string[], options: Pick<RenderAgendaOptions, "activeTagFilters" | "tagColorEditMode" | "hideTags">): HTMLElement {
   const badges = el("span", "tag-badges");
@@ -920,6 +940,7 @@ export function renderAgenda(
     activeTagFilters: options.activeTagFilters ?? [],
     tagColorEditMode: options.tagColorEditMode ?? false,
     hideTags: options.hideTags ?? false,
+    todoBadgeRings: options.todoBadgeRings ?? false,
   };
   renderAgendaBase(container, week, deadlines, overdue, someday, today, options);
   currentRenderOptions = {};

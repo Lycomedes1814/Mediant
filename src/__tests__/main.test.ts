@@ -114,6 +114,21 @@ describe("main.ts integration", () => {
     expect(document.querySelector(".hide-empty-days-toggle")?.classList.contains("is-on")).toBe(false);
     expect(document.querySelectorAll(".day-block")).toHaveLength(7);
 
+    const todoBadgeStyleBtn = document.querySelector<HTMLButtonElement>(".todo-badge-style-toggle");
+    expect(todoBadgeStyleBtn).not.toBeNull();
+    expect(todoBadgeStyleBtn!.textContent).toBe("Show TODO rings");
+    todoBadgeStyleBtn!.click();
+    await flush();
+    expect(localStorage.getItem("mediant-todo-badge-rings")).toBe("true");
+    expect(document.querySelector(".todo-badge-style-toggle")?.classList.contains("is-on")).toBe(true);
+    expect(document.querySelector(".todo-badge-style-toggle")?.textContent).toBe("Show TODO text");
+    expect(document.querySelector(".item-state.is-ring-style .item-state-ring")).not.toBeNull();
+    document.querySelector<HTMLButtonElement>(".todo-badge-style-toggle")!.click();
+    await flush();
+    expect(localStorage.getItem("mediant-todo-badge-rings")).toBe("false");
+    expect(document.querySelector(".todo-badge-style-toggle")?.textContent).toBe("Show TODO rings");
+    expect(document.querySelector(".item-state.is-ring-style")).toBeNull();
+
     keydownHandler!(makeKeydownEvent("q", document.body));
     await waitFor(() => document.querySelector(".quick-capture-overlay.is-open") !== null);
     const quickInput = document.querySelector<HTMLInputElement>(".quick-capture-input");
