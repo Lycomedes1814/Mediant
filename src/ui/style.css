@@ -411,6 +411,12 @@ body {
   gap: 0 0.8rem;
 }
 
+.allday-item.has-ring-state,
+.timed-item.has-ring-state,
+.scheduled-item.has-ring-state {
+  column-gap: 0.5rem;
+}
+
 .allday-item.has-tag-fringe,
 .timed-item.has-tag-fringe,
 .scheduled-item.has-tag-fringe,
