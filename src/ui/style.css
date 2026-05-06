@@ -1048,6 +1048,7 @@ body {
 .hide-empty-days-toggle,
 .hide-completed-toggle,
 .month-ahead-toggle,
+.language-toggle,
 .clear-tag-filters {
   border: 1px solid var(--border);
   border-radius: 999px;

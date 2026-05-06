@@ -16,6 +16,7 @@ import type { AgendaDay } from "./agenda/model.ts";
 import { getTagColor } from "./ui/tagColors.ts";
 import { scheduleNotifications } from "./ui/notifications.ts";
 import { DAY_ABBREVS, MONTH_ABBREVS } from "./dateLabels.ts";
+import { t } from "./i18n.ts";
 
 // ── Constants ───────────────────────────────────────────────────────
 
@@ -129,10 +130,10 @@ function buildQuickCaptureOverlay(): void {
   quickCaptureInputEl = document.createElement("input");
   quickCaptureInputEl.type = "text";
   quickCaptureInputEl.className = "quick-capture-input";
-  quickCaptureInputEl.placeholder = "Quick task capture";
+  quickCaptureInputEl.placeholder = t("quickTaskCapture");
   quickCaptureInputEl.autocomplete = "off";
   quickCaptureInputEl.spellcheck = true;
-  quickCaptureInputEl.setAttribute("aria-label", "Quick task capture");
+  quickCaptureInputEl.setAttribute("aria-label", t("quickTaskCapture"));
   quickCaptureInputEl.addEventListener("click", (e) => e.stopPropagation());
   quickCaptureInputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -192,7 +193,7 @@ async function submitQuickCapture(): Promise<void> {
       quickCaptureInputEl.value = "";
       quickCaptureInputEl.focus();
     } else if (quickCaptureErrorEl) {
-      quickCaptureErrorEl.textContent = "Could not save task.";
+      quickCaptureErrorEl.textContent = t("couldNotSaveTask");
     }
   } finally {
     quickCaptureInputEl.disabled = false;
@@ -200,26 +201,30 @@ async function submitQuickCapture(): Promise<void> {
   }
 }
 
-const EVENT_REPEAT_OPTIONS = [
-  { value: "", label: "None" },
-  { value: "+1d", label: "Every day (+1d)" },
-  { value: "+1w", label: "Every week (+1w)" },
-  { value: "+2w", label: "Every 2 weeks (+2w)" },
-  { value: "+1m", label: "Every month (+1m)" },
-  { value: "+1y", label: "Every year (+1y)" },
- ] as const;
+function eventRepeatOptions(): { value: string; label: string }[] {
+  return [
+    { value: "", label: t("repeatNone") },
+    { value: "+1d", label: t("repeatEveryDay") },
+    { value: "+1w", label: t("repeatEveryWeek") },
+    { value: "+2w", label: t("repeatEvery2Weeks") },
+    { value: "+1m", label: t("repeatEveryMonth") },
+    { value: "+1y", label: t("repeatEveryYear") },
+  ];
+}
 
-const TODO_REPEAT_OPTIONS = [
-  ...EVENT_REPEAT_OPTIONS,
-  { value: "++1d", label: "Next future day (++1d)" },
-  { value: "++1w", label: "Next future week (++1w)" },
-  { value: "++1m", label: "Next future month (++1m)" },
-  { value: "++1y", label: "Next future year (++1y)" },
-  { value: ".+1d", label: "1 day from done (.+1d)" },
-  { value: ".+1w", label: "1 week from done (.+1w)" },
-  { value: ".+1m", label: "1 month from done (.+1m)" },
-  { value: ".+1y", label: "1 year from done (.+1y)" },
-] as const;
+function todoRepeatOptions(): { value: string; label: string }[] {
+  return [
+    ...eventRepeatOptions(),
+    { value: "++1d", label: t("repeatNextFutureDay") },
+    { value: "++1w", label: t("repeatNextFutureWeek") },
+    { value: "++1m", label: t("repeatNextFutureMonth") },
+    { value: "++1y", label: t("repeatNextFutureYear") },
+    { value: ".+1d", label: t("repeatDayFromDone") },
+    { value: ".+1w", label: t("repeatWeekFromDone") },
+    { value: ".+1m", label: t("repeatMonthFromDone") },
+    { value: ".+1y", label: t("repeatYearFromDone") },
+  ];
+}
 
 function hasParsedDate(input: HTMLInputElement): boolean {
   return Boolean(parseDateTime(input.value.trim())?.date);
@@ -238,13 +243,13 @@ function buildAddPanel(): void {
   header.className = "te-header";
 
   const title = document.createElement("span");
-  title.textContent = "Add item";
+  title.textContent = t("addItem");
   addPanelTitleEl = title;
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "te-close";
   closeBtn.textContent = "\u00D7";
-  closeBtn.setAttribute("aria-label", "Close");
+  closeBtn.setAttribute("aria-label", t("close"));
   closeBtn.addEventListener("click", closeAddPanel);
 
   header.append(title, closeBtn);
@@ -260,18 +265,18 @@ function buildAddPanel(): void {
   form.appendChild(occurrenceSection);
 
   // Type toggle
-  const typeGroup = makeRadioGroup("Type", "add-type", [
-    { value: "event", label: "Event", checked: true },
-    { value: "todo", label: "TODO" },
+  const typeGroup = makeRadioGroup(t("type"), "add-type", [
+    { value: "event", label: t("typeEvent"), checked: true },
+    { value: "todo", label: t("typeTodo") },
   ]);
   form.appendChild(typeGroup.container);
 
   // Priority
-  const priorityGroup = makeRadioGroup("Priority", "add-priority", [
+  const priorityGroup = makeRadioGroup(t("priority"), "add-priority", [
     { value: "A", label: "#A" },
     { value: "B", label: "#B" },
     { value: "C", label: "#C" },
-    { value: "", label: "None", checked: true },
+    { value: "", label: t("priorityNone"), checked: true },
   ]);
   form.appendChild(priorityGroup.container);
 
@@ -283,17 +288,17 @@ function buildAddPanel(): void {
   }));
 
   // Title
-  const titleInput = makeTextInput("Title", "add-title");
+  const titleInput = makeTextInput(t("title"), "add-title");
   form.appendChild(titleInput.container);
 
   // Event: when
-  const whenInput = makeDateTimeInput("When", "add-when", {
+  const whenInput = makeDateTimeInput(t("when"), "add-when", {
     onChange: () => scheduleEditAutosave(),
   });
   form.appendChild(whenInput.container);
 
   // TODO: scheduled / deadline (combined date+time)
-  const schedInput = makeDateTimeInput("Scheduled", "add-sched", {
+  const schedInput = makeDateTimeInput(t("scheduled"), "add-sched", {
     onChange: () => {
       syncVisibility();
       scheduleEditAutosave();
@@ -301,7 +306,7 @@ function buildAddPanel(): void {
   });
   form.appendChild(schedInput.container);
 
-  const deadInput = makeDateTimeInput("Deadline", "add-dead", {
+  const deadInput = makeDateTimeInput(t("deadlineField"), "add-dead", {
     onChange: () => {
       syncVisibility();
       scheduleEditAutosave();
@@ -310,17 +315,17 @@ function buildAddPanel(): void {
   form.appendChild(deadInput.container);
 
   // Repeat (event only)
-  const repeatSelect = makeSelect("Repeat", "add-repeat", [...EVENT_REPEAT_OPTIONS]);
+  const repeatSelect = makeSelect(t("repeat"), "add-repeat", eventRepeatOptions());
   form.appendChild(repeatSelect.container);
 
-  const schedRepeatSelect = makeSelect("Scheduled repeat", "add-sched-repeat", [...TODO_REPEAT_OPTIONS]);
+  const schedRepeatSelect = makeSelect(t("scheduledRepeat"), "add-sched-repeat", todoRepeatOptions());
   form.appendChild(schedRepeatSelect.container);
 
-  const deadRepeatSelect = makeSelect("Deadline repeat", "add-dead-repeat", [...TODO_REPEAT_OPTIONS]);
+  const deadRepeatSelect = makeSelect(t("deadlineRepeat"), "add-dead-repeat", todoRepeatOptions());
   form.appendChild(deadRepeatSelect.container);
 
   // Tags
-  const tagPicker = makeTagPicker("Tags", "add-tags");
+  const tagPicker = makeTagPicker(t("tags"), "add-tags");
   form.appendChild(tagPicker.container);
 
   // Show/hide fields based on type
@@ -384,7 +389,7 @@ function buildAddPanel(): void {
   skipCheckbox.className = "occurrence-toggle-checkbox";
   const skipCheckboxText = document.createElement("span");
   skipCheckboxText.className = "occurrence-toggle-label";
-  skipCheckboxText.textContent = "Skip this occurrence";
+  skipCheckboxText.textContent = t("skipThisOccurrence");
   skipCheckbox.addEventListener("change", () => void toggleOccurrenceSkipped());
   skipCheckboxRow.append(skipCheckbox, skipCheckboxText);
 
@@ -395,7 +400,7 @@ function buildAddPanel(): void {
   endSeriesCheckbox.className = "occurrence-toggle-checkbox";
   const endSeriesCheckboxText = document.createElement("span");
   endSeriesCheckboxText.className = "occurrence-toggle-label";
-  endSeriesCheckboxText.textContent = "Stop repeating after this occurrence";
+  endSeriesCheckboxText.textContent = t("stopRepeatingAfter");
   endSeriesCheckbox.addEventListener("change", () => void toggleOccurrenceIsLast());
   endSeriesCheckboxRow.append(endSeriesCheckbox, endSeriesCheckboxText);
 
@@ -404,7 +409,7 @@ function buildAddPanel(): void {
   const occurrenceInput = document.createElement("input");
   occurrenceInput.type = "text";
   occurrenceInput.className = "add-input occurrence-input";
-  occurrenceInput.placeholder = "Move to date/time";
+  occurrenceInput.placeholder = t("moveToDateTime");
   const occurrencePreview = document.createElement("div");
   occurrencePreview.className = "datetime-preview occurrence-preview";
   occurrenceInput.addEventListener("input", () => {
@@ -417,7 +422,7 @@ function buildAddPanel(): void {
   const clearOverrideBtn = document.createElement("button");
   clearOverrideBtn.type = "button";
   clearOverrideBtn.className = "occurrence-btn occurrence-btn-secondary";
-  clearOverrideBtn.textContent = "Clear override";
+  clearOverrideBtn.textContent = t("clearOverride");
   clearOverrideBtn.addEventListener("click", () => clearException("override"));
 
   occActions.append(skipCheckboxRow, endSeriesCheckboxRow, overrideRow, occurrencePreview, clearOverrideBtn);
@@ -425,7 +430,7 @@ function buildAddPanel(): void {
 
   const noteLabel = document.createElement("label");
   noteLabel.className = "add-label";
-  noteLabel.textContent = "Note for this occurrence";
+  noteLabel.textContent = t("noteForOccurrence");
   occurrenceSection.appendChild(noteLabel);
 
   const noteTextarea = document.createElement("textarea");
@@ -441,7 +446,7 @@ function buildAddPanel(): void {
   // Save button
   const saveBtn = document.createElement("button");
   saveBtn.className = "add-save-btn";
-  saveBtn.textContent = "Save";
+  saveBtn.textContent = t("save");
   saveBtn.addEventListener("click", () => {
     const orgText = buildPanelOrgText({ focusInvalid: true });
     if (orgText === null) return;
@@ -456,7 +461,7 @@ function buildAddPanel(): void {
 
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "add-delete-btn";
-  deleteBtn.textContent = "Delete";
+  deleteBtn.textContent = t("delete");
   deleteBtn.type = "button";
   deleteBtn.addEventListener("click", () => {
     if (editingLine === null) return;
@@ -516,7 +521,7 @@ function rebuildCheckboxUI(container: HTMLElement): void {
 
   const lbl = document.createElement("label");
   lbl.className = "add-label";
-  lbl.textContent = "Checklist";
+  lbl.textContent = t("checklist");
   container.appendChild(lbl);
 
   for (let ci = 0; ci < editingCheckboxItems.length; ci++) {
@@ -582,7 +587,7 @@ function rebuildCheckboxUI(container: HTMLElement): void {
   const addBtn = document.createElement("button");
   addBtn.type = "button";
   addBtn.className = "edit-checkbox-add";
-  addBtn.textContent = "+ Add subtask";
+  addBtn.textContent = t("addSubtask");
   addBtn.addEventListener("click", () => {
     editingCheckboxItems.push({ text: "", checked: false });
     rebuildCheckboxUI(container);
@@ -746,7 +751,7 @@ function makeTagPicker(label: string, id: string): TagPicker {
     if (query && !collectAllTags().some(t => t.toLowerCase() === query) && !selected.some(t => t.toLowerCase() === query)) {
       const addOpt = document.createElement("div");
       addOpt.className = "tag-picker-option tag-picker-option-new";
-      addOpt.textContent = `Add "${input.value.trim()}"`;
+      addOpt.textContent = t("addTagOption", { tag: input.value.trim() });
       const select = (): void => {
         selected.push(input.value.trim());
         input.value = "";
@@ -1000,7 +1005,7 @@ function makeDateTimeInput(
   const toggleBtn = document.createElement("button");
   toggleBtn.type = "button";
   toggleBtn.className = "datetime-picker-toggle";
-  toggleBtn.setAttribute("aria-label", `Open ${label.toLowerCase()} picker`);
+  toggleBtn.setAttribute("aria-label", t("openPicker", { label: label.toLowerCase() }));
   toggleBtn.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.5a.75.75 0 0 1 1.5 0V3h5V1.5a.75.75 0 0 1 1.5 0V3h.75A2.25 2.25 0 0 1 15 5.25v7.5A2.25 2.25 0 0 1 12.75 15h-9.5A2.25 2.25 0 0 1 1 12.75v-7.5A2.25 2.25 0 0 1 3.25 3H4V1.5ZM2.5 6v6.75c0 .414.336.75.75.75h9.5a.75.75 0 0 0 .75-.75V6h-11Z"/></svg>`;
 
   const pickerPopover = document.createElement("div");
@@ -1421,8 +1426,8 @@ function openAddPanel(prefillDate: string | null = null): void {
   editingDeadRepeater = null;
   editingProgress = null;
   editingCheckboxItems = [];
-  if (addPanelTitleEl) addPanelTitleEl.textContent = "Add item";
-  if (addPanelSaveBtnEl) addPanelSaveBtnEl.textContent = "Save";
+  if (addPanelTitleEl) addPanelTitleEl.textContent = t("addItem");
+  if (addPanelSaveBtnEl) addPanelSaveBtnEl.textContent = t("save");
   addPanelEl.classList.remove("is-editing");
   addPanelEl.classList.remove("has-occurrence");
 
@@ -1474,7 +1479,7 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   editingPriority = entry.priority;
   editingTodoState = entry.todo === "DONE" ? "DONE" : "TODO";
   editingProgress = entry.progress;
-  if (addPanelSaveBtnEl) addPanelSaveBtnEl.textContent = "Save";
+  if (addPanelSaveBtnEl) addPanelSaveBtnEl.textContent = t("save");
   addPanelEl.classList.add("is-editing");
   addPanelEl.classList.toggle("has-occurrence", baseDate !== null && entryHasRepeater(entry));
   refreshOccurrenceSection({ resetOccurrenceInput: true });
@@ -1482,7 +1487,7 @@ function openEditPanel(sourceLine: number, baseDate: string | null = null): void
   const refs = addPanelRefs;
 
   const type = entry.todo ? "todo" : "event";
-  if (addPanelTitleEl) addPanelTitleEl.textContent = type === "todo" ? "Edit task" : "Edit event";
+  if (addPanelTitleEl) addPanelTitleEl.textContent = type === "todo" ? t("editTask") : t("editEvent");
   selectRadioValue(refs.typeGroup, type);
   refs.typeGroup.style.display = "none";
 
@@ -1731,7 +1736,7 @@ function closeAddPanel(): void {
 function armDeleteBtn(): void {
   if (!addPanelDeleteBtnEl) return;
   addPanelDeleteBtnEl.classList.add("is-armed");
-  addPanelDeleteBtnEl.textContent = "Tap again to delete";
+  addPanelDeleteBtnEl.textContent = t("tapAgainToDelete");
   if (deleteArmedTimer !== null) clearTimeout(deleteArmedTimer);
   deleteArmedTimer = window.setTimeout(disarmDeleteBtn, 3000);
 }
@@ -1743,7 +1748,7 @@ function disarmDeleteBtn(): void {
   }
   if (!addPanelDeleteBtnEl) return;
   addPanelDeleteBtnEl.classList.remove("is-armed");
-  addPanelDeleteBtnEl.textContent = "Delete";
+  addPanelDeleteBtnEl.textContent = t("delete");
 }
 
 function navigateWeek(direction: "prev" | "next" | "today"): void {
@@ -1945,7 +1950,7 @@ function showInput(): void {
   wrapper.className = "input-screen";
 
   const title = document.createElement("h1");
-  title.textContent = "Mediant";
+  title.textContent = t("appTitle");
   title.className = "input-title";
 
   const textarea = document.createElement("textarea");
@@ -1955,7 +1960,7 @@ function showInput(): void {
 
   const btn = document.createElement("button");
   btn.className = "input-load-btn";
-  btn.textContent = "Load agenda";
+  btn.textContent = t("loadAgenda");
   btn.addEventListener("click", () => loadFromTextarea(textarea.value));
 
   const ghLink = document.createElement("a");
@@ -1963,7 +1968,7 @@ function showInput(): void {
   ghLink.href = "https://github.com/Jovlang/Mediant";
   ghLink.target = "_blank";
   ghLink.rel = "noopener noreferrer";
-  ghLink.setAttribute("aria-label", "View on GitHub");
+  ghLink.setAttribute("aria-label", t("viewOnGitHub"));
   ghLink.innerHTML = `<svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
 
   const headerRight = document.createElement("div");

@@ -3,6 +3,8 @@
  * Fires 1 hour before each event's start time (today only).
  */
 
+import { t } from "../i18n.ts";
+
 const STORAGE_KEY = "mediant-notifications";
 const LEAD_MS = 60 * 60 * 1000; // 1 hour
 
@@ -72,7 +74,7 @@ export function scheduleNotifications(
       const timer = setTimeout(() => {
         new Notification(item.title, {
           icon: "/icon.svg",
-          body: `Starts in 1 hour \u00B7 ${item.startTime}`,
+          body: t("notificationStartsIn1Hour", { time: item.startTime }),
           tag: `mediant-${item.dateStr}-${item.startTime}-${item.title}`,
         });
       }, delay);

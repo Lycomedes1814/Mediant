@@ -9,6 +9,7 @@ import type { AgendaDay, AgendaItem, DeadlineItem, OverdueItem, SomedayItem } fr
 import { getTagColor, setTagColor, TAG_DEFAULT_COLOR } from "./tagColors.ts";
 import { notificationsEnabled, setNotificationsEnabled, requestPermission, clearScheduled, scheduleNotifications } from "./notifications.ts";
 import { DAY_NAMES, MONTH_NAMES } from "../dateLabels.ts";
+import { t, type Locale, getLocale, setLocale, SUPPORTED_LOCALES } from "../i18n.ts";
 
 export interface RenderAgendaOptions {
   readonly activeTagFilters?: readonly string[];
@@ -30,13 +31,13 @@ export function createNotificationToggle(options: ToggleButtonOptions = {}): HTM
   const bellFilled = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
   const update = () => {
     const on = notificationsEnabled();
-    const nextNotificationLabel = on ? "Disable notifications" : "Enable notifications";
+    const nextNotificationLabel = on ? t("disableNotifications") : t("enableNotifications");
     if (options.label) {
       btn.textContent = nextNotificationLabel;
     } else {
       btn.innerHTML = on ? bellFilled : bellOutline;
     }
-    btn.setAttribute("aria-label", options.label ? nextNotificationLabel : "Toggle notifications");
+    btn.setAttribute("aria-label", options.label ? nextNotificationLabel : t("toggleNotifications"));
     btn.classList.toggle("is-on", on);
   };
   update();
@@ -131,7 +132,7 @@ function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptio
 
   const prevBtn = el("button", "nav-arrow");
   prevBtn.innerHTML = "&larr;";
-  prevBtn.setAttribute("aria-label", options.monthAhead ? "Previous 30 days" : "Previous 7 days");
+  prevBtn.setAttribute("aria-label", options.monthAhead ? t("prev30Days") : t("prev7Days"));
   prevBtn.dataset.action = "prev";
 
   const title = el("span", "nav-title");
@@ -141,13 +142,13 @@ function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptio
 
   const nextBtn = el("button", "nav-arrow");
   nextBtn.innerHTML = "&rarr;";
-  nextBtn.setAttribute("aria-label", options.monthAhead ? "Next 30 days" : "Next 7 days");
+  nextBtn.setAttribute("aria-label", options.monthAhead ? t("next30Days") : t("next7Days"));
   nextBtn.dataset.action = "next";
 
   const todayBtn = el("button", "agenda-nav-today");
-  todayBtn.textContent = "Today";
+  todayBtn.textContent = t("today");
   todayBtn.dataset.action = "today";
-  todayBtn.setAttribute("aria-label", "Today");
+  todayBtn.setAttribute("aria-label", t("todayAria"));
 
   nav.append(prevBtn, title, nextBtn);
 
@@ -155,9 +156,9 @@ function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptio
   const primaryActions = el("div", "agenda-primary-actions");
 
   const addBtn = el("button", "add-item-btn");
-  addBtn.textContent = "+Add";
+  addBtn.textContent = t("addLabel");
   addBtn.dataset.action = "add";
-  addBtn.setAttribute("aria-label", "Add item");
+  addBtn.setAttribute("aria-label", t("addAria"));
 
   primaryActions.append(addBtn);
   actions.append(primaryActions, renderSettingsMenu(options));
@@ -171,9 +172,10 @@ function renderHeader(startDate: Date, endDate: Date, options: RenderAgendaOptio
 
 function createColorModeToggle(options: RenderAgendaOptions): HTMLButtonElement {
   const colorModeBtn = el("button", "tag-color-mode-toggle");
-  colorModeBtn.textContent = options.tagColorEditMode ? "Click tag to filter" : "Click tag to change color";
+  const label = options.tagColorEditMode ? t("clickTagToFilter") : t("clickTagToChangeColor");
+  colorModeBtn.textContent = label;
   colorModeBtn.dataset.action = "toggle-tag-color-mode";
-  colorModeBtn.setAttribute("aria-label", options.tagColorEditMode ? "Click tag to filter" : "Click tag to change color");
+  colorModeBtn.setAttribute("aria-label", label);
   colorModeBtn.setAttribute("aria-pressed", options.tagColorEditMode ? "true" : "false");
   if (options.tagColorEditMode) colorModeBtn.classList.add("is-on");
   return colorModeBtn;
@@ -181,9 +183,10 @@ function createColorModeToggle(options: RenderAgendaOptions): HTMLButtonElement 
 
 function createHideEmptyDaysToggle(options: RenderAgendaOptions): HTMLButtonElement {
   const hideEmptyDaysBtn = el("button", "hide-empty-days-toggle");
-  hideEmptyDaysBtn.textContent = options.hideEmptyDays ? "Show empty days" : "Hide empty days";
+  const label = options.hideEmptyDays ? t("showEmptyDays") : t("hideEmptyDays");
+  hideEmptyDaysBtn.textContent = label;
   hideEmptyDaysBtn.dataset.action = "toggle-hide-empty-days";
-  hideEmptyDaysBtn.setAttribute("aria-label", options.hideEmptyDays ? "Show empty days" : "Hide empty days");
+  hideEmptyDaysBtn.setAttribute("aria-label", label);
   hideEmptyDaysBtn.setAttribute("aria-pressed", options.hideEmptyDays ? "true" : "false");
   if (options.hideEmptyDays) hideEmptyDaysBtn.classList.add("is-on");
   return hideEmptyDaysBtn;
@@ -191,7 +194,7 @@ function createHideEmptyDaysToggle(options: RenderAgendaOptions): HTMLButtonElem
 
 function createHideTagsToggle(options: RenderAgendaOptions): HTMLButtonElement {
   const btn = el("button", "hide-tags-toggle");
-  const label = options.hideTags ? "Show tags" : "Hide tags";
+  const label = options.hideTags ? t("showTags") : t("hideTags");
   btn.textContent = label;
   btn.dataset.action = "toggle-hide-tags";
   btn.setAttribute("aria-label", label);
@@ -202,7 +205,7 @@ function createHideTagsToggle(options: RenderAgendaOptions): HTMLButtonElement {
 
 function createHideCompletedToggle(options: RenderAgendaOptions): HTMLButtonElement {
   const btn = el("button", "hide-completed-toggle");
-  const label = options.hideCompletedAndSkipped ? "Show completed & skipped" : "Hide completed & skipped";
+  const label = options.hideCompletedAndSkipped ? t("showCompletedAndSkipped") : t("hideCompletedAndSkipped");
   btn.textContent = label;
   btn.dataset.action = "toggle-hide-completed";
   btn.setAttribute("aria-label", label);
@@ -213,7 +216,7 @@ function createHideCompletedToggle(options: RenderAgendaOptions): HTMLButtonElem
 
 function createMonthAheadToggle(options: RenderAgendaOptions): HTMLButtonElement {
   const btn = el("button", "month-ahead-toggle");
-  const label = options.monthAhead ? "Show 7 days" : "Show 30 days";
+  const label = options.monthAhead ? t("show7Days") : t("show30Days");
   btn.textContent = label;
   btn.dataset.action = "toggle-month-ahead";
   btn.setAttribute("aria-label", label);
@@ -222,13 +225,27 @@ function createMonthAheadToggle(options: RenderAgendaOptions): HTMLButtonElement
   return btn;
 }
 
+function createLanguageToggle(): HTMLButtonElement {
+  const btn = el("button", "language-toggle");
+  const current = getLocale();
+  const next = SUPPORTED_LOCALES[(SUPPORTED_LOCALES.indexOf(current) + 1) % SUPPORTED_LOCALES.length] as Locale;
+  const label = next === "nb" ? t("switchToNorwegian") : t("switchToEnglish");
+  btn.textContent = label;
+  btn.setAttribute("aria-label", label);
+  btn.addEventListener("click", () => {
+    setLocale(next);
+    if (typeof location !== "undefined") location.reload();
+  });
+  return btn;
+}
+
 function renderSettingsMenu(options: RenderAgendaOptions): HTMLElement {
   const menu = document.createElement("details");
   menu.className = "agenda-settings-menu";
 
   const summary = el("summary", "agenda-settings-summary");
-  summary.textContent = "Settings";
-  summary.setAttribute("aria-label", "Settings");
+  summary.textContent = t("settings");
+  summary.setAttribute("aria-label", t("settings"));
   menu.appendChild(summary);
 
   const panel = el("div", "agenda-settings-panel");
@@ -241,6 +258,7 @@ function renderSettingsMenu(options: RenderAgendaOptions): HTMLElement {
     createHideCompletedToggle(options),
     createMonthAheadToggle(options),
     createNotificationToggle({ label: true }),
+    createLanguageToggle(),
   );
   menu.appendChild(panel);
 
@@ -257,7 +275,7 @@ function renderActiveTagFilters(tags: readonly string[]): HTMLElement {
   const row = el("div", "active-tag-filters");
 
   const label = el("span", "active-tag-filters-label");
-  label.textContent = "Filtering:";
+  label.textContent = t("filtering");
   row.appendChild(label);
 
   for (const tag of tags) {
@@ -265,7 +283,7 @@ function renderActiveTagFilters(tags: readonly string[]): HTMLElement {
   }
 
   const clearBtn = el("button", "clear-tag-filters");
-  clearBtn.textContent = "Clear";
+  clearBtn.textContent = t("clear");
   clearBtn.dataset.action = "clear-tag-filters";
   row.appendChild(clearBtn);
   return row;
@@ -326,7 +344,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
   const section = el("section", "overdue-section");
 
   const header = el("header", "overdue-header");
-  header.textContent = "Overdue";
+  header.textContent = t("overdue");
   section.appendChild(header);
 
   for (const item of items) {
@@ -338,7 +356,7 @@ function renderOverdue(items: OverdueItem[]): HTMLElement {
     const time = el("span", "item-time");
     time.textContent = `-${item.daysOverdue}d`;
     const kind = el("span", "item-kind");
-    kind.textContent = item.kind === "deadline" ? "DEADLINE" : "SCHEDULED";
+    kind.textContent = item.kind === "deadline" ? t("deadline") : t("overdueScheduled");
     const state = renderStateBadge(item.entry);
     meta.append(time, kind, state);
 
@@ -405,10 +423,10 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
   const label = el("span", "date-label");
   let dayText = `${DAY_NAMES[day.date.getDay()]} ${day.date.getDate()} ${MONTH_NAMES[day.date.getMonth()]}`;
   if (day.date.getDay() === 1) {
-    dayText += ` (W${getISOWeek(day.date)})`;
+    dayText += ` (${t("weekAbbrev")}${getISOWeek(day.date)})`;
   }
   label.textContent = dayText;
-  header.setAttribute("aria-label", `Add event on ${dayText}`);
+  header.setAttribute("aria-label", t("addEventOn", { date: dayText }));
   header.appendChild(label);
 
   if (isToday) {
@@ -566,11 +584,11 @@ function renderOverrideChip(
     const mark = el("span", "item-skipped-mark");
     mark.textContent = "•";
     mark.title = override.detail;
-    mark.setAttribute("aria-label", `Skipped (${override.detail})`);
+    mark.setAttribute("aria-label", t("skippedDetail", { detail: override.detail }));
     return mark;
   }
   const chip = el("span", "item-override-chip");
-  chip.textContent = direction === "earlier" ? "← Moved" : "→ Moved";
+  chip.textContent = direction === "earlier" ? t("movedEarlier") : t("movedLater");
   chip.title = override.detail;
   chip.setAttribute("aria-label", `${chip.textContent} (${override.detail})`);
   return chip;
@@ -629,7 +647,7 @@ function renderItemForCategory(
   }
 
   const kind = el("span", "item-kind");
-  kind.textContent = "DEADLINE";
+  kind.textContent = t("deadline");
   const row = renderItem(item, "day-deadline-item", [kind, renderStateBadge(item.entry, "TODO")], "optional", true, checkboxListId, checkboxListKey);
   if (item.entry.checkboxItems.length > 0) row.classList.add("has-checkbox-list");
   return row;
@@ -663,7 +681,7 @@ function renderStateBadge(
     state.dataset.line = String(entry.sourceLineNumber);
     state.setAttribute("role", "button");
     state.setAttribute("tabindex", "0");
-    state.setAttribute("aria-label", entry.todo === "TODO" ? "Mark done" : "Mark not done");
+    state.setAttribute("aria-label", entry.todo === "TODO" ? t("markDone") : t("markNotDone"));
   }
   return state;
 }
@@ -679,7 +697,7 @@ function renderNowLine(today: Date): HTMLElement {
   time.textContent = hh + ":" + mm;
 
   const label = el("span", "now-label");
-  label.textContent = "\u25C4 now";
+  label.textContent = t("nowMarker");
 
   const rule = el("span", "now-rule");
 
@@ -747,7 +765,7 @@ function renderCheckboxItems(
     row.dataset.checkboxIndex = String(i);
     row.setAttribute("role", "button");
     row.setAttribute("tabindex", "0");
-    row.setAttribute("aria-label", item.checked ? "Mark not done" : "Mark done");
+    row.setAttribute("aria-label", item.checked ? t("markNotDone") : t("markDone"));
     const icon = el("span", "checkbox-icon");
     icon.setAttribute("aria-hidden", "true");
     const label = el("span", "checkbox-label");
@@ -791,7 +809,7 @@ function appendCheckboxToggle(title: HTMLElement, listId: string, listKey: strin
   toggle.className = "checkbox-list-toggle-inline";
   toggle.type = "button";
   toggle.textContent = initiallyCollapsed ? ">" : "<";
-  toggle.setAttribute("aria-label", initiallyCollapsed ? "Show checklist" : "Hide checklist");
+  toggle.setAttribute("aria-label", initiallyCollapsed ? t("showChecklist") : t("hideChecklist"));
   toggle.setAttribute("aria-expanded", initiallyCollapsed ? "false" : "true");
   toggle.setAttribute("aria-controls", listId);
   toggle.addEventListener("click", (event) => {
@@ -801,7 +819,7 @@ function appendCheckboxToggle(title: HTMLElement, listId: string, listKey: strin
     const collapsed = list.classList.toggle("is-collapsed");
     checkboxListCollapseState.set(listKey, collapsed);
     toggle.textContent = collapsed ? ">" : "<";
-    toggle.setAttribute("aria-label", collapsed ? "Show checklist" : "Hide checklist");
+    toggle.setAttribute("aria-label", collapsed ? t("showChecklist") : t("hideChecklist"));
     toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
     toggle.blur();
   });
@@ -854,10 +872,10 @@ function renderTag(
   span.setAttribute(
     "aria-label",
     options.colorEditMode
-      ? `Change color for tag ${tag}`
+      ? t("changeColorForTag", { tag })
       : options.selected
-        ? `Remove tag filter ${tag}`
-        : `Filter by tag ${tag}`,
+        ? t("removeTagFilter", { tag })
+        : t("filterByTag", { tag }),
   );
   if (options.selected) span.classList.add("is-selected");
   if (options.colorEditMode) span.classList.add("is-color-editable");
