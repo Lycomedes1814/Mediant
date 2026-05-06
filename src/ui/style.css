@@ -930,6 +930,7 @@ body {
   color: transparent;
   font-size: 0;
   line-height: 1;
+  transform: translateY(0.08rem);
 }
 
 .item-state-ring {
