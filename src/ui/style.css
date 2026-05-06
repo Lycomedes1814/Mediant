@@ -1027,7 +1027,9 @@ body {
 }
 
 .tag.is-color-editable .tag-color-picker {
-  opacity: 1;
+  inset: 0;
+  width: auto;
+  height: auto;
   pointer-events: auto;
 }
 
