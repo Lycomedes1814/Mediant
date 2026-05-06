@@ -344,6 +344,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
         dl.entry.priority !== null,
         checkboxListId ?? undefined,
         checkboxListKey ?? undefined,
+        usesRingState(dl.entry),
       ));
     }
   }
@@ -412,6 +413,7 @@ function renderSomeday(items: SomedayItem[]): HTMLElement {
         item.entry.priority !== null,
         checkboxListId ?? undefined,
         checkboxListKey ?? undefined,
+        usesRingState(item.entry),
       ));
     }
   }
@@ -509,6 +511,7 @@ function renderDay(day: AgendaDay, today: Date): HTMLElement {
           item.entry.priority !== null,
           checkboxListId ?? undefined,
           checkboxListKey ?? undefined,
+          usesRingState(item.entry),
         ));
       }
     }
@@ -765,6 +768,7 @@ function renderCheckboxItems(
   hasPriority: boolean = false,
   listId?: string,
   listKey?: string,
+  ringState: boolean = false,
 ): HTMLElement {
   const list = el("div", "checkbox-list");
   if (listId) {
@@ -777,6 +781,7 @@ function renderCheckboxItems(
   }
   if (layoutClass) list.classList.add(layoutClass);
   if (hasPriority) list.classList.add("checkbox-list-has-priority");
+  if (ringState) list.classList.add("checkbox-list-ring-state");
 
   const rows = el("div", "checkbox-list-items");
   for (let i = 0; i < items.length; i++) {
@@ -808,6 +813,10 @@ let renderedCheckboxListKeys = new Set<string>();
 function nextCheckboxListId(): string {
   checkboxListIdCounter += 1;
   return `checklist-${checkboxListIdCounter}`;
+}
+
+function usesRingState(entry: { todo: string | null }): boolean {
+  return currentRenderOptions.todoBadgeRings === true && entry.todo !== null;
 }
 
 function checkboxKeyForAgendaItem(item: AgendaItem): string {

@@ -571,7 +571,12 @@ describe("renderAgenda", () => {
         makeItem({
           title: "Open",
           date: new Date(2026, 3, 20, 9, 0),
-          entry: makeEntry({ title: "Open", todo: "TODO", sourceLineNumber: 41 }),
+          entry: makeEntry({
+            title: "Open",
+            todo: "TODO",
+            sourceLineNumber: 41,
+            checkboxItems: [{ text: "Subtask", checked: false }],
+          }),
           sourceLineNumber: 41,
         }),
         makeItem({
@@ -608,6 +613,7 @@ describe("renderAgenda", () => {
     expect(states.map(state => state.dataset.state)).toEqual(["TODO", "DONE", "TODO"]);
     expect(states.every(state => state.querySelector(".item-state-ring") !== null)).toBe(true);
     expect(states[1]?.closest(".item-done")).not.toBeNull();
+    expect(container.querySelector<HTMLElement>(".checkbox-list")?.classList.contains("checkbox-list-ring-state")).toBe(true);
     expect(container.querySelector<HTMLButtonElement>(".todo-badge-style-toggle")?.textContent).toBe("Show TODO text");
   });
 
