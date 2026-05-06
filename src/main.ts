@@ -273,9 +273,9 @@ function buildAddPanel(): void {
 
   // Priority
   const priorityGroup = makeRadioGroup(t("priority"), "add-priority", [
-    { value: "A", label: "#A" },
-    { value: "B", label: "#B" },
-    { value: "C", label: "#C" },
+    { value: "A", label: "A" },
+    { value: "B", label: "B" },
+    { value: "C", label: "C" },
     { value: "", label: t("priorityNone"), checked: true },
   ]);
   form.appendChild(priorityGroup.container);

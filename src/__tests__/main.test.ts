@@ -248,6 +248,7 @@ describe("main.ts integration", () => {
     expect(document.querySelector<HTMLElement>(".te-header span")?.textContent).toBe("Add item");
     expect(document.querySelector<HTMLInputElement>("#add-title")?.value).toBe("");
     expect(document.querySelector<HTMLInputElement>("input[name='add-type']:checked")?.value).toBe("event");
+    expect(Array.from(document.querySelectorAll<HTMLElement>("input[name='add-priority'] + .add-radio-label")).map(label => label.textContent)).toEqual(["A", "B", "C", "None"]);
     expect((document.querySelector<HTMLInputElement>("input[name='add-type']")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
     expect((document.querySelector<HTMLInputElement>("#add-when")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("");
     expect((document.querySelector<HTMLInputElement>("#add-sched")?.closest(".add-field") as HTMLElement | null)?.style.display).toBe("none");
