@@ -601,18 +601,28 @@ describe("renderAgenda", () => {
       [],
     ]);
 
-    renderAgenda(container, week, [], [], [], new Date(2026, 3, 20, 8, 0), {
+    const deadlines: DeadlineItem[] = [{
+      entry: makeEntry({ title: "Upcoming", todo: "TODO", sourceLineNumber: 44 }),
+      dueDate: new Date(2026, 3, 21),
+      daysUntil: 1,
+      sourceTimestamp: makeTimestamp("2026-04-21"),
+      baseDate: null,
+      instanceNote: null,
+    }];
+
+    renderAgenda(container, week, deadlines, [], [], new Date(2026, 3, 20, 8, 0), {
       todoBadgeRings: true,
     });
 
     const states = Array.from(container.querySelectorAll<HTMLElement>(".item-state"));
-    expect(states.map(state => state.textContent)).toEqual(["TODO", "DONE", "TODO"]);
+    expect(states.map(state => state.textContent)).toEqual(["TODO", "TODO", "DONE", "TODO"]);
+    expect(container.querySelector<HTMLElement>(".deadline-item")?.classList.contains("has-ring-state")).toBe(true);
     expect(container.querySelector<HTMLElement>(".timed-item")?.classList.contains("has-ring-state")).toBe(true);
     expect(container.querySelector<HTMLElement>(".day-deadline-item")?.classList.contains("has-ring-state")).toBe(true);
     expect(states.every(state => state.classList.contains("is-ring-style"))).toBe(true);
-    expect(states.map(state => state.dataset.state)).toEqual(["TODO", "DONE", "TODO"]);
+    expect(states.map(state => state.dataset.state)).toEqual(["TODO", "TODO", "DONE", "TODO"]);
     expect(states.every(state => state.querySelector(".item-state-ring") !== null)).toBe(true);
-    expect(states[1]?.closest(".item-done")).not.toBeNull();
+    expect(states[2]?.closest(".item-done")).not.toBeNull();
     expect(container.querySelector<HTMLElement>(".checkbox-list")?.classList.contains("checkbox-list-ring-state")).toBe(true);
     expect(container.querySelector<HTMLButtonElement>(".todo-badge-style-toggle")?.textContent).toBe("Show TODO text");
   });

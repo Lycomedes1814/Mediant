@@ -313,6 +313,7 @@ function renderDeadlines(deadlines: DeadlineItem[]): HTMLElement {
     row.classList.add(getDeadlineUrgencyClass(dl.daysUntil));
     if (dl.entry.todo === "DONE") row.classList.add("item-done");
     if (dl.entry.checkboxItems.length > 0) row.classList.add("has-checkbox-list");
+    if (usesRingState(dl.entry)) row.classList.add("has-ring-state");
     applyPrimaryTagFringe(row, dl.entry.tags, "compact");
 
     const meta = el("span", "deadline-meta");

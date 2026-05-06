@@ -651,6 +651,11 @@ body {
   gap: 0 0.72rem;
 }
 
+.deadline-item.has-ring-state {
+  grid-template-columns: 3.55ch minmax(0, 1fr) auto;
+  column-gap: 0.5rem;
+}
+
 .deadline-item + .deadline-item {
   margin-top: 0.14rem;
 }
