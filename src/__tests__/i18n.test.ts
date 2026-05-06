@@ -11,12 +11,14 @@ describe("i18n", () => {
   it("returns English by default", () => {
     expect(t("save")).toBe("Save");
     expect(t("delete")).toBe("Delete");
+    expect(t("typeTodo")).toBe("Task");
   });
 
   it("returns Norwegian when locale is set to nb", () => {
     setLocale("nb");
     expect(t("save")).toBe("Lagre");
     expect(t("delete")).toBe("Slett");
+    expect(t("typeTodo")).toBe("Oppgave");
     expect(getLocale()).toBe("nb");
   });
 

@@ -72,7 +72,7 @@ const messages = {
     // Add/edit panel — fields
     type: "Type",
     typeEvent: "Event",
-    typeTodo: "TODO",
+    typeTodo: "Task",
     priority: "Priority",
     priorityNone: "None",
     title: "Title",
@@ -185,7 +185,7 @@ const messages = {
 
     type: "Type",
     typeEvent: "Hendelse",
-    typeTodo: "TODO",
+    typeTodo: "Oppgave",
     priority: "Prioritet",
     priorityNone: "Ingen",
     title: "Tittel",
