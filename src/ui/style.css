@@ -393,16 +393,16 @@ body {
   justify-content: center;
   width: 1rem;
   height: 1rem;
-  color: var(--text-dim);
-  opacity: 0.78;
+  color: color-mix(in srgb, var(--text) 72%, var(--text-dim));
+  opacity: 0.92;
 }
 
 .item-all-day-marker svg {
-  width: 0.92rem;
-  height: 0.92rem;
+  width: 0.98rem;
+  height: 0.98rem;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 2.1;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
